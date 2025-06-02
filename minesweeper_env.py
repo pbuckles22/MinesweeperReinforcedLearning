@@ -14,7 +14,7 @@ class MinesweeperEnv(gym.Env):
         self.num_mines = num_mines
         
         # Define action and observation spaces
-        self.action_space = spaces.Discrete(board_size * board_size)  # Each cell is a possible action
+        self.action_space = spaces.Discrete(2 * board_size * board_size)  # Each cell has reveal and flag actions
         self.observation_space = spaces.Box(
             low=-1,  # -1 for unrevealed cells
             high=8,  # 0-8 for revealed cells (0-8 adjacent mines)
@@ -26,6 +26,7 @@ class MinesweeperEnv(gym.Env):
         self.board = None  # The actual board with mines
         self.state = None  # The visible state to the agent
         self.mines = None  # Positions of mines
+        self.flags = set()  # Positions of flagged cells
         self.game_over = False
         self.won = False
         
@@ -52,6 +53,7 @@ class MinesweeperEnv(gym.Env):
                 if (x, y) not in self.mines:
                     self.board[x, y] = self._count_adjacent_mines(x, y)
         
+        self.flags = set()
         self.game_over = False
         self.won = False
         
@@ -62,12 +64,22 @@ class MinesweeperEnv(gym.Env):
         if self.game_over:
             return self.state, 0, True, True, {}
         
-        # Convert action to coordinates
-        x = action // self.board_size
-        y = action % self.board_size
+        # Convert action to coordinates and type (reveal or flag)
+        cell_action = action % (self.board_size * self.board_size)
+        x = cell_action // self.board_size
+        y = cell_action % self.board_size
+        is_flag = action >= self.board_size * self.board_size
+        
+        # Handle flagging
+        if is_flag:
+            if (x, y) in self.flags:
+                self.flags.remove((x, y))
+            else:
+                self.flags.add((x, y))
+            return self.state, 0, False, False, {}
         
         # Check if action is valid
-        if self.state[x, y] != -1:
+        if self.state[x, y] != -1 or (x, y) in self.flags:
             return self.state, -1, True, False, {}  # Invalid move
         
         # Reveal the cell
@@ -127,14 +139,16 @@ class MinesweeperEnv(gym.Env):
     
     def render(self):
         """Render the current state of the environment."""
-        for row in self.state:
-            for cell in row:
-                if cell == -1:
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if (x, y) in self.flags:
+                    print('🚩', end=' ')
+                elif self.state[x, y] == -1:
                     print('□', end=' ')
-                elif cell == -2:
+                elif self.state[x, y] == -2:
                     print('💣', end=' ')
                 else:
-                    print(cell, end=' ')
+                    print(self.state[x, y], end=' ')
             print()
 
 def main():
