@@ -13,7 +13,7 @@ A reinforcement learning project that trains an agent to play Minesweeper using 
 Options:
 - `-Force`: Automatically delete existing virtual environment if present
 - `-NoCache`: Install dependencies without using pip cache
-- `--use-gpu`: Install PyTorch with CUDA support
+- `-UseGPU`: Install PyTorch with CUDA support
 
 Example:
 ```powershell
@@ -38,27 +38,55 @@ Example:
 
 ## Testing
 
-### Basic Tests
-Run the basic test suite to verify environment setup and dependencies:
+### Environment Tests
+The installation process includes basic environment tests to verify the Minesweeper environment is working correctly. These tests check:
+
+1. Environment Creation
+   - Verifies the environment can be created
+   - Checks default board size and mine count
+
+2. Environment Reset
+   - Tests proper environment reset
+   - Verifies board state is cleared
+   - Checks mine count is reset
+
+3. Environment Step
+   - Tests basic environment interactions
+   - Verifies observation format
+   - Checks reward structure
+   - Validates info dictionary
+
+4. Invalid Action Handling
+   - Tests out-of-bounds actions
+   - Verifies proper error handling
+   - Checks reward for invalid moves
+
+5. Environment Consistency
+   - Tests state consistency between steps
+   - Verifies revealed cells remain revealed
+   - Checks board state integrity
+
+6. Environment Completion
+   - Tests win/loss conditions
+   - Verifies game termination
+   - Checks final state reporting
+
+To run environment tests manually:
+```powershell
+python test_environment.py
+```
+
+### Agent Tests
+To test the agent's training and performance:
 ```powershell
 python test_train_agent.py
 ```
 
-This will run:
-- Environment creation test
-- Environment interaction test
-- Model initialization test
-
-### Deep Tests
-To run additional tests that verify model functionality:
-```powershell
-python test_train_agent.py --deep-tests
-```
-
-This includes all basic tests plus:
-- Model prediction test
-- Model saving/loading test
-- Training step test
+This runs comprehensive tests of the agent's:
+- Training process
+- Model architecture
+- Learning capabilities
+- Performance metrics
 
 ## Training
 
@@ -69,11 +97,11 @@ python train_agent.py
 
 Options:
 - `--use-gpu`: Use GPU for training (not recommended for MLP policies)
-- `--timesteps`: Number of timesteps to train for (default: 1000)
+- `--timesteps`: Number of timesteps to train for (default: 100)
 
 Example:
 ```powershell
-python train_agent.py --timesteps 10000
+python train_agent.py --timesteps 1000
 ```
 
 ## Visualization

@@ -1,3 +1,25 @@
+param(
+    [switch]$Force,
+    [switch]$NoCache,
+    [switch]$UseGPU
+)
+
+# Check if virtual environment exists
+if (Test-Path "venv") {
+    if ($Force) {
+        Write-Host "Removing existing virtual environment..."
+        Remove-Item -Recurse -Force venv
+    }
+    else {
+        $response = Read-Host "Virtual environment already exists. Delete it? (y/n)"
+        if ($response -ne "y") {
+            exit 1
+        }
+        Write-Host "Removing existing virtual environment..."
+        Remove-Item -Recurse -Force venv
+    }
+}
+
 # Create virtual environment
 Write-Host "Creating virtual environment..."
 python -m venv venv
@@ -8,16 +30,27 @@ Write-Host "Activating virtual environment..."
 
 # Upgrade pip
 Write-Host "Upgrading pip..."
-pip install --upgrade pip
+python -m pip install --upgrade pip
 
 # Install dependencies
 Write-Host "Installing dependencies..."
-pip install -r requirements.txt
+if ($NoCache) {
+    pip install --no-cache-dir -r requirements.txt
+}
+else {
+    pip install -r requirements.txt
+}
 
-# Run the training script
+# Install PyTorch with CUDA if requested
+if ($UseGPU) {
+    Write-Host "Installing PyTorch with CUDA support..."
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+}
+
+# Run environment tests
+Write-Host "Running environment tests..."
+python test_environment.py
+
+# Run training script
 Write-Host "Running training script..."
-python train_agent.py
-
-# Run the test suite
-Write-Host "Running tests..."
-python -m unittest test_train_agent.py -v 
+python train_agent.py 
