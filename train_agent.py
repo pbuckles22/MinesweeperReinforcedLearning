@@ -5,65 +5,75 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from minesweeper_env import MinesweeperEnv
+import argparse
 
-# Create logs directory
-log_dir = "logs/"
-os.makedirs(log_dir, exist_ok=True)
-
-# Create and wrap the environment
 def make_env():
-    env = MinesweeperEnv(board_size=5, num_mines=4)  # Start with a small board
-    env = Monitor(env, log_dir)
+    """Create and wrap the Minesweeper environment"""
+    env = MinesweeperEnv(board_size=5, num_mines=4)
     return env
 
-# Create vectorized environment
-env = DummyVecEnv([make_env])
+def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Train a PPO agent on Minesweeper')
+    parser.add_argument('--use-gpu', action='store_true', help='Use GPU for training (not recommended for MLP policies)')
+    parser.add_argument('--timesteps', type=int, default=100, help='Number of timesteps to train for (default: 100)')
+    args = parser.parse_args()
 
-# Create evaluation environment
-eval_env = DummyVecEnv([make_env])
+    # Set device based on argument
+    device = 'cuda' if args.use_gpu else 'cpu'
+    print(f"Using {device} device")
 
-# Create evaluation callback
-eval_callback = EvalCallback(
-    eval_env,
-    best_model_save_path=log_dir,
-    log_path=log_dir,
-    eval_freq=1000,
-    deterministic=True,
-    render=False
-)
+    # Create logs directory
+    log_dir = "logs/"
+    os.makedirs(log_dir, exist_ok=True)
 
-# Initialize the agent
-model = PPO(
-    "MlpPolicy",
-    env,
-    verbose=1,
-    learning_rate=0.0003,
-    n_steps=2048,
-    batch_size=64,
-    n_epochs=10,
-    gamma=0.99,
-    gae_lambda=0.95,
-    clip_range=0.2,
-    tensorboard_log=log_dir
-)
+    # Create and wrap the environment
+    env = DummyVecEnv([make_env])
 
-# Train the agent
-total_timesteps = 100000  # Adjust based on your needs
-model.learn(
-    total_timesteps=total_timesteps,
-    callback=eval_callback,
-    progress_bar=True
-)
+    # Create evaluation environment with Monitor wrapper
+    eval_env = DummyVecEnv([lambda: Monitor(make_env(), log_dir)])
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path=log_dir,
+        log_path=log_dir,
+        eval_freq=10,  # Reduced for testing
+        deterministic=True,
+        render=False
+    )
 
-# Save the final model
-model.save(os.path.join(log_dir, "final_model"))
+    # Initialize the PPO agent
+    model = PPO(
+        "MlpPolicy",
+        env,
+        learning_rate=0.0003,
+        n_steps=64,  # Reduced for testing
+        batch_size=32,  # Reduced for testing
+        n_epochs=2,  # Reduced for testing
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        verbose=1,
+        tensorboard_log=log_dir,
+        device=device
+    )
 
-# Test the trained agent
-obs = env.reset()
-for _ in range(100):  # Run 100 test episodes
-    action, _states = model.predict(obs, deterministic=True)
-    obs, rewards, dones, info = env.step(action)
-    if dones:
-        obs = env.reset()
+    # Train the agent
+    model.learn(
+        total_timesteps=args.timesteps,
+        callback=eval_callback,
+        progress_bar=True
+    )
 
-print("Training completed! Model saved in", log_dir) 
+    # Save the final model
+    model.save(os.path.join(log_dir, "final_model"))
+
+    # Test the trained agent
+    obs = env.reset()
+    for _ in range(3):  # Reduced number of test episodes
+        action, _ = model.predict(obs, deterministic=True)
+        obs, _, done, _ = env.step(action)
+        if done:
+            obs = env.reset()
+
+if __name__ == "__main__":
+    main() 
