@@ -1,7 +1,7 @@
 # Monitor training progress in real-time
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent (Split-Path -Parent $scriptPath)
-$logDir = Join-Path $projectRoot "tests"
+$logDir = Join-Path $projectRoot "logs"
 
 function Write-ColorOutput($ForegroundColor) {
     $fc = $host.UI.RawUI.ForegroundColor
