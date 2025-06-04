@@ -9,6 +9,9 @@ if (Test-Path "..\..\venv\Scripts\Activate.ps1") {
 # Set working directory to project root
 Set-Location -Path "..\.."
 
+# Add src directory to Python path
+$env:PYTHONPATH = "src;$env:PYTHONPATH"
+
 # Run environment tests first
 Write-Host "Running environment tests..."
 python "src\tests\test_environment.py"
@@ -101,4 +104,4 @@ if ($process.HasExited) {
     Write-ToLog "Training completed with exit code: $($process.ExitCode)"
 } else {
     Write-ToLog "Training was stopped due to timeout"
-}
+} 

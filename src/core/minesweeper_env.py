@@ -228,7 +228,6 @@ class MinesweeperEnv(gym.Env):
         if self.curriculum_mode and self.total_games > 0:
             # Track games at current size
             self.games_at_current_size += 1
-            
             # Check if we should increase board size
             if (self.games_at_current_size >= self.min_games_before_size_increase and 
                 self.current_board_size < self.max_board_size):
@@ -246,36 +245,35 @@ class MinesweeperEnv(gym.Env):
                     # Reset size-specific counters
                     self.games_at_current_size = 0
                     self.wins_at_current_size = 0
-            
             # Check if we should increase mines
-            win_rate = self.win_count / self.total_games
-            if win_rate > self.mines_increment_threshold and self.current_mines < self.max_mines:
-                self.current_mines = min(self.current_mines + self.mines_increment, self.max_mines)
-                self.logger.info(f"\n💣 Curriculum Update: Increased mines to {self.current_mines}")
-        
-        # Internal board/state/flags are current_board_size
+            if self.current_mines < self.max_mines:
+                win_rate = self.win_count / self.total_games
+                if win_rate >= self.mines_increment_threshold:
+                    self.current_mines = min(self.current_mines + self.mines_increment, self.max_mines)
+                    self.logger.info(f"\n💣 Increased mines to {self.current_mines}")
+        # Initialize arrays
         self.board = np.zeros((self.current_board_size, self.current_board_size), dtype=np.int8)
         self.state = np.full((self.current_board_size, self.current_board_size), -1, dtype=np.int8)
         self.flags = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
+        self.revealed = np.zeros((self.current_board_size, self.current_board_size), dtype=np.int8)
+        # Place mines as a set of (x, y) tuples
         self.mines = set()
         while len(self.mines) < self.current_mines:
-            x = self.np_random.integers(0, self.current_board_size)
-            y = self.np_random.integers(0, self.current_board_size)
-            if (x, y) not in self.mines:
-                self.mines.add((x, y))
-                self.board[x, y] = -1
-        
+            x = np.random.randint(0, self.current_board_size)
+            y = np.random.randint(0, self.current_board_size)
+            self.mines.add((x, y))
+        # Fill board with adjacent mine counts
         for x in range(self.current_board_size):
             for y in range(self.current_board_size):
-                if (x, y) not in self.mines:
+                if (x, y) in self.mines:
+                    self.board[x, y] = -1
+                else:
                     self.board[x, y] = self._count_adjacent_mines(x, y)
-        
         self.game_over = False
         self.won = False
         self.revealed_count = 0
         self.flagged_mines = 0
         self.incorrect_flags = 0
-        
         # Log episode start with debug level
         self.logger.debug(f"\nStarting new episode:")
         self.logger.debug(f"- Board size: {self.current_board_size}x{self.current_board_size}")
@@ -283,55 +281,39 @@ class MinesweeperEnv(gym.Env):
         self.logger.debug(f"- Win rate: {(self.win_count/self.total_games*100 if self.total_games > 0 else 0):.1f}%")
         self.logger.debug(f"- Games at current size: {self.games_at_current_size}")
         self.logger.debug(f"- Max steps: {self.max_steps}")
-        
-        # Check training health at the start of each episode
         self._check_training_health()
-        
-        # Update progress display
         self._update_progress_display()
-        
         return self._get_obs(), {}
 
     def step(self, action):
         current_time = time.time()
         time_since_last_action = current_time - self.last_action_time
         self.last_action_time = current_time
-        
         if self.game_over:
-            # Record episode statistics
             self.recent_episode_lengths.append(self.steps)
             if self.won:
-                self.wins_at_current_size += 1  # Track wins at current size
+                self.wins_at_current_size += 1
             return self._get_obs(), 0, True, True, {}
-        
         self.steps += 1
         if self.steps >= self.max_steps:
             episode_duration = current_time - self.episode_start_time
             self.logger.debug(f"Episode timeout after {episode_duration:.1f}s")
             self.recent_episode_lengths.append(self.steps)
-            return self._get_obs(), -5, True, False, {}  # Timeout penalty
-        
+            return self._get_obs(), -5, True, False, {}
         N = self.max_board_size * self.max_board_size
-        # Map action to (x, y, is_flag)
         is_flag = action >= N
         idx = action % N
         x = idx // self.max_board_size
         y = idx % self.max_board_size
-        
-        # Log slow actions
-        if time_since_last_action > 1.0:  # More than 1 second between actions
+        if time_since_last_action > 1.0:
             self.logger.warning(f"Slow action detected: {time_since_last_action:.1f}s")
-        
-        # Out of bounds for current board?
         if x >= self.current_board_size or y >= self.current_board_size:
-            return self._get_obs(), -1, False, False, {}  # Reduced OOB penalty
-        
+            return self._get_obs(), -1, False, False, {}
         if not is_flag:
-            # Reveal
             if self.flags[x, y]:
-                return self._get_obs(), -0.5, False, False, {}  # Reduced penalty for revealing flagged cell
+                return self._get_obs(), -0.5, False, False, {}
             if self.state[x, y] != -1:
-                return self._get_obs(), -0.2, False, False, {}  # Reduced penalty for revealing revealed cell
+                return self._get_obs(), -0.2, False, False, {}
             if (x, y) in self.mines:
                 self.state[x, y] = -2
                 self.game_over = True
@@ -342,43 +324,33 @@ class MinesweeperEnv(gym.Env):
                 self.logger.debug(f"Hit mine after {episode_duration:.1f}s")
                 self.recent_episode_lengths.append(self.steps)
                 return self._get_obs(), self.mine_penalty, True, False, {}
-            
-            # Safe reveal - give immediate reward
             self._reveal_cell(x, y)
-            safe_reward = self.safe_reveal_base  # Base reward for safe reveal
-            
-            # Additional reward for revealing a number
+            safe_reward = self.safe_reveal_base
             if self.board[x, y] > 0:
                 safe_reward += self.number_reveal_bonus
-            
             if self._check_win():
                 self.won = True
                 self.game_over = True
                 self.win_count += 1
                 self.total_games += 1
-                self.consecutive_mine_hits = 0  # Reset consecutive mine hits on win
+                self.consecutive_mine_hits = 0
                 self.last_win_time = current_time
                 self.recent_mine_hits.append(False)
                 episode_duration = current_time - self.episode_start_time
                 self.logger.info(f"🎉 Won game after {episode_duration:.1f}s")
                 self.recent_episode_lengths.append(self.steps)
                 return self._get_obs(), self.win_reward, True, False, {}
-            
-            # Progress reward
             revealed_cells = np.sum((self.state != -1) & (~self.flags))
             total_cells = self.current_board_size * self.current_board_size
             progress_reward = (revealed_cells / total_cells) * self.progress_multiplier
-            
             reward = safe_reward + progress_reward
             self.recent_rewards.append(reward)
             return self._get_obs(), reward, False, False, {}
         else:
-            # Flag
             if self.state[x, y] != -1:
-                return self._get_obs(), -0.2, False, False, {}  # Reduced penalty for flagging revealed cell
+                return self._get_obs(), -0.2, False, False, {}
             if self.flags[x, y]:
-                return self._get_obs(), -0.2, False, False, {}  # Reduced penalty for flagging flagged cell
-            
+                return self._get_obs(), -0.2, False, False, {}
             self.flags[x, y] = True
             if (x, y) in self.mines:
                 self.flagged_mines += 1
@@ -386,20 +358,18 @@ class MinesweeperEnv(gym.Env):
             else:
                 self.incorrect_flags += 1
                 reward = self.incorrect_flag_penalty
-            
             if self._check_win():
                 self.won = True
                 self.game_over = True
                 self.win_count += 1
                 self.total_games += 1
-                self.consecutive_mine_hits = 0  # Reset consecutive mine hits on win
+                self.consecutive_mine_hits = 0
                 self.last_win_time = current_time
                 self.recent_mine_hits.append(False)
                 episode_duration = current_time - self.episode_start_time
                 self.logger.info(f"🎉 Won game after {episode_duration:.1f}s")
                 self.recent_episode_lengths.append(self.steps)
                 return self._get_obs(), reward, False, False, {}
-            
             self.recent_rewards.append(reward)
             return self._get_obs(), reward, False, False, {}
 
@@ -444,8 +414,7 @@ class MinesweeperEnv(gym.Env):
         return True
 
     def _get_obs(self):
-        # Pad to max_board_size with -3
-        obs = np.full((self.max_board_size, self.max_board_size), -3, dtype=np.int8)
+        obs = np.full((self.current_board_size, self.current_board_size), -3, dtype=np.int8)
         obs[:self.current_board_size, :self.current_board_size] = self.state
         mask = (self.flags & (self.state == -1))
         obs[:self.current_board_size, :self.current_board_size][mask] = 9

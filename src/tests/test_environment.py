@@ -4,7 +4,9 @@ import numpy as np
 import pygame
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from minesweeper_env import MinesweeperEnv
+from core.minesweeper_env import MinesweeperEnv
+import unittest
+import gymnasium as gym
 
 def test_imports():
     """Test that all required modules can be imported"""
@@ -14,7 +16,7 @@ def test_imports():
         import pygame
         from stable_baselines3 import PPO
         from stable_baselines3.common.vec_env import DummyVecEnv
-        from minesweeper_env import MinesweeperEnv
+        from core.minesweeper_env import MinesweeperEnv
         print("✓ All imports successful")
         return True
     except ImportError as e:
@@ -41,8 +43,8 @@ def test_basic_actions():
         env = MinesweeperEnv(board_size=3, num_mines=1)
         state, _ = env.reset()
         
-        # Test a reveal action
-        action = 0  # Reveal first cell
+        # Test a reveal action (first cell)
+        action = 0  # Reveal first cell (0,0)
         state, reward, terminated, truncated, _ = env.step(action)
         print("✓ Basic action successful")
         print(f"✓ Reward: {reward}")
@@ -91,6 +93,55 @@ def main():
     else:
         print("✗ Some tests failed. Please check the output above.")
         return 1
+
+class TestMinesweeperEnv(unittest.TestCase):
+    def setUp(self):
+        self.env = MinesweeperEnv(board_size=10, num_mines=10)
+
+    def test_initialization(self):
+        """Test that the environment initializes correctly"""
+        self.assertEqual(self.env.board_size, 10)
+        self.assertEqual(self.env.num_mines, 10)
+        self.assertIsNotNone(self.env.board)
+        self.assertIsNotNone(self.env.mines)
+        self.assertIsNotNone(self.env.revealed)
+
+    def test_reset(self):
+        """Test that reset returns the correct observation and info"""
+        obs, info = self.env.reset()
+        self.assertIsInstance(obs, np.ndarray)
+        self.assertIsInstance(info, dict)
+        self.assertEqual(obs.shape, (10, 10))
+        self.assertTrue(np.all(obs == -1))  # All cells should be hidden initially
+
+    def test_step(self):
+        """Test that step returns the correct observation, reward, terminated, truncated, and info"""
+        self.env.reset()
+        obs, reward, terminated, truncated, info = self.env.step(0)  # Reveal first cell
+        self.assertIsInstance(obs, np.ndarray)
+        self.assertIsInstance(reward, float)
+        self.assertIsInstance(terminated, bool)
+        self.assertIsInstance(truncated, bool)
+        self.assertIsInstance(info, dict)
+        self.assertEqual(obs.shape, (10, 10))
+
+    def test_invalid_action(self):
+        """Test that invalid actions raise an error"""
+        self.env.reset()
+        with self.assertRaises(ValueError):
+            self.env.step(100)  # Out of bounds
+
+    def test_mine_reveal(self):
+        """Test that revealing a mine ends the episode"""
+        self.env.reset()
+        # Find a mine position
+        mine_pos = np.where(self.env.mines == 1)
+        if len(mine_pos[0]) > 0:
+            x, y = mine_pos[0][0], mine_pos[1][0]
+            action = x * self.env.current_board_size + y  # Convert (x,y) to single integer
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            self.assertTrue(terminated)
+            self.assertLess(reward, 0)  # Negative reward for hitting a mine
 
 if __name__ == "__main__":
     sys.exit(main()) 
