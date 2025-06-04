@@ -1,0 +1,1286 @@
+{
+  "training": [
+    {
+      "step": 100,
+      "metric": "avg_reward",
+      "value": -1.2290865384615386
+    },
+    {
+      "step": 100,
+      "metric": "win_rate",
+      "value": 30.76923076923077
+    },
+    {
+      "step": 100,
+      "metric": "avg_length",
+      "value": 7.384615384615385
+    },
+    {
+      "step": 200,
+      "metric": "avg_reward",
+      "value": -1.0804687499999999
+    },
+    {
+      "step": 200,
+      "metric": "win_rate",
+      "value": 37.5
+    },
+    {
+      "step": 200,
+      "metric": "avg_length",
+      "value": 8.166666666666666
+    },
+    {
+      "step": 300,
+      "metric": "avg_reward",
+      "value": 0.0892241379310345
+    },
+    {
+      "step": 300,
+      "metric": "win_rate",
+      "value": 44.827586206896555
+    },
+    {
+      "step": 300,
+      "metric": "avg_length",
+      "value": 9.689655172413794
+    },
+    {
+      "step": 400,
+      "metric": "avg_reward",
+      "value": -0.015625000000000035
+    },
+    {
+      "step": 400,
+      "metric": "win_rate",
+      "value": 43.58974358974359
+    },
+    {
+      "step": 400,
+      "metric": "avg_length",
+      "value": 9.538461538461538
+    },
+    {
+      "step": 500,
+      "metric": "avg_reward",
+      "value": 0.31527777777777777
+    },
+    {
+      "step": 500,
+      "metric": "win_rate",
+      "value": 46.666666666666664
+    },
+    {
+      "step": 500,
+      "metric": "avg_length",
+      "value": 11.022222222222222
+    },
+    {
+      "step": 600,
+      "metric": "avg_reward",
+      "value": 0.2797727272727273
+    },
+    {
+      "step": 600,
+      "metric": "win_rate",
+      "value": 41.81818181818181
+    },
+    {
+      "step": 600,
+      "metric": "avg_length",
+      "value": 10.581818181818182
+    },
+    {
+      "step": 700,
+      "metric": "avg_reward",
+      "value": 0.5097916666666665
+    },
+    {
+      "step": 700,
+      "metric": "win_rate",
+      "value": 43.333333333333336
+    },
+    {
+      "step": 700,
+      "metric": "avg_length",
+      "value": 11.333333333333334
+    },
+    {
+      "step": 800,
+      "metric": "avg_reward",
+      "value": 0.41463068181818175
+    },
+    {
+      "step": 800,
+      "metric": "win_rate",
+      "value": 40.909090909090914
+    },
+    {
+      "step": 800,
+      "metric": "avg_length",
+      "value": 11.318181818181818
+    },
+    {
+      "step": 900,
+      "metric": "avg_reward",
+      "value": 0.4760817307692308
+    },
+    {
+      "step": 900,
+      "metric": "win_rate",
+      "value": 38.46153846153847
+    },
+    {
+      "step": 900,
+      "metric": "avg_length",
+      "value": 11.474358974358974
+    },
+    {
+      "step": 1000,
+      "metric": "avg_reward",
+      "value": 0.6932776162790697
+    },
+    {
+      "step": 1000,
+      "metric": "win_rate",
+      "value": 40.69767441860465
+    },
+    {
+      "step": 1000,
+      "metric": "avg_length",
+      "value": 11.569767441860465
+    },
+    {
+      "step": 1100,
+      "metric": "avg_reward",
+      "value": 0.8484203296703298
+    },
+    {
+      "step": 1100,
+      "metric": "win_rate",
+      "value": 41.75824175824176
+    },
+    {
+      "step": 1100,
+      "metric": "avg_length",
+      "value": 11.846153846153847
+    },
+    {
+      "step": 1200,
+      "metric": "avg_reward",
+      "value": 1.1063486842105263
+    },
+    {
+      "step": 1200,
+      "metric": "win_rate",
+      "value": 44.21052631578947
+    },
+    {
+      "step": 1200,
+      "metric": "avg_length",
+      "value": 12.536842105263158
+    },
+    {
+      "step": 1300,
+      "metric": "avg_reward",
+      "value": 0.9317812499999999
+    },
+    {
+      "step": 1300,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 1300,
+      "metric": "avg_length",
+      "value": 12.09
+    },
+    {
+      "step": 1400,
+      "metric": "avg_reward",
+      "value": 1.0193124999999998
+    },
+    {
+      "step": 1400,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 1400,
+      "metric": "avg_length",
+      "value": 12.59
+    },
+    {
+      "step": 1500,
+      "metric": "avg_reward",
+      "value": 1.49671875
+    },
+    {
+      "step": 1500,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 1500,
+      "metric": "avg_length",
+      "value": 13.27
+    },
+    {
+      "step": 1600,
+      "metric": "avg_reward",
+      "value": 1.02865625
+    },
+    {
+      "step": 1600,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 1600,
+      "metric": "avg_length",
+      "value": 12.5
+    },
+    {
+      "step": 1700,
+      "metric": "avg_reward",
+      "value": 0.9874687499999998
+    },
+    {
+      "step": 1700,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 1700,
+      "metric": "avg_length",
+      "value": 12.11
+    },
+    {
+      "step": 1800,
+      "metric": "avg_reward",
+      "value": 1.4002187499999998
+    },
+    {
+      "step": 1800,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 1800,
+      "metric": "avg_length",
+      "value": 12.48
+    },
+    {
+      "step": 1900,
+      "metric": "avg_reward",
+      "value": 1.06175
+    },
+    {
+      "step": 1900,
+      "metric": "win_rate",
+      "value": 44.0
+    },
+    {
+      "step": 1900,
+      "metric": "avg_length",
+      "value": 12.12
+    },
+    {
+      "step": 2000,
+      "metric": "avg_reward",
+      "value": 0.9869999999999999
+    },
+    {
+      "step": 2000,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 2000,
+      "metric": "avg_length",
+      "value": 11.48
+    },
+    {
+      "step": 2100,
+      "metric": "avg_reward",
+      "value": 0.64984375
+    },
+    {
+      "step": 2100,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 2100,
+      "metric": "avg_length",
+      "value": 11.1
+    },
+    {
+      "step": 2200,
+      "metric": "avg_reward",
+      "value": 0.2633749999999999
+    },
+    {
+      "step": 2200,
+      "metric": "win_rate",
+      "value": 39.0
+    },
+    {
+      "step": 2200,
+      "metric": "avg_length",
+      "value": 10.12
+    },
+    {
+      "step": 2300,
+      "metric": "avg_reward",
+      "value": 0.23378124999999997
+    },
+    {
+      "step": 2300,
+      "metric": "win_rate",
+      "value": 39.0
+    },
+    {
+      "step": 2300,
+      "metric": "avg_length",
+      "value": 10.07
+    },
+    {
+      "step": 2400,
+      "metric": "avg_reward",
+      "value": 0.4285625000000001
+    },
+    {
+      "step": 2400,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 2400,
+      "metric": "avg_length",
+      "value": 10.33
+    },
+    {
+      "step": 2500,
+      "metric": "avg_reward",
+      "value": 0.6961250000000001
+    },
+    {
+      "step": 2500,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 2500,
+      "metric": "avg_length",
+      "value": 10.72
+    },
+    {
+      "step": 2600,
+      "metric": "avg_reward",
+      "value": 0.4431562499999999
+    },
+    {
+      "step": 2600,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 2600,
+      "metric": "avg_length",
+      "value": 10.38
+    },
+    {
+      "step": 2700,
+      "metric": "avg_reward",
+      "value": 0.34275000000000005
+    },
+    {
+      "step": 2700,
+      "metric": "win_rate",
+      "value": 39.0
+    },
+    {
+      "step": 2700,
+      "metric": "avg_length",
+      "value": 10.2
+    },
+    {
+      "step": 2800,
+      "metric": "avg_reward",
+      "value": 0.35400000000000004
+    },
+    {
+      "step": 2800,
+      "metric": "win_rate",
+      "value": 38.0
+    },
+    {
+      "step": 2800,
+      "metric": "avg_length",
+      "value": 10.35
+    },
+    {
+      "step": 2900,
+      "metric": "avg_reward",
+      "value": 0.10518750000000011
+    },
+    {
+      "step": 2900,
+      "metric": "win_rate",
+      "value": 36.0
+    },
+    {
+      "step": 2900,
+      "metric": "avg_length",
+      "value": 10.14
+    },
+    {
+      "step": 3000,
+      "metric": "avg_reward",
+      "value": 0.24931250000000002
+    },
+    {
+      "step": 3000,
+      "metric": "win_rate",
+      "value": 36.0
+    },
+    {
+      "step": 3000,
+      "metric": "avg_length",
+      "value": 10.88
+    },
+    {
+      "step": 3100,
+      "metric": "avg_reward",
+      "value": 0.40031250000000007
+    },
+    {
+      "step": 3100,
+      "metric": "win_rate",
+      "value": 38.0
+    },
+    {
+      "step": 3100,
+      "metric": "avg_length",
+      "value": 11.22
+    },
+    {
+      "step": 3200,
+      "metric": "avg_reward",
+      "value": 0.71359375
+    },
+    {
+      "step": 3200,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 3200,
+      "metric": "avg_length",
+      "value": 11.46
+    },
+    {
+      "step": 3300,
+      "metric": "avg_reward",
+      "value": 0.9723125
+    },
+    {
+      "step": 3300,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 3300,
+      "metric": "avg_length",
+      "value": 12.13
+    },
+    {
+      "step": 3400,
+      "metric": "avg_reward",
+      "value": 1.22815625
+    },
+    {
+      "step": 3400,
+      "metric": "win_rate",
+      "value": 44.0
+    },
+    {
+      "step": 3400,
+      "metric": "avg_length",
+      "value": 12.82
+    },
+    {
+      "step": 3500,
+      "metric": "avg_reward",
+      "value": 1.0452187499999999
+    },
+    {
+      "step": 3500,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 3500,
+      "metric": "avg_length",
+      "value": 12.63
+    },
+    {
+      "step": 3600,
+      "metric": "avg_reward",
+      "value": 1.0010937500000001
+    },
+    {
+      "step": 3600,
+      "metric": "win_rate",
+      "value": 47.0
+    },
+    {
+      "step": 3600,
+      "metric": "avg_length",
+      "value": 12.66
+    },
+    {
+      "step": 3700,
+      "metric": "avg_reward",
+      "value": 1.0010937500000001
+    },
+    {
+      "step": 3700,
+      "metric": "win_rate",
+      "value": 47.0
+    },
+    {
+      "step": 3700,
+      "metric": "avg_length",
+      "value": 12.66
+    },
+    {
+      "step": 3800,
+      "metric": "avg_reward",
+      "value": 0.45050000000000007
+    },
+    {
+      "step": 3800,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 3800,
+      "metric": "avg_length",
+      "value": 12.68
+    },
+    {
+      "step": 3900,
+      "metric": "avg_reward",
+      "value": 0.6264062499999999
+    },
+    {
+      "step": 3900,
+      "metric": "win_rate",
+      "value": 44.0
+    },
+    {
+      "step": 3900,
+      "metric": "avg_length",
+      "value": 12.67
+    },
+    {
+      "step": 4000,
+      "metric": "avg_reward",
+      "value": 0.706875
+    },
+    {
+      "step": 4000,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 4000,
+      "metric": "avg_length",
+      "value": 12.98
+    },
+    {
+      "step": 4100,
+      "metric": "avg_reward",
+      "value": 0.5944375000000001
+    },
+    {
+      "step": 4100,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 4100,
+      "metric": "avg_length",
+      "value": 13.02
+    },
+    {
+      "step": 4200,
+      "metric": "avg_reward",
+      "value": 0.86678125
+    },
+    {
+      "step": 4200,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 4200,
+      "metric": "avg_length",
+      "value": 13.66
+    },
+    {
+      "step": 4300,
+      "metric": "avg_reward",
+      "value": 1.2508437499999996
+    },
+    {
+      "step": 4300,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 4300,
+      "metric": "avg_length",
+      "value": 14.03
+    },
+    {
+      "step": 4400,
+      "metric": "avg_reward",
+      "value": 0.6882187499999999
+    },
+    {
+      "step": 4400,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 4400,
+      "metric": "avg_length",
+      "value": 12.47
+    },
+    {
+      "step": 4500,
+      "metric": "avg_reward",
+      "value": 0.8214374999999999
+    },
+    {
+      "step": 4500,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 4500,
+      "metric": "avg_length",
+      "value": 12.57
+    },
+    {
+      "step": 4600,
+      "metric": "avg_reward",
+      "value": 0.63521875
+    },
+    {
+      "step": 4600,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 4600,
+      "metric": "avg_length",
+      "value": 12.02
+    },
+    {
+      "step": 4700,
+      "metric": "avg_reward",
+      "value": 0.9168125
+    },
+    {
+      "step": 4700,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 4700,
+      "metric": "avg_length",
+      "value": 12.67
+    },
+    {
+      "step": 4800,
+      "metric": "avg_reward",
+      "value": 1.1186249999999998
+    },
+    {
+      "step": 4800,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 4800,
+      "metric": "avg_length",
+      "value": 12.93
+    },
+    {
+      "step": 4900,
+      "metric": "avg_reward",
+      "value": 1.3720625000000002
+    },
+    {
+      "step": 4900,
+      "metric": "win_rate",
+      "value": 47.0
+    },
+    {
+      "step": 4900,
+      "metric": "avg_length",
+      "value": 13.22
+    },
+    {
+      "step": 5000,
+      "metric": "avg_reward",
+      "value": 1.32846875
+    },
+    {
+      "step": 5000,
+      "metric": "win_rate",
+      "value": 44.0
+    },
+    {
+      "step": 5000,
+      "metric": "avg_length",
+      "value": 12.33
+    },
+    {
+      "step": 5100,
+      "metric": "avg_reward",
+      "value": 1.9348124999999998
+    },
+    {
+      "step": 5100,
+      "metric": "win_rate",
+      "value": 48.0
+    },
+    {
+      "step": 5100,
+      "metric": "avg_length",
+      "value": 13.21
+    },
+    {
+      "step": 5200,
+      "metric": "avg_reward",
+      "value": 1.936125
+    },
+    {
+      "step": 5200,
+      "metric": "win_rate",
+      "value": 49.0
+    },
+    {
+      "step": 5200,
+      "metric": "avg_length",
+      "value": 13.03
+    },
+    {
+      "step": 5300,
+      "metric": "avg_reward",
+      "value": 2.329
+    },
+    {
+      "step": 5300,
+      "metric": "win_rate",
+      "value": 53.0
+    },
+    {
+      "step": 5300,
+      "metric": "avg_length",
+      "value": 13.23
+    },
+    {
+      "step": 5400,
+      "metric": "avg_reward",
+      "value": 2.177375
+    },
+    {
+      "step": 5400,
+      "metric": "win_rate",
+      "value": 50.0
+    },
+    {
+      "step": 5400,
+      "metric": "avg_length",
+      "value": 12.36
+    },
+    {
+      "step": 5500,
+      "metric": "avg_reward",
+      "value": 1.7401874999999998
+    },
+    {
+      "step": 5500,
+      "metric": "win_rate",
+      "value": 47.0
+    },
+    {
+      "step": 5500,
+      "metric": "avg_length",
+      "value": 11.77
+    },
+    {
+      "step": 5600,
+      "metric": "avg_reward",
+      "value": 1.856125
+    },
+    {
+      "step": 5600,
+      "metric": "win_rate",
+      "value": 49.0
+    },
+    {
+      "step": 5600,
+      "metric": "avg_length",
+      "value": 12.27
+    },
+    {
+      "step": 5700,
+      "metric": "avg_reward",
+      "value": 1.8159687500000001
+    },
+    {
+      "step": 5700,
+      "metric": "win_rate",
+      "value": 49.0
+    },
+    {
+      "step": 5700,
+      "metric": "avg_length",
+      "value": 12.27
+    },
+    {
+      "step": 5800,
+      "metric": "avg_reward",
+      "value": 1.7161562500000003
+    },
+    {
+      "step": 5800,
+      "metric": "win_rate",
+      "value": 49.0
+    },
+    {
+      "step": 5800,
+      "metric": "avg_length",
+      "value": 12.16
+    },
+    {
+      "step": 5900,
+      "metric": "avg_reward",
+      "value": 1.6625312500000005
+    },
+    {
+      "step": 5900,
+      "metric": "win_rate",
+      "value": 48.0
+    },
+    {
+      "step": 5900,
+      "metric": "avg_length",
+      "value": 12.72
+    },
+    {
+      "step": 6000,
+      "metric": "avg_reward",
+      "value": 1.5653125
+    },
+    {
+      "step": 6000,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 6000,
+      "metric": "avg_length",
+      "value": 12.49
+    },
+    {
+      "step": 6100,
+      "metric": "avg_reward",
+      "value": 1.015
+    },
+    {
+      "step": 6100,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 6100,
+      "metric": "avg_length",
+      "value": 11.7
+    },
+    {
+      "step": 6200,
+      "metric": "avg_reward",
+      "value": 0.8926250000000002
+    },
+    {
+      "step": 6200,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 6200,
+      "metric": "avg_length",
+      "value": 11.79
+    },
+    {
+      "step": 6300,
+      "metric": "avg_reward",
+      "value": 0.5302499999999999
+    },
+    {
+      "step": 6300,
+      "metric": "win_rate",
+      "value": 39.0
+    },
+    {
+      "step": 6300,
+      "metric": "avg_length",
+      "value": 11.8
+    },
+    {
+      "step": 6400,
+      "metric": "avg_reward",
+      "value": 1.1924062500000001
+    },
+    {
+      "step": 6400,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 6400,
+      "metric": "avg_length",
+      "value": 12.53
+    },
+    {
+      "step": 6500,
+      "metric": "avg_reward",
+      "value": 1.3735937500000004
+    },
+    {
+      "step": 6500,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 6500,
+      "metric": "avg_length",
+      "value": 12.99
+    },
+    {
+      "step": 6600,
+      "metric": "avg_reward",
+      "value": 1.0864687499999999
+    },
+    {
+      "step": 6600,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 6600,
+      "metric": "avg_length",
+      "value": 12.68
+    },
+    {
+      "step": 6700,
+      "metric": "avg_reward",
+      "value": 0.9885937500000002
+    },
+    {
+      "step": 6700,
+      "metric": "win_rate",
+      "value": 44.0
+    },
+    {
+      "step": 6700,
+      "metric": "avg_length",
+      "value": 12.25
+    },
+    {
+      "step": 6800,
+      "metric": "avg_reward",
+      "value": 0.9730312499999999
+    },
+    {
+      "step": 6800,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 6800,
+      "metric": "avg_length",
+      "value": 12.01
+    },
+    {
+      "step": 6900,
+      "metric": "avg_reward",
+      "value": 1.3029062500000002
+    },
+    {
+      "step": 6900,
+      "metric": "win_rate",
+      "value": 49.0
+    },
+    {
+      "step": 6900,
+      "metric": "avg_length",
+      "value": 12.4
+    },
+    {
+      "step": 7000,
+      "metric": "avg_reward",
+      "value": 0.6997812499999999
+    },
+    {
+      "step": 7000,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 7000,
+      "metric": "avg_length",
+      "value": 10.83
+    },
+    {
+      "step": 7100,
+      "metric": "avg_reward",
+      "value": 0.69515625
+    },
+    {
+      "step": 7100,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 7100,
+      "metric": "avg_length",
+      "value": 11.09
+    },
+    {
+      "step": 7200,
+      "metric": "avg_reward",
+      "value": 0.72296875
+    },
+    {
+      "step": 7200,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 7200,
+      "metric": "avg_length",
+      "value": 11.2
+    },
+    {
+      "step": 7300,
+      "metric": "avg_reward",
+      "value": 0.9177812499999999
+    },
+    {
+      "step": 7300,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 7300,
+      "metric": "avg_length",
+      "value": 11.05
+    },
+    {
+      "step": 7400,
+      "metric": "avg_reward",
+      "value": 0.8262187499999996
+    },
+    {
+      "step": 7400,
+      "metric": "win_rate",
+      "value": 46.0
+    },
+    {
+      "step": 7400,
+      "metric": "avg_length",
+      "value": 10.8
+    },
+    {
+      "step": 7500,
+      "metric": "avg_reward",
+      "value": 0.19449999999999995
+    },
+    {
+      "step": 7500,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 7500,
+      "metric": "avg_length",
+      "value": 10.32
+    },
+    {
+      "step": 7600,
+      "metric": "avg_reward",
+      "value": 0.373375
+    },
+    {
+      "step": 7600,
+      "metric": "win_rate",
+      "value": 45.0
+    },
+    {
+      "step": 7600,
+      "metric": "avg_length",
+      "value": 10.67
+    },
+    {
+      "step": 7700,
+      "metric": "avg_reward",
+      "value": 0.10831249999999998
+    },
+    {
+      "step": 7700,
+      "metric": "win_rate",
+      "value": 41.0
+    },
+    {
+      "step": 7700,
+      "metric": "avg_length",
+      "value": 10.65
+    },
+    {
+      "step": 7800,
+      "metric": "avg_reward",
+      "value": 0.30359375
+    },
+    {
+      "step": 7800,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 7800,
+      "metric": "avg_length",
+      "value": 11.29
+    },
+    {
+      "step": 7900,
+      "metric": "avg_reward",
+      "value": 0.23940624999999996
+    },
+    {
+      "step": 7900,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 7900,
+      "metric": "avg_length",
+      "value": 11.34
+    },
+    {
+      "step": 8000,
+      "metric": "avg_reward",
+      "value": 0.037031250000000016
+    },
+    {
+      "step": 8000,
+      "metric": "win_rate",
+      "value": 38.0
+    },
+    {
+      "step": 8000,
+      "metric": "avg_length",
+      "value": 11.55
+    },
+    {
+      "step": 8100,
+      "metric": "avg_reward",
+      "value": 0.035843750000000056
+    },
+    {
+      "step": 8100,
+      "metric": "win_rate",
+      "value": 38.0
+    },
+    {
+      "step": 8100,
+      "metric": "avg_length",
+      "value": 11.47
+    },
+    {
+      "step": 8200,
+      "metric": "avg_reward",
+      "value": 0.45075
+    },
+    {
+      "step": 8200,
+      "metric": "win_rate",
+      "value": 40.0
+    },
+    {
+      "step": 8200,
+      "metric": "avg_length",
+      "value": 12.42
+    },
+    {
+      "step": 8300,
+      "metric": "avg_reward",
+      "value": 0.78153125
+    },
+    {
+      "step": 8300,
+      "metric": "win_rate",
+      "value": 43.0
+    },
+    {
+      "step": 8300,
+      "metric": "avg_length",
+      "value": 12.81
+    },
+    {
+      "step": 8400,
+      "metric": "avg_reward",
+      "value": 0.7958125000000001
+    },
+    {
+      "step": 8400,
+      "metric": "win_rate",
+      "value": 42.0
+    },
+    {
+      "step": 8400,
+      "metric": "avg_length",
+      "value": 12.63
+    }
+  ],
+  "validation": [],
+  "hyperparameters": {
+    "timesteps": 150000,
+    "board_size": 8,
+    "max_mines": 12,
+    "use_gpu": false,
+    "random_seed": 42,
+    "learning_rate": 0.0001,
+    "n_steps": 2048,
+    "batch_size": 64,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5
+  },
+  "metadata": {
+    "start_time": "20250603_162113",
+    "random_seed": 42
+  }
+}
