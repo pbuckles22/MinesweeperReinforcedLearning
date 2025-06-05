@@ -341,13 +341,32 @@ class MinesweeperEnv(gym.Env):
         
         # Handle mine hit
         if self.mines[row, col]:
-            self.terminated = True
-            self.state[row, col] = 9  # Mark mine
-            return self.state, self.mine_penalty, True, False, {
-                'reward_breakdown': {'mine_hit': self.mine_penalty},
-                'revealed_cells': {(row, col)},
-                'adjacent_mines': {(row, col)}
-            }
+            if self.is_first_move:
+                # First move hit a mine - reset the game
+                self.reset()
+                # Force state to be all -1 after reset
+                self.state = np.full((self.current_board_size, self.current_board_size), -1, dtype=np.int8)
+                self.flags = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
+                self.is_first_move = False  # Set flag to False after move is complete
+                return self.state, 0, False, False, {
+                    'reward_breakdown': {'first_move_mine_hit_reset': 0},
+                    'revealed_cells': set(),
+                    'adjacent_mines': set()
+                }
+            else:
+                # Non-first move hit a mine - game over
+                self.terminated = True
+                self.state[row, col] = -2  # Mark mine as hit
+                # Reveal all mines
+                for y in range(self.current_board_size):
+                    for x in range(self.current_board_size):
+                        if self.mines[y, x]:
+                            self.state[y, x] = -2
+                return self.state, self.mine_penalty, True, False, {
+                    'reward_breakdown': {'mine_hit': self.mine_penalty},
+                    'revealed_cells': {(row, col)},
+                    'adjacent_mines': {(row, col)}
+                }
         
         # Handle safe cell reveal
         info = {'revealed_cells': set(), 'adjacent_mines': set()}
