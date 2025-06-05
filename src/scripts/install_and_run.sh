@@ -1,77 +1,64 @@
 #!/bin/bash
 
-# Parse command line arguments
-FORCE=false
-NO_CACHE=false
-USE_GPU=false
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
 
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --force)
-            FORCE=true
-            shift
-            ;;
-        --no-cache)
-            NO_CACHE=true
-            shift
-            ;;
-        --use-gpu)
-            USE_GPU=true
-            shift
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-done
-
-# Check if virtual environment exists
-if [ -d "venv" ]; then
-    if [ "$FORCE" = true ]; then
-        echo "Removing existing virtual environment..."
-        rm -rf venv
-    else
-        read -p "Virtual environment already exists. Delete it? (y/n) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-        echo "Removing existing virtual environment..."
-        rm -rf venv
-    fi
+# Check if Python is installed
+if ! command_exists python; then
+    echo "Python is not installed. Please install Python 3.8 or higher."
+    exit 1
 fi
 
-# Create virtual environment
-echo "Creating virtual environment..."
-python -m venv venv
+# Check Python version
+python_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+if (( $(echo "$python_version < 3.8" | bc -l) )); then
+    echo "Python version $python_version is not supported. Please install Python 3.8 or higher."
+    exit 1
+fi
+
+# Create virtual environment if it doesn't exist
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python -m venv venv
+fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
 source venv/bin/activate
 
-# Upgrade pip
-echo "Upgrading pip..."
-python -m pip install --upgrade pip
+# Install requirements
+echo "Installing requirements..."
+pip install -r requirements.txt
 
-# Install dependencies
-echo "Installing dependencies..."
-if [ "$NO_CACHE" = true ]; then
-    pip install --no-cache-dir -r requirements.txt
-else
-    pip install -r requirements.txt
-fi
+# Add src directory to Python path
+export PYTHONPATH="src:$PYTHONPATH"
 
-# Install PyTorch with CUDA if requested
-if [ "$USE_GPU" = true ]; then
-    echo "Installing PyTorch with CUDA support..."
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-fi
+# Create logs directory
+mkdir -p logs
 
 # Run environment tests
 echo "Running environment tests..."
-python test_environment.py
+python tests/test_environment.py
 
 # Run training script
-echo "Running training script..."
-python train_agent.py 
+echo "Starting training..."
+python src/core/train_agent.py \
+    --board-size 8 \
+    --max-mines 12 \
+    --timesteps 1000000 \
+    --learning-rate 0.0001 \
+    --batch-size 64 \
+    --n-steps 2048 \
+    --n-epochs 10 \
+    --gamma 0.99 \
+    --gae-lambda 0.95 \
+    --clip-range 0.2 \
+    --ent-coef 0.01 \
+    --vf-coef 0.5 \
+    --max-grad-norm 0.5 \
+    --debug-level 2
+
+# Deactivate virtual environment
+deactivate 

@@ -1,7 +1,5 @@
 # Monitor training progress in real-time
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$projectRoot = Split-Path -Parent (Split-Path -Parent $scriptPath)
-$logDir = Join-Path $projectRoot "logs"
+$logDir = "tests"
 
 function Write-ColorOutput($ForegroundColor) {
     $fc = $host.UI.RawUI.ForegroundColor
@@ -113,7 +111,7 @@ Write-ColorOutput "Yellow" "Press Ctrl+C to exit`n"
 
 # Watch the log file for changes
 try {
-    Get-Content $logFile -Wait | ForEach-Object {
+    Get-Content -Path $logFile -Wait | ForEach-Object {
         $line = $_
         
         # Update metrics based on log content

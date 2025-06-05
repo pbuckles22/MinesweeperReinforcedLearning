@@ -282,6 +282,7 @@ class MinesweeperEnv(gym.Env):
             # Reveal cell
             if (row, col) in self.mines:
                 self.state[row, col] = -2  # Mark mine
+                self.revealed_count += 1  # Increment revealed count for mine hit
                 self.won = False
                 reward = self.mine_penalty
                 reward_breakdown['mine_hit'] = self.mine_penalty

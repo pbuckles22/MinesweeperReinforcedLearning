@@ -89,11 +89,18 @@ class IterationCallback(BaseCallback):
         self.phase_start_reward = 0
         self.phase_start_win_rate = 0
         
+        # Curriculum tracking
+        self.curriculum_stage = 1
+        self.stage_start_iteration = 0
+        self.stage_wins = 0
+        self.stage_games = 0
+        
         # Debug information
         self.last_step_time = time.time()
         self.step_times = []
         self.episode_lengths = []
         self.rewards = []
+        self.wins = []
         
         # Debug level descriptions
         self.debug_levels = {
@@ -171,21 +178,24 @@ class IterationCallback(BaseCallback):
                 avg_reward = np.mean([ep_info["r"] for ep_info in current_episodes])
                 self.rewards.append(avg_reward)
                 
-                # Win rate (episodes with positive reward)
-                wins = sum(1 for ep_info in current_episodes if ep_info["r"] > 0)
+                # Win rate based on actual wins (not just positive rewards)
+                wins = sum(1 for ep_info in current_episodes if ep_info.get("won", False))
                 total_episodes = len(current_episodes)
                 win_rate = (wins / total_episodes) * 100 if total_episodes > 0 else 0
+                self.wins.append(win_rate)
                 
                 # Average game length
                 avg_length = np.mean([ep_info["l"] for ep_info in current_episodes])
                 self.episode_lengths.append(avg_length)
                 
+                # Update curriculum stage tracking
+                self.stage_games += total_episodes
+                self.stage_wins += wins
+                
                 # Calculate improvements
                 reward_improvement = ((avg_reward - self.last_avg_reward) / 
                                     (abs(self.last_avg_reward) + 1e-6)) * 100
                 win_rate_improvement = win_rate - self.last_win_rate
-                length_improvement = ((self.last_avg_length - avg_length) / 
-                                    (abs(self.last_avg_length) + 1e-6)) * 100
                 
                 # Update best metrics
                 self.best_reward = max(self.best_reward, avg_reward)
@@ -194,85 +204,34 @@ class IterationCallback(BaseCallback):
                 # Update learning phase
                 self._update_learning_phase(avg_reward, win_rate)
                 
+                # Log progress
+                self.log(f"\nIteration {self.iterations}")
+                self.log(f"Time: {total_time:.1f}s (Iteration: {iteration_time:.1f}s)")
+                self.log(f"Win Rate: {win_rate:.1f}% (Best: {self.best_win_rate:.1f}%)")
+                self.log(f"Average Reward: {avg_reward:.2f} (Best: {self.best_reward:.2f})")
+                self.log(f"Average Length: {avg_length:.1f}")
+                self.log(f"Learning Phase: {self.learning_phase}")
+                self.log(f"Curriculum Stage: {self.curriculum_stage}")
+                self.log(f"Stage Win Rate: {(self.stage_wins/self.stage_games*100):.1f}%")
+                
                 # Store current metrics for next iteration
                 self.last_avg_reward = avg_reward
                 self.last_win_rate = win_rate
                 self.last_avg_length = avg_length
                 
-                # Print detailed metrics
-                print("\n" + "="*70)
-                print(f"Training Progress at {time.strftime('%H:%M:%S')}")
-                print("="*70)
-                print("\nGame Configuration:")
-                env = self.training_env.envs[0]
-                board_size = self.get_env_attr(env, 'current_board_size')
-                mines = self.get_env_attr(env, 'current_mines')
-                max_steps = self.get_env_attr(env, 'max_steps')
-                print(f"Board Size: {board_size}x{board_size}")
-                print(f"Mines: {mines} (Density: {(mines/(board_size**2))*100:.1f}%)")
-                print(f"Max Steps: {max_steps}")
-                
-                print("\nPerformance Metrics:")
-                print(f"Win Rate: {win_rate:.1f}%")
-                print(f"Average Reward: {avg_reward:.2f}")
-                print(f"Average Game Length: {avg_length:.1f} steps")
-                
-                print("\nGame Statistics:")
-                print(f"Total Games: {total_episodes}")
-                print(f"Total Wins: {wins}")
-                print(f"Games at Current Size: {total_episodes}")
-                
-                print("\nRecent Performance:")
-                recent_rewards = [f"{r:.1f}" for r in self.rewards[-10:]]
-                recent_lengths = [f"{l:.0f}" for l in self.episode_lengths[-10:]]
-                print(f"Last 10 Rewards: {recent_rewards}")
-                print(f"Last 10 Game Lengths: {recent_lengths}")
-                print("="*70 + "\n")
-                
-                # Level 2 (INFO) - Basic progress updates
-                self.log(f"\nIteration {self.iterations}", level=2)
-                self.log(f"Timesteps: {self.num_timesteps}", level=2)
-                self.log(f"Progress: {self.num_timesteps/self.locals['total_timesteps']*100:.1f}%", level=2)
-                self.log(f"Win Rate: {win_rate:.1f}% (Best: {self.best_win_rate:.1f}%)", level=2)
-                
-                # Level 3 (DEBUG) - Detailed metrics
-                self.log(f"\nLearning Phase: {self.learning_phase}", level=3)
-                self.log(f"Learning Metrics:", level=3)
-                self.log(f"- Average Reward: {avg_reward:.2f} (Best: {self.best_reward:.2f})", level=3)
-                self.log(f"- Average Game Length: {avg_length:.1f} steps", level=3)
-                self.log(f"- Total Games Played: {total_episodes}", level=3)
-                
-                self.log(f"\nImprovements (since last iteration):", level=3)
-                self.log(f"- Reward: {reward_improvement:+.1f}%", level=3)
-                self.log(f"- Win Rate: {win_rate_improvement:+.1f}%", level=3)
-                self.log(f"- Game Length: {length_improvement:+.1f}%", level=3)
-                
-                # Log to experiment tracker
+                # Update experiment tracker
                 if self.experiment_tracker:
-                    self.experiment_tracker.add_training_metric("avg_reward", avg_reward, self.num_timesteps)
-                    self.experiment_tracker.add_training_metric("win_rate", win_rate, self.num_timesteps)
-                    self.experiment_tracker.add_training_metric("avg_length", avg_length, self.num_timesteps)
-            else:
-                avg_reward = 0
-                win_rate = 0
-                avg_length = 0
-                reward_improvement = 0
-                win_rate_improvement = 0
-                length_improvement = 0
+                    self.experiment_tracker.add_training_metric("win_rate", win_rate, self.iterations)
+                    self.experiment_tracker.add_training_metric("avg_reward", avg_reward, self.iterations)
+                    self.experiment_tracker.add_training_metric("avg_length", avg_length, self.iterations)
             
             self.last_iteration_time = current_time
             
         return True
 
-def make_env(board_size=8, num_mines=12):
-    """Create and wrap the Minesweeper environment"""
-    env = MinesweeperEnv(board_size=board_size, num_mines=num_mines)
-    # Add debug prints for environment creation
-    print("\nEnvironment created with:")
-    print(f"- Board size: {env.current_board_size}x{env.current_board_size}")
-    print(f"- Number of mines: {env.current_mines}")
-    print(f"- Action space: {env.action_space}")
-    print(f"- Observation space: {env.observation_space}")
+def make_env(board_size, num_mines):
+    """Create and return a Minesweeper environment."""
+    env = MinesweeperEnv(max_board_size=board_size, max_mines=num_mines)
     return env
 
 def parse_args():
@@ -301,6 +260,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    """Main training function."""
     args = parse_args()
     
     # Set random seeds for reproducibility
@@ -356,18 +316,18 @@ def main():
         model = PPO(
             "MlpPolicy",
             env,
-            learning_rate=args.learning_rate,
-            n_steps=args.n_steps,
-            batch_size=args.batch_size,
-            n_epochs=args.n_epochs,
-            gamma=args.gamma,
-            gae_lambda=args.gae_lambda,
-            clip_range=args.clip_range,
-            ent_coef=args.ent_coef,
-            vf_coef=args.vf_coef,
-            max_grad_norm=args.max_grad_norm,
+            learning_rate=0.0003,
+            n_steps=1024,
+            batch_size=32,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.02,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
             policy_kwargs=dict(
-                net_arch=[dict(pi=[128, 128], vf=[128, 128])]
+                net_arch=[dict(pi=[256, 256], vf=[256, 256])]
             ),
             verbose=1,
             tensorboard_log=log_dir,
@@ -428,14 +388,15 @@ def evaluate_model(model, env, n_episodes=100):
         
         while not done:
             action, _ = model.predict(obs)
-            obs, reward, terminated, truncated, _ = env.step(action)
+            obs, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
             episode_reward += reward
             episode_length += 1
         
         rewards.append(episode_reward)
         lengths.append(episode_length)
-        if episode_reward > 0:
+        # Check if the game was won using the environment's won state
+        if hasattr(env, 'won') and env.won:
             wins += 1
     
     # Calculate statistics

@@ -6,29 +6,26 @@ param(
     [switch]$Force
 )
 
-# Get the script's directory
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-
 # List of files to copy
 $filesToCopy = @(
-    "install_and_run.ps1",
-    "install_and_run.sh",
+    "src\scripts\install_and_run.ps1",
+    "src\scripts\install_and_run.sh",
     "requirements.txt",
-    "train_agent.py",
-    "test_train_agent.py",
-    "minesweeper_env.py"
+    "src\core\train_agent.py",
+    "tests\test_train_agent.py",
+    "src\core\minesweeper_env.py"
 )
 
 # Convert destination path to absolute path
 $DestinationPath = (Resolve-Path $DestinationPath).Path
 
 # Check if any files exist in destination
-$existingFiles = $filesToCopy | Where-Object { Test-Path (Join-Path $DestinationPath $_) }
+$existingFiles = $filesToCopy | Where-Object { Test-Path (Join-Path $DestinationPath (Split-Path $_ -Leaf)) }
 if ($existingFiles) {
     if ($Force) {
         Write-Host "Removing existing files in: $DestinationPath"
         foreach ($file in $existingFiles) {
-            Remove-Item -Force (Join-Path $DestinationPath $file)
+            Remove-Item -Force (Join-Path $DestinationPath (Split-Path $file -Leaf))
         }
     } else {
         $response = Read-Host "Files already exist in destination. Overwrite? (y/n)"
@@ -38,7 +35,7 @@ if ($existingFiles) {
         }
         Write-Host "Removing existing files in: $DestinationPath"
         foreach ($file in $existingFiles) {
-            Remove-Item -Force (Join-Path $DestinationPath $file)
+            Remove-Item -Force (Join-Path $DestinationPath (Split-Path $file -Leaf))
         }
     }
 }
@@ -51,10 +48,9 @@ if (-not (Test-Path $DestinationPath)) {
 
 # Copy files
 foreach ($file in $filesToCopy) {
-    $sourceFile = Join-Path $scriptDir $file
-    if (Test-Path $sourceFile) {
+    if (Test-Path $file) {
         Write-Host "Copying $file to $DestinationPath"
-        Copy-Item $sourceFile -Destination $DestinationPath
+        Copy-Item $file -Destination $DestinationPath
     } else {
         Write-Host "Warning: $file not found in source directory"
     }
@@ -62,5 +58,5 @@ foreach ($file in $filesToCopy) {
 
 Write-Host "`nFiles copied successfully to: $DestinationPath"
 Write-Host "To run the installation script, navigate to the directory and run:"
-Write-Host "cd $DestinationPath"
+Write-Host "Navigate to: $DestinationPath"
 Write-Host ".\install_and_run.ps1" 
