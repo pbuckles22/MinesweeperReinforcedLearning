@@ -5,8 +5,9 @@ from src.core.minesweeper_env import MinesweeperEnv
 @pytest.fixture
 def env():
     env = MinesweeperEnv(
-        max_board_size=3,
+        max_board_size=4,
         max_mines=1,
+        initial_mines=1,
         early_learning_mode=True
     )
     env.current_board_size = 3

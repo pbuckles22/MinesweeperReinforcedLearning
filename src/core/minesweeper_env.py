@@ -17,9 +17,45 @@ class MinesweeperEnv(gym.Env):
                  early_learning_mode=False, early_learning_threshold=200,
                  early_learning_corner_safe=True, early_learning_edge_safe=True,
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
-                 invalid_action_penalty=-0.1):
+                 invalid_action_penalty=-0.1, mine_penalty=-10.0,
+                 flag_mine_reward=5.0, flag_safe_penalty=-1.0,
+                 unflag_penalty=-0.1, safe_reveal_base=5.0, win_reward=100.0):
         """Initialize the Minesweeper environment."""
         super().__init__()
+        
+        # Validate board size
+        if max_board_size <= 0:
+            raise ValueError("Board size must be positive")
+        if max_board_size > 100:
+            raise ValueError("Board size too large")
+            
+        # Validate mine count
+        if max_mines <= 0:
+            raise ValueError("Mine count must be positive")
+        if max_mines > max_board_size * max_board_size:
+            raise ValueError("Mine count cannot exceed board size squared")
+            
+        # Validate mine spacing
+        if mine_spacing < 0:
+            raise ValueError("Mine spacing must be non-negative")
+        if mine_spacing >= max_board_size:
+            raise ValueError("Mine spacing too large for board size")
+            
+        # Validate initial parameters
+        if initial_board_size > max_board_size:
+            raise ValueError("Initial board size cannot exceed max board size")
+        if initial_mines > max_mines:
+            raise ValueError("Initial mine count cannot exceed max mines")
+        if initial_mines > initial_board_size * initial_board_size:
+            raise ValueError("Initial mine count cannot exceed initial board size squared")
+            
+        # Validate reward parameters
+        if mine_penalty >= 0:
+            raise ValueError("Mine penalty must be negative")
+        if flag_safe_penalty >= 0:
+            raise ValueError("Flag safe penalty must be negative")
+        if unflag_penalty >= 0:
+            raise ValueError("Unflag penalty must be negative")
         
         # Store parameters
         self.max_board_size = max_board_size
@@ -33,6 +69,12 @@ class MinesweeperEnv(gym.Env):
         self.initial_board_size = initial_board_size
         self.initial_mines = initial_mines
         self.invalid_action_penalty = invalid_action_penalty
+        self.mine_penalty = mine_penalty
+        self.flag_mine_reward = flag_mine_reward
+        self.flag_safe_penalty = flag_safe_penalty
+        self.unflag_penalty = unflag_penalty
+        self.safe_reveal_base = safe_reveal_base
+        self.win_reward = win_reward
         
         # Initialize game state
         self.current_board_size = initial_board_size
@@ -45,14 +87,6 @@ class MinesweeperEnv(gym.Env):
         self.won = False
         self.total_games = 0
         self.games_at_current_size = 0
-        
-        # Define rewards and penalties
-        self.mine_penalty = -10.0
-        self.flag_mine_reward = 5.0
-        self.flag_safe_penalty = -1.0
-        self.unflag_penalty = -0.1
-        self.safe_reveal_base = 5.0
-        self.win_reward = 100.0
         
         # Initialize logger
         self.logger = logging.getLogger(__name__)
