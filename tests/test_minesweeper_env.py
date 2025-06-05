@@ -155,7 +155,9 @@ class TestMinesweeperEnv:
 
         # Verify state update
         assert self.env.state[1, 1] == 2  # Cell should be revealed with count 2
-        assert reward > 0  # Should get positive reward for safe reveal
+        assert reward == 0  # First move should give 0 reward
+        assert 'first_move_safe_reveal' in info['reward_breakdown']
+        assert info['reward_breakdown']['first_move_safe_reveal'] == 0
         assert not terminated  # Game should not be over
         assert not truncated  # Game should not be truncated
         assert not self.env.won  # Game should not be won
@@ -184,7 +186,9 @@ class TestMinesweeperEnv:
                 elif abs(row - 3) <= 1 and abs(col - 3) <= 1:  # Adjacent to mine
                     assert self.env.state[row, col] != -1  # Should be revealed with count
 
-        assert reward > 0  # Should get positive reward for safe reveal
+        assert reward == 0  # First move should give 0 reward
+        assert 'first_move_safe_reveal' in info['reward_breakdown']
+        assert info['reward_breakdown']['first_move_safe_reveal'] == 0
         assert not terminated  # Game should not be over
         assert not truncated  # Game should not be truncated
         assert not self.env.won  # Game should not be won

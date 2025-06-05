@@ -36,8 +36,10 @@ def test_safe_cell_reveal(env):
     assert env.state[0, 0] == 1  # Should show 1 adjacent mine
     assert env.revealed_count == 1
     
-    # Check reward
-    assert reward > 0  # Should get positive reward for safe reveal
+    # Check reward - first move should give 0 reward
+    assert reward == 0  # First move should give 0 reward
+    assert 'first_move_safe_reveal' in info['reward_breakdown']
+    assert info['reward_breakdown']['first_move_safe_reveal'] == 0
     
     # Check game not terminated
     assert not terminated
@@ -101,7 +103,7 @@ def test_safe_cell_adjacent_mines(env):
     assert len(info['adjacent_mines']) == 1  # Should have one adjacent mine
     assert (1, 1) in info['adjacent_mines']  # Mine should be at (1,1)
     
-    # Check reward breakdown
+    # Check reward breakdown - first move should give 0 reward
     assert 'reward_breakdown' in info
-    assert 'safe_reveal' in info['reward_breakdown']
-    assert info['reward_breakdown']['safe_reveal'] > 0 
+    assert 'first_move_safe_reveal' in info['reward_breakdown']
+    assert info['reward_breakdown']['first_move_safe_reveal'] == 0 

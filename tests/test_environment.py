@@ -99,21 +99,30 @@ class TestMinesweeperEnv:
             env.step(100)  # Out of bounds
 
     def test_mine_reveal(self, env):
-        """Test that revealing a mine ends the game"""
-        env.reset()
-        # Find a mine by checking the mines array
-        for y in range(env.current_board_size):
-            for x in range(env.current_board_size):
-                if env.mines[y, x]:
-                    action = y * env.current_board_size + x
-                    obs, reward, terminated, truncated, info = env.step(action)
-                    assert reward == env.mine_penalty  # Should be -10.0
-                    assert terminated  # Game should end
-                    assert not truncated
-                    assert 'mine_hit' in info['reward_breakdown']
-                    assert info['reward_breakdown']['mine_hit'] == env.mine_penalty
-                    return
-        pytest.fail("No mine found on the board")
+        """Test revealing a mine."""
+        # Find a mine on the board
+        mine_found = False
+        for i in range(env.current_board_size * env.current_board_size):
+            row = i // env.current_board_size
+            col = i % env.current_board_size
+            if env.mines[row, col]:
+                mine_found = True
+                action = i
+                break
+        
+        assert mine_found, "No mine found on board"
+        
+        # Reveal the mine
+        state, reward, terminated, truncated, info = env.step(action)
+        
+        # If this is the first move, the game should be reset
+        if env.is_first_move:
+            assert not terminated
+            assert reward == 0
+        else:
+            assert reward == env.mine_penalty
+            assert terminated
+            assert 'mine_hit' in info['reward_breakdown']
 
     def test_reset(self, env):
         """Test that reset returns the correct observation and info"""

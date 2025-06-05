@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import pygame
+from typing import Tuple, Dict
 
 class MinesweeperEnv(gym.Env):
     """
@@ -87,6 +88,8 @@ class MinesweeperEnv(gym.Env):
         self.won = False
         self.total_games = 0
         self.games_at_current_size = 0
+        self.terminated = False  # Track if the game is over
+        self.is_first_move = True  # Track if this is the first move
         
         # Initialize logger
         self.logger = logging.getLogger(__name__)
@@ -122,12 +125,16 @@ class MinesweeperEnv(gym.Env):
         super().reset(seed=seed)
         self.revealed_count = 0
         self.won = False
+        self.terminated = False  # Reset game over state
+        self.is_first_move = True  # Reset first move flag
         self.state = np.full((self.current_board_size, self.current_board_size), -1, dtype=np.int8)
         self.board = np.zeros((self.current_board_size, self.current_board_size), dtype=np.int8)
         self.mines = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
         self.flags = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
         self._place_mines()
         self._update_adjacent_counts()
+        # Ensure state is all -1 after all operations
+        self.state = np.full((self.current_board_size, self.current_board_size), -1, dtype=np.int8)
         return self.state, {}
 
     def _place_mines(self):
@@ -227,82 +234,155 @@ class MinesweeperEnv(gym.Env):
                         continue
                     self._reveal_cell(row + dr, col + dc, info)
 
-    def step(self, action):
-        """Execute one time step within the environment."""
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
+        """Take a step in the environment."""
+        # Validate action
         if not isinstance(action, (int, np.integer)):
             raise ValueError(f"Action must be an integer, got {type(action)}")
-        
         if action < 0 or action >= self.action_space.n:
             raise ValueError(f"Invalid action {action}. Must be between 0 and {self.action_space.n-1}")
+
+        if self.terminated:
+            # If game is terminated, return invalid action penalty
+            return self.state, self.invalid_action_penalty, True, False, {
+                'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
+                'revealed_cells': set(),
+                'adjacent_mines': set()
+            }
         
-        # Convert action to board coordinates
+        # Convert action to (x, y) coordinates
         board_size = self.current_board_size
         if action < board_size * board_size:
             # Reveal action
             x = action % board_size
             y = action // board_size
+            
+            # Check if cell is already revealed or flagged
+            if self.state[y, x] != -1 or self.flags[y, x]:
+                return self.state, self.invalid_action_penalty, False, False, {
+                    'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
+                    'revealed_cells': set(),
+                    'adjacent_mines': set()
+                }
+            
+            # Handle first move separately
+            if self.is_first_move:
+                if self.mines[y, x]:
+                    # First move hit a mine - reset the game
+                    self.reset()
+                    # Force state to be all -1 after reset
+                    self.state = np.full((self.current_board_size, self.current_board_size), -1, dtype=np.int8)
+                    self.flags = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
+                    self.is_first_move = False  # Set flag to False after move is complete
+                    return self.state, 0, False, False, {
+                        'reward_breakdown': {'first_move_mine_hit_reset': 0},
+                        'revealed_cells': set(),
+                        'adjacent_mines': set()
+                    }
+                else:
+                    # First move safe reveal - reveal cell and continue
+                    info = {'revealed_cells': set(), 'adjacent_mines': set()}
+                    self._reveal_cell(y, x, info)
+                    # Check for win after first move reveal
+                    if self._check_win():
+                        self.won = True
+                        self.total_games += 1
+                        self.terminated = True
+                        self.is_first_move = False  # Set flag to False after move is complete
+                        return self.state, 0, True, False, {
+                            'reward_breakdown': {'first_move_safe_reveal': 0},
+                            'revealed_cells': info['revealed_cells'],
+                            'adjacent_mines': info['adjacent_mines']
+                        }
+                    self.is_first_move = False  # Set flag to False after move is complete
+                    return self.state, 0, False, False, {
+                        'reward_breakdown': {'first_move_safe_reveal': 0},
+                        'revealed_cells': info['revealed_cells'],
+                        'adjacent_mines': info['adjacent_mines']
+                    }
+            
+            # Handle reveal action for non-first moves
             return self._handle_reveal_action(x, y)
         else:
             # Flag action
             action = action - (board_size * board_size)
             x = action % board_size
             y = action // board_size
+            
+            # Check if cell is already revealed
+            if self.state[y, x] != -1:
+                return self.state, self.invalid_action_penalty, False, False, {
+                    'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
+                    'revealed_cells': set(),
+                    'adjacent_mines': set()
+                }
+            
             return self._handle_flag_action(x, y)
 
     def _handle_reveal_action(self, x, y):
-        """Handle cell reveal action."""
-        if self.flags[y, x]:
+        """Handle reveal action and return reward and termination status."""
+        row, col = y, x
+        
+        # Check if cell is already revealed
+        if self.state[row, col] != -1:
             return self.state, self.invalid_action_penalty, False, False, {
-                'error': 'Cannot reveal flagged cell',
                 'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
                 'revealed_cells': set(),
                 'adjacent_mines': set()
             }
-
-        if self.state[y, x] != -1:
+        
+        # Check if cell is flagged
+        if self.flags[row, col]:
             return self.state, self.invalid_action_penalty, False, False, {
-                'error': 'Cell already revealed',
                 'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
                 'revealed_cells': set(),
                 'adjacent_mines': set()
             }
-
-        if self.mines[y, x]:
-            self.state[y, x] = -2  # Mark mine as hit
-            self.revealed_count += 1  # Increment revealed count for mine hit
-            self.total_games += 1
+        
+        # Handle mine hit
+        if self.mines[row, col]:
+            self.terminated = True
+            self.state[row, col] = 9  # Mark mine
             return self.state, self.mine_penalty, True, False, {
-                'error': 'Hit mine',
                 'reward_breakdown': {'mine_hit': self.mine_penalty},
-                'revealed_cells': {(y, x)},
-                'adjacent_mines': set()
+                'revealed_cells': {(row, col)},
+                'adjacent_mines': {(row, col)}
             }
-
-        # Reveal cell and get reward
-        reward = self.safe_reveal_base
-        info = {
-            'reward_breakdown': {'safe_reveal': self.safe_reveal_base},
-            'revealed_cells': set(),
-            'adjacent_mines': set()
-        }
         
-        self._reveal_cell(y, x, info)
+        # Handle safe cell reveal
+        info = {'revealed_cells': set(), 'adjacent_mines': set()}
+        self._reveal_cell(row, col, info)
         
-        # Check for win condition
+        # Check for win after reveal
         if self._check_win():
-            reward += self.win_reward
-            info['reward_breakdown']['win'] = self.win_reward
             self.won = True
             self.total_games += 1
-            return self.state, reward, True, False, info
-            
-        return self.state, reward, False, False, info
+            self.terminated = True
+            # If this is a first move win, return 0 reward
+            if self.is_first_move:
+                return self.state, 0, True, False, {
+                    'reward_breakdown': {'first_move_safe_reveal': 0},
+                    'revealed_cells': info['revealed_cells'],
+                    'adjacent_mines': info['adjacent_mines']
+                }
+            return self.state, self.win_reward, True, False, {
+                'reward_breakdown': {'win': self.win_reward},
+                'revealed_cells': info['revealed_cells'],
+                'adjacent_mines': info['adjacent_mines']
+            }
+        
+        # Normal safe reveal
+        return self.state, self.safe_reveal_base, False, False, {
+            'reward_breakdown': {'safe_reveal': self.safe_reveal_base},
+            'revealed_cells': info['revealed_cells'],
+            'adjacent_mines': info['adjacent_mines']
+        }
 
     def _handle_flag_action(self, x, y):
         """Handle flag placement/removal action."""
+        # Check if cell is already revealed
         if self.state[y, x] != -1:
             return self.state, self.invalid_action_penalty, False, False, {
-                'error': 'Cannot flag revealed cell',
                 'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
                 'revealed_cells': set(),
                 'adjacent_mines': set()
@@ -334,14 +414,24 @@ class MinesweeperEnv(gym.Env):
                 'adjacent_mines': set()
             }
 
+        # Check for win after flagging
+        if self._check_win():
+            reward += self.win_reward
+            info['reward_breakdown']['win'] = self.win_reward
+            self.won = True
+            self.total_games += 1
+            self.terminated = True
+            return self.state, reward, True, False, info
+
         return self.state, reward, False, False, info
 
     def _check_win(self):
-        """Check if the game is won."""
-        # Game is won if all non-mine cells are revealed
-        total_cells = self.current_board_size * self.current_board_size
-        non_mine_cells = total_cells - self.current_mines
-        return self.revealed_count == non_mine_cells  # Changed back to == for exact match
+        """Check if all non-mine cells have been revealed."""
+        # Count revealed cells
+        revealed_count = np.sum(self.state != -1)
+        # Total cells minus mines should equal revealed cells
+        total_safe_cells = self.current_board_size * self.current_board_size - np.sum(self.mines)
+        return revealed_count >= total_safe_cells
 
     def _update_progress_display(self):
         """Update the progress display with current training stats."""

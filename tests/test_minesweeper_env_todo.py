@@ -23,8 +23,8 @@ TODO: Additional test cases for MinesweeperEnv
    - [x] Test flag placement on safe cells
    - [x] Test flag removal
    - [x] Test invalid actions
-   - [ ] Test action space boundaries
-   - [ ] Test action masking
+   - [x] Test action space boundaries
+   - [x] Test action masking
 
 4. Reward Tests
    - [x] Test mine hit penalty
