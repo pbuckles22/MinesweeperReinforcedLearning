@@ -124,6 +124,9 @@ class TestMinesweeperEnv:
 
         # Set up environment with test board
         self.env.board = test_board
+        self.env.mines = np.zeros((4, 4), dtype=bool)
+        self.env.mines[0, 0] = True
+        self.env.mines[2, 2] = True
         self.env._update_adjacent_counts()
 
         # Verify adjacent counts
@@ -140,7 +143,9 @@ class TestMinesweeperEnv:
         test_board[0, 0] = 9  # Mine at top-left
         test_board[2, 2] = 9  # Mine at center
         self.env.board = test_board
-        self.env.mines = {(0, 0), (2, 2)}  # Initialize mines set
+        self.env.mines = np.zeros((4, 4), dtype=bool)
+        self.env.mines[0, 0] = True
+        self.env.mines[2, 2] = True
         self.env._update_adjacent_counts()
 
         # Test revealing a safe cell (1, 1) which should have 2 adjacent mines
@@ -160,7 +165,8 @@ class TestMinesweeperEnv:
         test_board = np.zeros((4, 4), dtype=int)
         test_board[3, 3] = 9  # Mine at bottom-right
         self.env.board = test_board
-        self.env.mines = {(3, 3)}  # Update mines set
+        self.env.mines = np.zeros((4, 4), dtype=bool)
+        self.env.mines[3, 3] = True
         self.env._update_adjacent_counts()
 
         # Reveal cell (0, 0) which should trigger cascade

@@ -4,10 +4,10 @@ import time
 import json
 from datetime import datetime
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback, BaseCallback
 from stable_baselines3.common.monitor import Monitor
-from minesweeper_env import MinesweeperEnv
+from src.core.minesweeper_env import MinesweeperEnv
+from src.core.vec_env import DummyVecEnv
 import argparse
 import torch
 from scipy import stats

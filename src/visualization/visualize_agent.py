@@ -6,7 +6,10 @@ import numpy as np
 import pygame
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from minesweeper_env import MinesweeperEnv
+from src.core.minesweeper_env import MinesweeperEnv
+from src.core.vec_env import DummyVecEnv
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 # Colors
 BLACK = (0, 0, 0)

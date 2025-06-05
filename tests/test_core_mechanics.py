@@ -18,7 +18,8 @@ def env():
         [0, 9, 0],  # Mine at (1,1) represented by 9
         [0, 0, 0]
     ])
-    env.mines = [(1, 1)]
+    env.mines = np.zeros((3, 3), dtype=bool)
+    env.mines[1, 1] = True
     env._update_adjacent_counts()
     env.state = np.full((3, 3), -1, dtype=np.int8)
     env.flags = np.zeros((3, 3), dtype=bool)
@@ -62,7 +63,8 @@ def test_safe_cell_cascade(env):
         [0, 0, 0],
         [0, 0, 9]  # Mine at (2,2)
     ])
-    env.mines = [(2, 2)]
+    env.mines = np.zeros((3, 3), dtype=bool)
+    env.mines[2, 2] = True
     env._update_adjacent_counts()  # Ensure adjacent mine counts are correct
     print('Board after _update_adjacent_counts:')
     print(env.board)

@@ -3,15 +3,19 @@ import os
 import shutil
 import numpy as np
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.minesweeper_env import MinesweeperEnv
+from src.core.vec_env import DummyVecEnv
 
 class TestTrainAgent:
     @pytest.fixture
     def env(self):
-        """Create a test environment"""
-        env = MinesweeperEnv(max_board_size=4, max_mines=2, mine_spacing=2)
-        return DummyVecEnv([lambda: env])
+        """Create a test environment."""
+        env_fn = lambda: MinesweeperEnv(
+            max_board_size=4,
+            max_mines=2,
+            early_learning_mode=True
+        )
+        return DummyVecEnv([env_fn])
 
     def setUp(self):
         """Set up test environment before each test"""
@@ -28,57 +32,61 @@ class TestTrainAgent:
 
     def test_environment_creation(self, env):
         """Test that the environment is created correctly"""
-        assert env.observation_space.shape == (4, 4)
-        assert env.action_space.n == 16  # 4x4 board = 16 possible actions
+        assert env.action_space.shape == (1,)  # Single discrete action
+        assert env.observation_space.shape == (1, 4, 4)  # (num_envs, height, width)
 
     def test_environment_reset(self, env):
         """Test that the environment resets correctly"""
-        obs = env.reset()
-        assert isinstance(obs, np.ndarray)
-        assert obs.shape == (1, 4, 4)  # DummyVecEnv adds a batch dimension
+        obs, info = env.reset()
+        assert obs.shape == (1, 4, 4)  # (num_envs, height, width)
+        assert np.all(obs == -1)  # All cells should be hidden
 
     def test_environment_step(self, env):
         """Test that the environment responds correctly to actions"""
         env.reset()
         obs, reward, terminated, truncated, info = env.step([0])  # Reveal first cell
-        assert isinstance(obs, np.ndarray)
-        assert obs.shape == (1, 4, 4)  # DummyVecEnv adds a batch dimension
+        assert obs.shape == (1, 4, 4)
         assert isinstance(reward, np.ndarray)
         assert isinstance(terminated, np.ndarray)
         assert isinstance(truncated, np.ndarray)
-        assert isinstance(info, list)
+        assert isinstance(info, dict)
 
     def test_environment_consistency(self, env):
         """Test that the environment maintains consistent state"""
-        obs = env.reset()
+        obs, _ = env.reset()
         initial_state = obs.copy()
-        
+
         # Take a step
-        obs, _, _, _, _ = env.step([0])
-        
-        # Reset and verify state is different
-        obs = env.reset()
-        assert not np.array_equal(obs, initial_state)
+        obs, _, terminated, truncated, _ = env.step([0])
+        assert not np.array_equal(obs, initial_state)  # State should change
+        assert not terminated[0]  # Game should not end on first move
+        assert not truncated[0]
 
     def test_environment_completion(self, env):
         """Test that the environment properly detects game completion"""
-        obs = env.reset()
-        terminated = False
-        truncated = False
-        
-        # Try to complete the game
-        for _ in range(100):  # Limit steps to prevent infinite loops
-            obs, _, terminated, truncated, _ = env.step([0])
-            if terminated or truncated:
+        obs, _ = env.reset()
+        terminated = np.array([False])
+        truncated = np.array([False])
+        board_size = 4  # Since we're using a 4x4 board in the test
+
+        # Try to complete the game by revealing cells systematically
+        for i in range(board_size * board_size):
+            # Convert linear index to 2D coordinates
+            row = i // board_size
+            col = i % board_size
+            # Convert to action space index (multiply by 2 since each cell has reveal/flag actions)
+            action = (row * board_size + col) * 2
+            obs, _, terminated, truncated, info = env.step([action])
+            if terminated[0] or truncated[0]:
                 break
-        
-        assert terminated or truncated
+
+        assert terminated[0] or truncated[0]  # Game should end
 
     def test_invalid_action(self, env):
         """Test that the environment handles invalid actions"""
         env.reset()
         with pytest.raises((ValueError, IndexError)):
-            env.step([100])  # Out of bounds
+            env.step([100])  # Action out of bounds
 
 if __name__ == '__main__':
     pytest.main() 
