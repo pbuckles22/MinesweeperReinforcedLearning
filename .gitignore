@@ -20,8 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 test_logs_*
-tests/
-test/
+experiments/
 
 # Virtual Environment
 venv/
@@ -37,7 +36,13 @@ ENV/
 # Logs
 logs/
 *.log
+latest.log
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/ 
