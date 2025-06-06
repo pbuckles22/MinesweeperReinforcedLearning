@@ -1,8 +1,8 @@
 # Minesweeper Test Checklist (Updated)
 
 ## Priority 1: Core State Management & Mechanics
-- [ ] Safe cell reveal: `assert not terminated` fails
-- [ ] Safe cell cascade: Not explicitly listed, but likely related to state update issues
+- [x] Safe cell reveal: `assert not terminated` fails
+- [x] Safe cell cascade: Not explicitly listed, but likely related to state update issues
 - [ ] Safe cell adjacent mines: `assert np.int64(9) == 0`
 - [ ] Mine placement: `assert mine_count == self.env.current_mines`
 - [ ] Board initialization: `assert np.all(env.board == CELL_UNREVEALED)`
@@ -152,6 +152,80 @@
 - [ ] Test different color schemes
 - [ ] Test display scaling
 
+## Priority 16: Early Learning Mode
+### Early Learning Tests
+- [ ] Test early learning mode initialization
+- [ ] Test corner safety
+- [ ] Test edge safety
+- [ ] Test initial board size
+- [ ] Test transition out of early learning
+- [ ] Test threshold behavior
+- [ ] Test parameter updates
+- [ ] Test state preservation
+
+## Priority 17: State Management
+### State Tests
+- [ ] Test state reset
+- [ ] Test mine placement on reset
+- [ ] Test flag clearing
+- [ ] Test counter reset
+- [ ] Test state persistence between actions
+- [ ] Test flag persistence
+- [ ] Test revealed cell persistence
+- [ ] Test game over state
+- [ ] Test game counter
+- [ ] Test win counter
+- [ ] Test consecutive hits
+- [ ] Test win rate calculation
+
+## Priority 18: Error Handling
+### Error Tests
+- [ ] Test invalid board size errors
+- [ ] Test invalid mine count errors
+- [ ] Test invalid spacing errors
+- [ ] Test invalid threshold errors
+- [ ] Test invalid reward errors
+- [ ] Test error message clarity
+- [ ] Test error recovery
+
+## Priority 19: Functional Tests
+### Game Flow Tests
+- [ ] Test complete game win scenario
+- [ ] Test complete game loss scenario
+- [ ] Test game with flags
+- [ ] Test game with wrong flags
+
+### Difficulty Progression Tests
+- [ ] Test early learning progression
+- [ ] Test different difficulty levels
+- [ ] Test curriculum limits
+- [ ] Test win rate tracking
+
+### Performance Tests
+- [ ] Test large board performance
+- [ ] Test many mines performance
+- [ ] Test memory usage
+- [ ] Test reset performance
+- [ ] Test state update performance
+- [ ] Test rapid actions
+
+## Priority 20: Script Tests
+### Installation Script Tests
+- [ ] Test script existence
+- [ ] Test script permissions
+- [ ] Test script syntax
+- [ ] Test script dependencies
+- [ ] Test environment setup
+
+### Run Script Tests
+- [ ] Test script existence
+- [ ] Test script permissions
+- [ ] Test script syntax
+- [ ] Test script parameters
+- [ ] Test environment check
+- [ ] Test output handling
+- [ ] Test error handling
+
 ## Test Implementation Status
 - [x] Basic environment tests implemented
 - [ ] Difficulty level tests implemented
@@ -161,7 +235,7 @@
 - [ ] Integration tests implemented
 
 ## Notes
-- Tests should be implemented in `test_minesweeper_env.py`
+- Tests should be implemented in appropriate test files under the new directory structure
 - Each test should have clear documentation
 - Tests should be independent and repeatable
 - Tests should cover both success and failure cases
