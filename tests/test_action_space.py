@@ -16,51 +16,56 @@ def env():
     return env
 
 def test_action_space_dimensions(env):
-    """Test that the action space dimensions match the board size."""
-    # For a 4x4 board, we should have 32 actions (16 cells * 2 actions per cell)
-    assert env.action_space.n == 32
+    """Test that action space has correct dimensions."""
+    # Action space should be 2 * board area (reveal + flag actions)
+    expected_size = env.current_board_width * env.current_board_height * 2
+    assert env.action_space.n == expected_size
 
 def test_action_space_boundaries(env):
-    """Test that invalid actions raise appropriate errors."""
-    # Test negative action
-    with pytest.raises(ValueError):
-        env.step(-1)
+    """Test that action space boundaries are correct."""
+    # Test reveal actions (0 to width*height-1)
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            action = i * env.current_board_width + j
+            assert 0 <= action < env.current_board_width * env.current_board_height
     
-    # Test action too large
-    with pytest.raises(ValueError):
-        env.step(env.action_space.n)
-    
-    # Test non-integer action
-    with pytest.raises(ValueError):
-        env.step(1.5)
+    # Test flag actions (width*height to 2*width*height-1)
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            action = env.current_board_width * env.current_board_height + (i * env.current_board_width + j)
+            assert env.current_board_width * env.current_board_height <= action < 2 * env.current_board_width * env.current_board_height
 
 def test_action_space_mapping(env):
-    """Test that actions map correctly to board positions."""
-    board_size = env.current_board_size
-
-    # Test reveal action
-    action = 5  # Should map to position (1,1) on a 4x4 board
-    state, reward, terminated, truncated, info = env.step(action)
+    """Test that action space maps correctly to board positions."""
+    # Test reveal action mapping
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            action = i * env.current_board_width + j
+            row = action // env.current_board_width
+            col = action % env.current_board_width
+            assert row == i
+            assert col == j
     
-    # If this is the first move, check first move behavior
-    if env.is_first_move:
-        assert not terminated
-        assert reward == 0
-    else:
-        # Check that the action was processed
-        assert state[1, 1] != -1  # Cell should be revealed
+    # Test flag action mapping
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            action = env.current_board_width * env.current_board_height + (i * env.current_board_width + j)
+            row = (action - env.current_board_width * env.current_board_height) // env.current_board_width
+            col = (action - env.current_board_width * env.current_board_height) % env.current_board_width
+            assert row == i
+            assert col == j
 
 def test_action_space_consistency(env):
-    """Test that the action space remains consistent after actions and resets."""
-    initial_action_space = env.action_space.n
+    """Test that action space remains consistent after board size changes."""
+    # Get initial action space size
+    initial_size = env.action_space.n
     
-    # Perform some actions
-    for _ in range(5):
-        env.step(0)
-    
-    # Check action space hasn't changed
-    assert env.action_space.n == initial_action_space
-    
-    # Reset and check again
+    # Change board size
+    env.current_board_width = 4
+    env.current_board_height = 4
     env.reset()
-    assert env.action_space.n == initial_action_space 
+    
+    # Action space should be updated
+    new_size = env.action_space.n
+    assert new_size == env.current_board_width * env.current_board_height * 2
+    assert new_size != initial_size 

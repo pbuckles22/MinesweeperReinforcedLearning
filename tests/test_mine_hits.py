@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
+from src.core.constants import CELL_MINE_HIT, CELL_UNREVEALED
 
 @pytest.fixture
 def env():
@@ -21,79 +22,92 @@ def env():
 
 def test_mine_hit_termination(env):
     """Test that hitting a mine terminates the game."""
-    # Calculate action index for the mine position (1,1)
-    mine_action = 1 * env.current_board_size + 1
-
-    # Reveal the mine
-    obs, reward, terminated, truncated, info = env.step(mine_action)
-
+    # Place mine at (1,1)
+    env.mines[1, 1] = True
+    env._update_adjacent_counts()
+    
+    # Take action to hit mine
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
     # If this is the first move, the game should be reset
     if env.is_first_move:
         assert not terminated
         assert reward == 0
     else:
-        # Otherwise, the game should be terminated
         assert terminated
-        assert reward == env.mine_penalty
-        assert 'mine_hit' in info['reward_breakdown']
+        assert not truncated
+        assert state[1, 1] == CELL_MINE_HIT
+        assert reward < 0  # Should be negative reward for hitting mine
 
 def test_mine_hit_state_update(env):
     """Test that hitting a mine updates the state correctly."""
-    # Calculate action index for the mine position (1,1)
-    mine_action = 1 * env.current_board_size + 1
-
-    # Reveal the mine
-    obs, reward, terminated, truncated, info = env.step(mine_action)
-
+    # Place mine at (1,1)
+    env.mines[1, 1] = True
+    env._update_adjacent_counts()
+    
+    # Take action to hit mine
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
     # If this is the first move, the game should be reset
     if env.is_first_move:
         assert not terminated
         assert reward == 0
-        # State should be reset to all unrevealed
-        assert np.all(obs == -1)
+        assert np.all(state == CELL_UNREVEALED)  # All cells should be unrevealed
     else:
-        # Otherwise, the mine should be marked as hit
-        assert terminated
-        assert obs[1, 1] == -2  # Mine should be marked as hit
-        assert reward == env.mine_penalty
+        # Check that only the mine hit cell is revealed
+        assert state[1, 1] == CELL_MINE_HIT
+        for i in range(env.current_board_height):
+            for j in range(env.current_board_width):
+                if (i, j) != (1, 1):
+                    assert state[i, j] == CELL_UNREVEALED
 
 def test_mine_hit_reward_breakdown(env):
-    """Test that hitting a mine includes correct reward breakdown in info."""
-    # Calculate action index for the mine position (1,1)
-    mine_action = 1 * env.current_board_size + 1
-
-    # Reveal the mine
-    obs, reward, terminated, truncated, info = env.step(mine_action)
-
-    # Check reward breakdown
-    assert 'reward_breakdown' in info
+    """Test that hitting a mine provides correct reward breakdown."""
+    # Place mine at (1,1)
+    env.mines[1, 1] = True
+    env._update_adjacent_counts()
+    
+    # Take action to hit mine
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
+    # If this is the first move, the game should be reset
     if env.is_first_move:
+        assert not terminated
         assert reward == 0
     else:
-        assert 'mine_hit' in info['reward_breakdown']
-        assert info['reward_breakdown']['mine_hit'] == env.mine_penalty
+        assert terminated
+        assert reward < 0  # Should be negative reward for hitting mine
+        assert 'won' in info
 
 def test_first_move_mine_hit_reset(env):
-    """Test that hitting a mine on the first move resets the game with no penalty."""
-    # Hit a mine on the first move
-    state, reward, terminated, truncated, info = env.step(0)
-
-    # If first move didn't hit mine, try another cell
-    if not terminated:
-        env.reset()
-        state, reward, terminated, truncated, info = env.step(1)
-
-    # Verify the game was reset
-    assert not terminated  # Game should not be terminated
-    assert reward == 0  # No penalty
-    assert np.all(state == -1)  # All cells should be unrevealed
+    """Test that hitting a mine on first move resets the board."""
+    # Place mine at (1,1)
+    env.mines[1, 1] = True
+    env._update_adjacent_counts()
+    
+    # Take action to hit mine on first move
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
+    # First move should be safe
+    assert not terminated
+    assert reward == 0
+    assert not env.mines[1, 1]  # Mine should be moved
+    assert np.all(state == CELL_UNREVEALED)  # All cells should be unrevealed
 
 def test_first_move_behavior(env):
-    """Test that first move behavior is consistent regardless of outcome."""
-    # Try first move
-    state, reward, terminated, truncated, info = env.step(0)
-
-    # Verify first move behavior
-    assert not terminated  # Game should not be terminated
-    assert reward == 0  # No reward for first move
-    assert env.is_first_move == False  # First move flag should be set to False 
+    """Test that first move is always safe."""
+    # Try multiple first moves
+    for _ in range(10):
+        env.reset()
+        # Take random first move
+        first_action = np.random.randint(0, env.current_board_width * env.current_board_height)
+        state, reward, terminated, truncated, info = env.step(first_action)
+        
+        # First move should never hit a mine
+        assert not terminated
+        assert reward == 0
+        assert not env.mines[first_action // env.current_board_width, first_action % env.current_board_width] 

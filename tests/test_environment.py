@@ -8,6 +8,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.minesweeper_env import MinesweeperEnv
 import unittest
 import gymnasium as gym
+from src.core.constants import CELL_UNREVEALED
 
 def test_imports():
     """Test that all required imports are available"""
@@ -102,9 +103,9 @@ class TestMinesweeperEnv:
         """Test revealing a mine."""
         # Find a mine on the board
         mine_found = False
-        for i in range(env.current_board_size * env.current_board_size):
-            row = i // env.current_board_size
-            col = i % env.current_board_size
+        for i in range(env.current_board_width * env.current_board_height):
+            row = i // env.current_board_width
+            col = i % env.current_board_width
             if env.mines[row, col]:
                 mine_found = True
                 action = i
@@ -141,6 +142,222 @@ class TestMinesweeperEnv:
         assert isinstance(terminated, bool)
         assert isinstance(truncated, bool)
         assert isinstance(info, dict)
+
+@pytest.fixture
+def env():
+    return MinesweeperEnv(initial_board_size=3, initial_mines=1)
+
+def test_initialization(env):
+    """Test that environment initializes correctly."""
+    assert env.current_board_width == 3
+    assert env.current_board_height == 3
+    assert env.initial_mines == 1
+    assert env.is_first_move
+    assert env.flags_remaining == env.initial_mines
+    assert env.mines.shape == (3, 3)
+    assert env.board.shape == (3, 3)
+    assert np.all(env.board == CELL_UNREVEALED)
+
+def test_reset(env):
+    """Test that environment resets correctly."""
+    # Make some moves
+    env.step(0)  # Reveal first cell
+    env.step(4)  # Place flag in middle
+    
+    # Reset environment
+    state = env.reset()
+    
+    # Check that everything is reset
+    assert env.current_board_width == 3
+    assert env.current_board_height == 3
+    assert env.initial_mines == 1
+    assert env.is_first_move
+    assert env.flags_remaining == env.initial_mines
+    assert env.mines.shape == (3, 3)
+    assert env.board.shape == (3, 3)
+    assert np.all(state == CELL_UNREVEALED)
+    assert np.all(env.board == CELL_UNREVEALED)
+
+def test_board_size_initialization():
+    """Test that different board sizes initialize correctly."""
+    # Test 5x5 board
+    env = MinesweeperEnv(initial_board_size=5, initial_mines=3)
+    assert env.current_board_width == 5
+    assert env.current_board_height == 5
+    assert env.initial_mines == 3
+    assert env.mines.shape == (5, 5)
+    assert env.board.shape == (5, 5)
+    
+    # Test 10x10 board
+    env = MinesweeperEnv(initial_board_size=10, initial_mines=10)
+    assert env.current_board_width == 10
+    assert env.current_board_height == 10
+    assert env.initial_mines == 10
+    assert env.mines.shape == (10, 10)
+    assert env.board.shape == (10, 10)
+
+def test_mine_count_initialization():
+    """Test that different mine counts initialize correctly."""
+    # Test with 1 mine
+    env = MinesweeperEnv(initial_board_size=3, initial_mines=1)
+    assert env.initial_mines == 1
+    assert np.sum(env.mines) == 1
+    
+    # Test with 2 mines
+    env = MinesweeperEnv(initial_board_size=3, initial_mines=2)
+    assert env.initial_mines == 2
+    assert np.sum(env.mines) == 2
+    
+    # Test with maximum mines (board_size - 1)
+    env = MinesweeperEnv(initial_board_size=3, initial_mines=8)
+    assert env.initial_mines == 8
+    assert np.sum(env.mines) == 8
+
+def test_adjacent_mines_initialization(env):
+    """Test that adjacent mine counts are calculated correctly."""
+    # Place mine at (1,1)
+    env.mines[1, 1] = True
+    env._update_adjacent_counts()
+    
+    # Check adjacent counts
+    assert env.board[0, 0] == 1
+    assert env.board[0, 1] == 1
+    assert env.board[0, 2] == 1
+    assert env.board[1, 0] == 1
+    assert env.board[1, 1] == 0  # Mine location
+    assert env.board[1, 2] == 1
+    assert env.board[2, 0] == 1
+    assert env.board[2, 1] == 1
+    assert env.board[2, 2] == 1
+
+def test_environment_initialization():
+    """Test environment initialization with different parameters."""
+    # Test with default parameters
+    env = MinesweeperEnv()
+    assert env.current_board_width == env.initial_board_width
+    assert env.current_board_height == env.initial_board_height
+    assert env.current_mines == env.initial_mines
+    
+    # Test with custom parameters
+    env = MinesweeperEnv(initial_board_size=(4, 5), initial_mines=3)
+    assert env.current_board_width == 4
+    assert env.current_board_height == 5
+    assert env.current_mines == 3
+
+def test_board_creation(env):
+    """Test that board is created with correct dimensions and mine count."""
+    assert env.board.shape == (env.current_board_height, env.current_board_width)
+    assert np.sum(env.mines) == env.current_mines
+
+def test_mine_placement(env):
+    """Test that mines are placed correctly."""
+    # Count mines
+    mine_count = np.sum(env.mines)
+    assert mine_count == env.current_mines
+    
+    # Check mine spacing
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            if env.mines[i, j]:
+                # Check surrounding cells
+                for di in [-1, 0, 1]:
+                    for dj in [-1, 0, 1]:
+                        ni, nj = i + di, j + dj
+                        if (0 <= ni < env.current_board_height and 
+                            0 <= nj < env.current_board_width and 
+                            (di != 0 or dj != 0)):
+                            assert not env.mines[ni, nj]
+
+def test_safe_cell_reveal(env):
+    """Test that revealing a safe cell works correctly."""
+    # Find a safe cell
+    safe_cell = None
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            if not env.mines[i, j]:
+                safe_cell = (i, j)
+                break
+        if safe_cell:
+            break
+    
+    # Reveal the safe cell
+    action = safe_cell[0] * env.current_board_width + safe_cell[1]
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    assert not terminated
+    assert reward >= 0
+    assert state[safe_cell] != CELL_UNREVEALED
+
+def test_difficulty_levels():
+    """Test different difficulty levels."""
+    # Test easy difficulty
+    env = MinesweeperEnv(initial_board_size=9, initial_mines=10)
+    assert env.current_board_width == 9
+    assert env.current_board_height == 9
+    assert env.current_mines == 10
+    
+    # Test normal difficulty
+    env = MinesweeperEnv(initial_board_size=16, initial_mines=40)
+    assert env.current_board_width == 16
+    assert env.current_board_height == 16
+    assert env.current_mines == 40
+    
+    # Test hard difficulty
+    env = MinesweeperEnv(initial_board_size=(16, 30), initial_mines=99)
+    assert env.current_board_width == 16
+    assert env.current_board_height == 30
+    assert env.current_mines == 99
+
+def test_rectangular_board_actions(env):
+    """Test actions on rectangular board."""
+    # Create rectangular board
+    env = MinesweeperEnv(initial_board_size=(4, 5), initial_mines=3)
+    
+    # Test actions in different positions
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            action = i * env.current_board_width + j
+            state, reward, terminated, truncated, info = env.step(action)
+            assert not terminated  # First move should be safe
+            assert state.shape == (env.current_board_height, env.current_board_width)
+
+def test_curriculum_progression(env):
+    """Test that curriculum learning progresses correctly."""
+    # Start with small board
+    assert env.current_board_width == env.initial_board_width
+    assert env.current_board_height == env.initial_board_height
+    assert env.current_mines == env.initial_mines
+    
+    # Win multiple games to trigger progression
+    for _ in range(5):
+        # Find and reveal all safe cells
+        for i in range(env.current_board_height):
+            for j in range(env.current_board_width):
+                if not env.mines[i, j]:
+                    action = i * env.current_board_width + j
+                    env.step(action)
+        
+        # Reset for next game
+        env.reset()
+    
+    # Board size should have increased
+    assert (env.current_board_width > env.initial_board_width or 
+            env.current_board_height > env.initial_board_height or
+            env.current_mines > env.initial_mines)
+
+def test_win_condition(env):
+    """Test win condition detection."""
+    # Reveal all safe cells
+    for i in range(env.current_board_height):
+        for j in range(env.current_board_width):
+            if not env.mines[i, j]:
+                action = i * env.current_board_width + j
+                state, reward, terminated, truncated, info = env.step(action)
+    
+    # Game should be won
+    assert terminated
+    assert reward > 0  # Should get positive reward for winning
+    assert not truncated
 
 if __name__ == "__main__":
     sys.exit(main()) 
