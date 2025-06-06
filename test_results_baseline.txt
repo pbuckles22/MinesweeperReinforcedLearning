@@ -1,0 +1,1347 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.0, pluggy-1.6.0 -- C:\Users\pbuck\Desktop\Development\MinesweeperReinforcedLearning\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\pbuck\Desktop\Development\MinesweeperReinforcedLearning
+collecting ... collected 72 items
+
+tests/test_action_masking.py::test_reveal_already_revealed_cell FAILED   [  1%]
+tests/test_action_masking.py::test_reveal_flagged_cell FAILED            [  2%]
+tests/test_action_masking.py::test_flag_revealed_cell FAILED             [  4%]
+tests/test_action_masking.py::test_flag_already_flagged_cell FAILED      [  5%]
+tests/test_action_masking.py::test_reveal_after_game_over FAILED         [  6%]
+tests/test_action_space.py::test_action_space_dimensions PASSED          [  8%]
+tests/test_action_space.py::test_action_space_boundaries PASSED          [  9%]
+tests/test_action_space.py::test_action_space_mapping PASSED             [ 11%]
+tests/test_action_space.py::test_action_space_consistency FAILED         [ 12%]
+tests/test_core_mechanics.py::test_safe_cell_reveal FAILED               [ 13%]
+tests/test_core_mechanics.py::test_safe_cell_cascade PASSED              [ 15%]
+tests/test_core_mechanics.py::test_safe_cell_adjacent_mines FAILED       [ 16%]
+tests/test_environment.py::test_imports PASSED                           [ 18%]
+tests/test_environment.py::test_environment_creation PASSED              [ 19%]
+tests/test_environment.py::test_basic_actions PASSED                     [ 20%]
+tests/test_environment.py::test_pygame PASSED                            [ 22%]
+tests/test_environment.py::TestMinesweeperEnv::test_initialization PASSED [ 23%]
+tests/test_environment.py::TestMinesweeperEnv::test_invalid_action FAILED [ 25%]
+tests/test_environment.py::TestMinesweeperEnv::test_mine_reveal FAILED   [ 26%]
+tests/test_environment.py::TestMinesweeperEnv::test_reset PASSED         [ 27%]
+tests/test_environment.py::TestMinesweeperEnv::test_step PASSED          [ 29%]
+tests/test_environment.py::test_initialization FAILED                    [ 30%]
+tests/test_environment.py::test_reset FAILED                             [ 31%]
+tests/test_environment.py::test_board_size_initialization PASSED         [ 33%]
+tests/test_environment.py::test_mine_count_initialization FAILED         [ 34%]
+tests/test_environment.py::test_adjacent_mines_initialization PASSED     [ 36%]
+tests/test_environment.py::test_environment_initialization PASSED        [ 37%]
+tests/test_environment.py::test_board_creation FAILED                    [ 38%]
+tests/test_environment.py::test_mine_placement FAILED                    [ 40%]
+tests/test_environment.py::test_safe_cell_reveal PASSED                  [ 41%]
+tests/test_environment.py::test_difficulty_levels PASSED                 [ 43%]
+tests/test_environment.py::test_rectangular_board_actions FAILED         [ 44%]
+tests/test_environment.py::test_curriculum_progression FAILED            [ 45%]
+tests/test_environment.py::test_win_condition FAILED                     [ 47%]
+tests/test_flag_placement.py::test_flag_placement FAILED                 [ 48%]
+tests/test_flag_placement.py::test_flag_removal FAILED                   [ 50%]
+tests/test_flag_placement.py::test_flag_on_revealed_cell FAILED          [ 51%]
+tests/test_flag_placement.py::test_flag_count FAILED                     [ 52%]
+tests/test_flag_placement.py::test_flag_on_mine FAILED                   [ 54%]
+tests/test_initialization.py::test_invalid_board_size FAILED             [ 55%]
+tests/test_initialization.py::test_invalid_mine_count FAILED             [ 56%]
+tests/test_initialization.py::test_invalid_mine_spacing PASSED           [ 58%]
+tests/test_initialization.py::test_invalid_initial_parameters FAILED     [ 59%]
+tests/test_initialization.py::test_invalid_reward_parameters FAILED      [ 61%]
+tests/test_mine_hits.py::test_mine_hit_termination FAILED                [ 62%]
+tests/test_mine_hits.py::test_mine_hit_state_update FAILED               [ 63%]
+tests/test_mine_hits.py::test_mine_hit_reward_breakdown FAILED           [ 65%]
+tests/test_mine_hits.py::test_first_move_mine_hit_reset FAILED           [ 66%]
+tests/test_mine_hits.py::test_first_move_behavior FAILED                 [ 68%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_initialization PASSED [ 69%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_board_creation PASSED [ 70%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_mine_placement FAILED [ 72%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_safe_cell_reveal FAILED [ 73%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_difficulty_levels FAILED [ 75%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_rectangular_board_actions PASSED [ 76%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_curriculum_progression FAILED [ 77%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_win_condition_rectangular FAILED [ 79%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_reveal_action PASSED [ 80%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_flag_action FAILED [ 81%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_unflag_action PASSED [ 83%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_invalid_actions FAILED [ 84%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_board_boundary_actions FAILED [ 86%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_game_over_condition FAILED [ 87%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_win_condition FAILED [ 88%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_state_transitions FAILED [ 90%]
+tests/test_minesweeper_env.py::TestMinesweeperEnv::test_state_representation FAILED [ 91%]
+tests/test_train_agent.py::TestTrainAgent::test_environment_creation PASSED [ 93%]
+tests/test_train_agent.py::TestTrainAgent::test_environment_reset PASSED [ 94%]
+tests/test_train_agent.py::TestTrainAgent::test_environment_step PASSED  [ 95%]
+tests/test_train_agent.py::TestTrainAgent::test_environment_consistency PASSED [ 97%]
+tests/test_train_agent.py::TestTrainAgent::test_environment_completion PASSED [ 98%]
+tests/test_train_agent.py::TestTrainAgent::test_invalid_action FAILED    [100%]
+
+================================== FAILURES ===================================
+______________________ test_reveal_already_revealed_cell ______________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EABA0B3770>
+
+    def test_reveal_already_revealed_cell(env):
+        """Test that revealing an already revealed cell is invalid."""
+        # Reveal a cell
+        action = 0
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        # Try to reveal the same cell again
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        assert reward < 0  # Should get negative reward for invalid action
+>       assert not terminated
+E       assert not True
+
+tests\test_action_masking.py:20: AssertionError
+__________________________ test_reveal_flagged_cell ___________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751BD0>
+
+    def test_reveal_flagged_cell(env):
+        """Test that revealing a flagged cell is invalid."""
+        # Flag a cell
+        action = env.current_board_width * env.current_board_height  # First flag action
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        # Try to reveal the flagged cell
+        reveal_action = 0  # First reveal action
+        state, reward, terminated, truncated, info = env.step(reveal_action)
+    
+        assert reward < 0  # Should get negative reward for invalid action
+>       assert not terminated
+E       assert not True
+
+tests\test_action_masking.py:35: AssertionError
+___________________________ test_flag_revealed_cell ___________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>
+
+    def test_flag_revealed_cell(env):
+        """Test that flagging a revealed cell is invalid."""
+        # Reveal a cell
+        action = 0
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        # Try to flag the revealed cell
+        flag_action = env.current_board_width * env.current_board_height  # First flag action
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        assert reward < 0  # Should get negative reward for invalid action
+>       assert not terminated
+E       assert not True
+
+tests\test_action_masking.py:50: AssertionError
+_______________________ test_flag_already_flagged_cell ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752850>
+
+    def test_flag_already_flagged_cell(env):
+        """Test that flagging an already flagged cell is invalid."""
+        # Flag a cell
+        flag_action = env.current_board_width * env.current_board_height  # First flag action
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Try to flag the same cell again
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        assert reward < 0  # Should get negative reward for invalid action
+        assert not terminated
+        assert not truncated
+>       assert 'won' in info
+E       AssertionError: assert 'won' in {}
+
+tests\test_action_masking.py:66: AssertionError
+_________________________ test_reveal_after_game_over _________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752FD0>
+
+    def test_reveal_after_game_over(env):
+        """Test that revealing after game over is invalid."""
+        # Place mine at (0,0)
+        env.mines[0, 0] = True
+        env._update_adjacent_counts()
+    
+        # Hit the mine
+        action = 0
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        # Try to reveal another cell
+        action = 1
+        state, reward, terminated, truncated, info = env.step(action)
+    
+        assert reward < 0  # Should get negative reward for invalid action
+        assert terminated  # Game should still be terminated
+        assert not truncated
+>       assert 'won' in info
+E       AssertionError: assert 'won' in {'error': 'Cell already revealed'}
+
+tests\test_action_masking.py:85: AssertionError
+________________________ test_action_space_consistency ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753110>
+
+    def test_action_space_consistency(env):
+        """Test that action space remains consistent after board size changes."""
+        # Get initial action space size
+        initial_size = env.action_space.n
+    
+        # Change board size
+        env.current_board_width = 4
+        env.current_board_height = 4
+        env.reset()
+    
+        # Action space should be updated
+        new_size = env.action_space.n
+        assert new_size == env.current_board_width * env.current_board_height * 2
+>       assert new_size != initial_size
+E       assert np.int64(32) != np.int64(32)
+
+tests\test_action_space.py:71: AssertionError
+____________________________ test_safe_cell_reveal ____________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753390>
+
+    def test_safe_cell_reveal(env):
+        """Test that revealing a safe cell works correctly."""
+        # Find a safe cell
+        safe_cell = None
+        for i in range(env.current_board_height):
+            for j in range(env.current_board_width):
+                if not env.mines[i, j]:
+                    safe_cell = (i, j)
+                    break
+            if safe_cell:
+                break
+    
+        # Reveal the safe cell
+        action = safe_cell[0] * env.current_board_width + safe_cell[1]
+        state, reward, terminated, truncated, info = env.step(action)
+    
+>       assert not terminated
+E       assert not True
+
+tests\test_core_mechanics.py:41: AssertionError
+________________________ test_safe_cell_adjacent_mines ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753250>
+
+    def test_safe_cell_adjacent_mines(env):
+        """Test that adjacent mine counts are correct after placing a mine."""
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+        assert env.board[0, 0] == 1
+        assert env.board[0, 1] == 1
+        assert env.board[0, 2] == 1
+        assert env.board[1, 0] == 1
+>       assert env.board[1, 1] == 0
+E       assert np.int64(9) == 0
+
+tests\test_core_mechanics.py:83: AssertionError
+___________________ TestMinesweeperEnv.test_invalid_action ____________________
+
+self = <tests.test_environment.TestMinesweeperEnv object at 0x000001EAE6750CD0>
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752E90>
+
+    def test_invalid_action(self, env):
+        """Test that invalid actions are handled (should not crash)"""
+        env.reset()
+>       with pytest.raises((ValueError, IndexError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (<class 'ValueError'>, <class 'IndexError'>)
+
+tests\test_environment.py:99: Failed
+_____________________ TestMinesweeperEnv.test_mine_reveal _____________________
+
+self = <tests.test_environment.TestMinesweeperEnv object at 0x000001EADF1B48A0>
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752FD0>
+
+    def test_mine_reveal(self, env):
+        """Test revealing a mine."""
+        # Find a mine on the board
+        mine_found = False
+        for i in range(env.current_board_width * env.current_board_height):
+            row = i // env.current_board_width
+            col = i % env.current_board_width
+            if env.mines[row, col]:
+                mine_found = True
+                action = i
+                break
+    
+>       assert mine_found, "No mine found on board"
+E       AssertionError: No mine found on board
+E       assert False
+
+tests\test_environment.py:114: AssertionError
+_____________________________ test_initialization _____________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753390>
+
+    def test_initialization(env):
+        """Test that environment initializes correctly."""
+        assert env.current_board_width == 3
+        assert env.current_board_height == 3
+        assert env.initial_mines == 1
+        assert env.is_first_move
+        assert env.flags_remaining == env.initial_mines
+        assert env.mines.shape == (3, 3)
+        assert env.board.shape == (3, 3)
+>       assert np.all(env.board == CELL_UNREVEALED)
+E       assert np.False_
+E        +  where np.False_ = <function all at 0x000001EAD9A71CF0>(array([[0, 0, 0],\n       [0, 0, 0],\n       [0, 0, 0]]) == -1)
+E        +    where <function all at 0x000001EAD9A71CF0> = np.all
+E        +    and   array([[0, 0, 0],\n       [0, 0, 0],\n       [0, 0, 0]]) = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753390>.board
+
+tests\test_environment.py:159: AssertionError
+_________________________________ test_reset __________________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752850>
+
+    def test_reset(env):
+        """Test that environment resets correctly."""
+        # Make some moves
+        env.step(0)  # Reveal first cell
+        env.step(4)  # Place flag in middle
+    
+        # Reset environment
+        state = env.reset()
+    
+        # Check that everything is reset
+        assert env.current_board_width == 3
+        assert env.current_board_height == 3
+        assert env.initial_mines == 1
+        assert env.is_first_move
+        assert env.flags_remaining == env.initial_mines
+        assert env.mines.shape == (3, 3)
+        assert env.board.shape == (3, 3)
+>       assert np.all(state == CELL_UNREVEALED)
+E       assert np.False_
+E        +  where np.False_ = <function all at 0x000001EAD9A71CF0>((array([[-1, -1, -1],\n       [-1, -1, -1],\n       [-1, -1, -1]]), {}) == -1)
+E        +    where <function all at 0x000001EAD9A71CF0> = np.all
+
+tests\test_environment.py:178: AssertionError
+_______________________ test_mine_count_initialization ________________________
+
+    def test_mine_count_initialization():
+        """Test that different mine counts initialize correctly."""
+        # Test with 1 mine
+        env = MinesweeperEnv(initial_board_size=3, initial_mines=1)
+        assert env.initial_mines == 1
+>       assert np.sum(env.mines) == 1
+E       assert np.int64(0) == 1
+E        +  where np.int64(0) = <function sum at 0x000001EAD9A71830>(array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]))
+E        +    where <function sum at 0x000001EAD9A71830> = np.sum
+E        +    and   array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752710>.mines
+
+tests\test_environment.py:204: AssertionError
+_____________________________ test_board_creation _____________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>
+
+    def test_board_creation(env):
+        """Test that board is created with correct dimensions and mine count."""
+        assert env.board.shape == (env.current_board_height, env.current_board_width)
+>       assert np.sum(env.mines) == env.current_mines
+E       assert np.int64(0) == 1
+E        +  where np.int64(0) = <function sum at 0x000001EAD9A71830>(array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]))
+E        +    where <function sum at 0x000001EAD9A71830> = np.sum
+E        +    and   array([[False, False, False],\n       [False, False, False],\n       [False, False, False]]) = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>.mines
+E        +  and   1 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>.current_mines
+
+tests\test_environment.py:250: AssertionError
+_____________________________ test_mine_placement _____________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751E50>
+
+    def test_mine_placement(env):
+        """Test that mines are placed correctly."""
+        # Count mines
+        mine_count = np.sum(env.mines)
+>       assert mine_count == env.current_mines
+E       assert np.int64(0) == 1
+E        +  where 1 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751E50>.current_mines
+
+tests\test_environment.py:256: AssertionError
+_______________________ test_rectangular_board_actions ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751BD0>
+
+    def test_rectangular_board_actions(env):
+        """Test actions on rectangular board."""
+        # Create rectangular board
+        env = MinesweeperEnv(initial_board_size=(4, 5), initial_mines=3)
+    
+        # Test actions in different positions
+        for i in range(env.current_board_height):
+            for j in range(env.current_board_width):
+                action = i * env.current_board_width + j
+                state, reward, terminated, truncated, info = env.step(action)
+>               assert not terminated  # First move should be safe
+                ^^^^^^^^^^^^^^^^^^^^^
+E               assert not True
+
+tests\test_environment.py:321: AssertionError
+_________________________ test_curriculum_progression _________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>
+
+    def test_curriculum_progression(env):
+        """Test that curriculum learning progresses correctly."""
+        # Start with small board
+        assert env.current_board_width == env.initial_board_width
+        assert env.current_board_height == env.initial_board_height
+        assert env.current_mines == env.initial_mines
+    
+        # Win multiple games to trigger progression
+        for _ in range(5):
+            # Find and reveal all safe cells
+            for i in range(env.current_board_height):
+                for j in range(env.current_board_width):
+                    if not env.mines[i, j]:
+                        action = i * env.current_board_width + j
+                        env.step(action)
+    
+            # Reset for next game
+            env.reset()
+    
+        # Board size should have increased
+>       assert (env.current_board_width > env.initial_board_width or
+                env.current_board_height > env.initial_board_height or
+                env.current_mines > env.initial_mines)
+E       assert (3 > 3 or 3 > 3 or 1 > 1)
+E        +  where 3 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.current_board_width
+E        +  and   3 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.initial_board_width
+E        +  and   3 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.current_board_height
+E        +  and   3 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.initial_board_height
+E        +  and   1 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.current_mines
+E        +  and   1 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>.initial_mines
+
+tests\test_environment.py:344: AssertionError
+_____________________________ test_win_condition ______________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753750>
+
+    def test_win_condition(env):
+        """Test win condition detection."""
+        # Reveal all safe cells
+        for i in range(env.current_board_height):
+            for j in range(env.current_board_width):
+                if not env.mines[i, j]:
+                    action = i * env.current_board_width + j
+                    state, reward, terminated, truncated, info = env.step(action)
+    
+        # Game should be won
+        assert terminated
+>       assert reward > 0  # Should get positive reward for winning
+        ^^^^^^^^^^^^^^^^^
+E       assert -0.1 > 0
+
+tests\test_environment.py:359: AssertionError
+_____________________________ test_flag_placement _____________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EADA7A3B10>
+
+    def test_flag_placement(env):
+        """Test that placing a flag works correctly."""
+        # Place flag at (1,1)
+        flag_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Check that flag was placed
+>       assert state[1, 1] == CELL_FLAGGED
+E       assert np.int64(1) == -3
+
+tests\test_flag_placement.py:18: AssertionError
+______________________________ test_flag_removal ______________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>
+
+    def test_flag_removal(env):
+        """Test that removing a flag works correctly."""
+        # Place flag at (1,1)
+        flag_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Remove flag at same position
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Check that flag was removed
+>       assert state[1, 1] == CELL_UNREVEALED
+E       assert np.int64(1) == -1
+
+tests\test_flag_placement.py:33: AssertionError
+_________________________ test_flag_on_revealed_cell __________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751BD0>
+
+    def test_flag_on_revealed_cell(env):
+        """Test that flag cannot be placed on revealed cell."""
+        # Reveal cell at (1,1)
+        reveal_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(reveal_action)
+    
+        # Try to place flag on revealed cell
+        flag_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Check that flag was not placed
+        assert state[1, 1] != CELL_FLAGGED
+>       assert not terminated
+E       assert not True
+
+tests\test_flag_placement.py:50: AssertionError
+_______________________________ test_flag_count _______________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>
+
+    def test_flag_count(env):
+        """Test that flag count is tracked correctly."""
+        # Place flag at (1,1)
+        flag_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Check flag count
+>       assert info['flags_remaining'] == env.initial_mines - 1
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'flags_remaining'
+
+tests\test_flag_placement.py:61: KeyError
+______________________________ test_flag_on_mine ______________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752710>
+
+    def test_flag_on_mine(env):
+        """Test that flag can be placed on mine."""
+        # Place mine at (1,1)
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+    
+        # Place flag at mine location
+        flag_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(flag_action)
+    
+        # Check that flag was placed
+>       assert state[1, 1] == CELL_FLAGGED
+E       assert np.int64(1) == -3
+
+tests\test_flag_placement.py:88: AssertionError
+___________________________ test_invalid_board_size ___________________________
+
+    def test_invalid_board_size():
+        """Test that invalid board sizes raise appropriate errors."""
+        # Test negative board size
+        with pytest.raises(ValueError, match="Board size must be positive"):
+>           MinesweeperEnv(max_board_size=-1)
+
+tests\test_initialization.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753390>
+max_board_size = -1, max_mines = 130, render_mode = None
+early_learning_mode = False, early_learning_threshold = 200
+early_learning_corner_safe = True, early_learning_edge_safe = True
+mine_spacing = 1, initial_board_size = 4, initial_mines = 2
+invalid_action_penalty = -0.1, mine_penalty = -50, flag_mine_reward = 5
+flag_safe_penalty = -1, unflag_penalty = -0.1, safe_reveal_base = 5
+win_reward = 100
+
+    def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
+                 early_learning_mode=False, early_learning_threshold=200,
+                 early_learning_corner_safe=True, early_learning_edge_safe=True,
+                 mine_spacing=1, initial_board_size=4, initial_mines=2,
+                 invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
+                 flag_mine_reward=REWARD_FLAG_MINE, flag_safe_penalty=REWARD_FLAG_SAFE,
+                 unflag_penalty=REWARD_UNFLAG, safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
+        """Initialize the Minesweeper environment."""
+        super().__init__()
+    
+        # Initialize progress tracking variables
+        self.last_progress_update = time.time()
+        self.progress_interval = 1.0  # Update every second
+        self.win_count = 0
+        self.total_games = 0
+        self.recent_rewards = deque(maxlen=100)
+        self.recent_episode_lengths = deque(maxlen=100)
+        self.last_win_rate = 0
+        self.last_avg_reward = 0
+        self.last_avg_length = 0
+        self.games_at_current_size = 0
+    
+        # Initialize training health variables
+        self.min_win_rate = 0.1  # Minimum expected win rate
+        self.consecutive_mine_hits = 0
+        self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
+    
+        # Handle tuple board sizes
+        if isinstance(max_board_size, tuple):
+            self.max_board_width, self.max_board_height = max_board_size
+            self.max_board_size = max(max_board_size)
+        else:
+            self.max_board_width = self.max_board_height = max_board_size
+            self.max_board_size = max_board_size
+    
+        # Validate board size
+        if self.max_board_width <= 0 or self.max_board_height <= 0:
+>           raise ValueError("Board dimensions must be positive")
+E           ValueError: Board dimensions must be positive
+
+src\core\minesweeper_env.py:71: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_invalid_board_size():
+        """Test that invalid board sizes raise appropriate errors."""
+        # Test negative board size
+>       with pytest.raises(ValueError, match="Board size must be positive"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'Board size must be positive'
+E        Input: 'Board dimensions must be positive'
+
+tests\test_initialization.py:12: AssertionError
+___________________________ test_invalid_mine_count ___________________________
+
+    def test_invalid_mine_count():
+        """Test that invalid mine counts raise appropriate errors."""
+        # Test negative mine count
+        with pytest.raises(ValueError, match="Mine count must be positive"):
+            MinesweeperEnv(max_mines=-1)
+    
+        # Test zero mine count
+        with pytest.raises(ValueError, match="Mine count must be positive"):
+            MinesweeperEnv(max_mines=0)
+    
+        # Test mine count greater than board size squared
+        with pytest.raises(ValueError, match="Mine count cannot exceed board size squared"):
+>           MinesweeperEnv(max_board_size=3, max_mines=10)
+
+tests\test_initialization.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EABA0DFED0>
+max_board_size = 3, max_mines = 10, render_mode = None
+early_learning_mode = False, early_learning_threshold = 200
+early_learning_corner_safe = True, early_learning_edge_safe = True
+mine_spacing = 1, initial_board_size = 4, initial_mines = 2
+invalid_action_penalty = -0.1, mine_penalty = -50, flag_mine_reward = 5
+flag_safe_penalty = -1, unflag_penalty = -0.1, safe_reveal_base = 5
+win_reward = 100
+
+    def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
+                 early_learning_mode=False, early_learning_threshold=200,
+                 early_learning_corner_safe=True, early_learning_edge_safe=True,
+                 mine_spacing=1, initial_board_size=4, initial_mines=2,
+                 invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
+                 flag_mine_reward=REWARD_FLAG_MINE, flag_safe_penalty=REWARD_FLAG_SAFE,
+                 unflag_penalty=REWARD_UNFLAG, safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
+        """Initialize the Minesweeper environment."""
+        super().__init__()
+    
+        # Initialize progress tracking variables
+        self.last_progress_update = time.time()
+        self.progress_interval = 1.0  # Update every second
+        self.win_count = 0
+        self.total_games = 0
+        self.recent_rewards = deque(maxlen=100)
+        self.recent_episode_lengths = deque(maxlen=100)
+        self.last_win_rate = 0
+        self.last_avg_reward = 0
+        self.last_avg_length = 0
+        self.games_at_current_size = 0
+    
+        # Initialize training health variables
+        self.min_win_rate = 0.1  # Minimum expected win rate
+        self.consecutive_mine_hits = 0
+        self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
+    
+        # Handle tuple board sizes
+        if isinstance(max_board_size, tuple):
+            self.max_board_width, self.max_board_height = max_board_size
+            self.max_board_size = max(max_board_size)
+        else:
+            self.max_board_width = self.max_board_height = max_board_size
+            self.max_board_size = max_board_size
+    
+        # Validate board size
+        if self.max_board_width <= 0 or self.max_board_height <= 0:
+            raise ValueError("Board dimensions must be positive")
+        if self.max_board_width > 100 or self.max_board_height > 100:
+            raise ValueError("Board dimensions too large")
+    
+        # Validate mine count
+        if max_mines <= 0:
+            raise ValueError("Mine count must be positive")
+        if max_mines > self.max_board_width * self.max_board_height:
+>           raise ValueError("Mine count cannot exceed board area")
+E           ValueError: Mine count cannot exceed board area
+
+src\core\minesweeper_env.py:79: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_invalid_mine_count():
+        """Test that invalid mine counts raise appropriate errors."""
+        # Test negative mine count
+        with pytest.raises(ValueError, match="Mine count must be positive"):
+            MinesweeperEnv(max_mines=-1)
+    
+        # Test zero mine count
+        with pytest.raises(ValueError, match="Mine count must be positive"):
+            MinesweeperEnv(max_mines=0)
+    
+        # Test mine count greater than board size squared
+>       with pytest.raises(ValueError, match="Mine count cannot exceed board size squared"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'Mine count cannot exceed board size squared'
+E        Input: 'Mine count cannot exceed board area'
+
+tests\test_initialization.py:34: AssertionError
+_______________________ test_invalid_initial_parameters _______________________
+
+    def test_invalid_initial_parameters():
+        """Test that invalid initial board size and mine count raise appropriate errors."""
+        # Test initial board size greater than max board size
+        with pytest.raises(ValueError, match="Initial board size cannot exceed max board size"):
+>           MinesweeperEnv(max_board_size=5, initial_board_size=6)
+
+tests\test_initialization.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EABA1E0050>
+max_board_size = 5, max_mines = 130, render_mode = None
+early_learning_mode = False, early_learning_threshold = 200
+early_learning_corner_safe = True, early_learning_edge_safe = True
+mine_spacing = 1, initial_board_size = 6, initial_mines = 2
+invalid_action_penalty = -0.1, mine_penalty = -50, flag_mine_reward = 5
+flag_safe_penalty = -1, unflag_penalty = -0.1, safe_reveal_base = 5
+win_reward = 100
+
+    def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
+                 early_learning_mode=False, early_learning_threshold=200,
+                 early_learning_corner_safe=True, early_learning_edge_safe=True,
+                 mine_spacing=1, initial_board_size=4, initial_mines=2,
+                 invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
+                 flag_mine_reward=REWARD_FLAG_MINE, flag_safe_penalty=REWARD_FLAG_SAFE,
+                 unflag_penalty=REWARD_UNFLAG, safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
+        """Initialize the Minesweeper environment."""
+        super().__init__()
+    
+        # Initialize progress tracking variables
+        self.last_progress_update = time.time()
+        self.progress_interval = 1.0  # Update every second
+        self.win_count = 0
+        self.total_games = 0
+        self.recent_rewards = deque(maxlen=100)
+        self.recent_episode_lengths = deque(maxlen=100)
+        self.last_win_rate = 0
+        self.last_avg_reward = 0
+        self.last_avg_length = 0
+        self.games_at_current_size = 0
+    
+        # Initialize training health variables
+        self.min_win_rate = 0.1  # Minimum expected win rate
+        self.consecutive_mine_hits = 0
+        self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
+    
+        # Handle tuple board sizes
+        if isinstance(max_board_size, tuple):
+            self.max_board_width, self.max_board_height = max_board_size
+            self.max_board_size = max(max_board_size)
+        else:
+            self.max_board_width = self.max_board_height = max_board_size
+            self.max_board_size = max_board_size
+    
+        # Validate board size
+        if self.max_board_width <= 0 or self.max_board_height <= 0:
+            raise ValueError("Board dimensions must be positive")
+        if self.max_board_width > 100 or self.max_board_height > 100:
+            raise ValueError("Board dimensions too large")
+    
+        # Validate mine count
+        if max_mines <= 0:
+            raise ValueError("Mine count must be positive")
+        if max_mines > self.max_board_width * self.max_board_height:
+>           raise ValueError("Mine count cannot exceed board area")
+E           ValueError: Mine count cannot exceed board area
+
+src\core\minesweeper_env.py:79: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_invalid_initial_parameters():
+        """Test that invalid initial board size and mine count raise appropriate errors."""
+        # Test initial board size greater than max board size
+>       with pytest.raises(ValueError, match="Initial board size cannot exceed max board size"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'Initial board size cannot exceed max board size'
+E        Input: 'Mine count cannot exceed board area'
+
+tests\test_initialization.py:50: AssertionError
+_______________________ test_invalid_reward_parameters ________________________
+
+    def test_invalid_reward_parameters():
+        """Test that invalid reward parameters raise appropriate errors."""
+        # Test invalid mine penalty (should be negative)
+>       with pytest.raises(ValueError, match="Mine penalty must be negative"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests\test_initialization.py:64: Failed
+__________________________ test_mine_hit_termination __________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6752710>
+
+    def test_mine_hit_termination(env):
+        """Test that hitting a mine terminates the game."""
+        # Place mine at (1,1)
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+    
+        # Take action to hit mine
+        mine_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(mine_action)
+    
+        # If this is the first move, the game should be reset
+        if env.is_first_move:
+            assert not terminated
+            assert reward == 0
+        else:
+>           assert terminated
+E           assert False
+
+tests\test_mine_hits.py:38: AssertionError
+_________________________ test_mine_hit_state_update __________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE67525D0>
+
+    def test_mine_hit_state_update(env):
+        """Test that hitting a mine updates the state correctly."""
+        # Place mine at (1,1)
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+    
+        # Take action to hit mine
+        mine_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(mine_action)
+    
+        # If this is the first move, the game should be reset
+        if env.is_first_move:
+            assert not terminated
+            assert reward == 0
+            assert np.all(state == CELL_UNREVEALED)  # All cells should be unrevealed
+        else:
+            # Check that only the mine hit cell is revealed
+>           assert state[1, 1] == CELL_MINE_HIT
+E           assert np.int64(1) == -4
+
+tests\test_mine_hits.py:60: AssertionError
+_______________________ test_mine_hit_reward_breakdown ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6751A90>
+
+    def test_mine_hit_reward_breakdown(env):
+        """Test that hitting a mine provides correct reward breakdown."""
+        # Place mine at (1,1)
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+    
+        # Take action to hit mine
+        mine_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(mine_action)
+    
+        # If this is the first move, the game should be reset
+        if env.is_first_move:
+            assert not terminated
+            assert reward == 0
+        else:
+>           assert terminated
+E           assert False
+
+tests\test_mine_hits.py:81: AssertionError
+_______________________ test_first_move_mine_hit_reset ________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753610>
+
+    def test_first_move_mine_hit_reset(env):
+        """Test that hitting a mine on first move resets the board."""
+        # Place mine at (1,1)
+        env.mines[1, 1] = True
+        env._update_adjacent_counts()
+    
+        # Take action to hit mine on first move
+        mine_action = 1 * env.current_board_width + 1
+        state, reward, terminated, truncated, info = env.step(mine_action)
+    
+        # First move should be safe
+        assert not terminated
+>       assert reward == 0
+E       assert 5 == 0
+
+tests\test_mine_hits.py:97: AssertionError
+__________________________ test_first_move_behavior ___________________________
+
+env = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753110>
+
+    def test_first_move_behavior(env):
+        """Test that first move is always safe."""
+        # Try multiple first moves
+        for _ in range(10):
+            env.reset()
+            # Take random first move
+            first_action = np.random.randint(0, env.current_board_width * env.current_board_height)
+            state, reward, terminated, truncated, info = env.step(first_action)
+    
+            # First move should never hit a mine
+            assert not terminated
+>           assert reward == 0
+E           assert 5 == 0
+
+tests\test_mine_hits.py:112: AssertionError
+___________________ TestMinesweeperEnv.test_mine_placement ____________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE6705480>
+
+    def test_mine_placement(self):
+        """Verify mines are placed correctly and not in invalid locations."""
+        # Reset environment multiple times to check different mine placements
+        for _ in range(5):
+            self.env.reset()
+    
+            # Check mine count
+            mine_count = np.sum(self.env.board == 9)  # 9 represents a mine
+>           assert mine_count == self.env.current_mines
+E           assert np.int64(0) == 2
+E            +  where 2 = <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753250>.current_mines
+E            +    where <src.core.minesweeper_env.MinesweeperEnv object at 0x000001EAE6753250> = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE6705480>.env
+
+tests\test_minesweeper_env.py:75: AssertionError
+__________________ TestMinesweeperEnv.test_safe_cell_reveal ___________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE67055B0>
+
+    def test_safe_cell_reveal(self):
+        """Test revealing a safe cell and its effects."""
+        # Create a test board with known mine positions
+        test_board = np.zeros((4, 4), dtype=int)
+        test_board[0, 0] = 9  # Mine at top-left
+        test_board[2, 2] = 9  # Mine at center
+        self.env.board = test_board
+        self.env.mines = np.zeros((4, 4), dtype=bool)
+        self.env.mines[0, 0] = True
+        self.env.mines[2, 2] = True
+        self.env._update_adjacent_counts()
+    
+        # Test revealing a safe cell (1, 1) which should have 2 adjacent mines
+        action = 1 * self.env.current_board_width + 1
+        state, reward, terminated, truncated, info = self.env.step(action)
+    
+        # Verify the cell was revealed with correct number
+>       assert state[1, 1] == 2  # Should show 2 adjacent mines
+        ^^^^^^^^^^^^^^^^^^^^^^^
+E       assert np.int64(1) == 2
+
+tests\test_minesweeper_env.py:109: AssertionError
+__________________ TestMinesweeperEnv.test_difficulty_levels __________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE679F410>
+
+    def test_difficulty_levels(self):
+        """Test environment with different difficulty levels."""
+        difficulty_configs = [
+            ('easy', 9, 9, 10),
+            ('normal', 16, 16, 40),
+            ('hard', 16, 30, 99),
+            ('expert', 18, 24, 115),
+            ('chaotic', 20, 35, 130)
+        ]
+    
+        for name, width, height, mines in difficulty_configs:
+            env = MinesweeperEnv(
+                max_board_size=(width, height),
+                max_mines=mines,
+                initial_board_size=(width, height),
+                initial_mines=mines,
+                mine_spacing=0  # Disable mine spacing for testing
+            )
+    
+            # Test initialization
+            assert env.current_board_width == width
+            assert env.current_board_height == height
+            assert env.current_mines == mines
+    
+            # Test board creation
+            assert env.board.shape == (height, width)
+            assert env.state.shape == (height, width)
+            assert env.flags.shape == (height, width)
+    
+            # Test mine placement
+            env.reset()
+            mine_count = np.sum(env.mines)
+>           assert mine_count == mines
+E           assert np.int64(0) == 10
+
+tests\test_minesweeper_env.py:145: AssertionError
+_______________ TestMinesweeperEnv.test_curriculum_progression ________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE673D040>
+
+    def test_curriculum_progression(self):
+        """Test curriculum learning progression through difficulty levels."""
+        # Start with beginner level
+        env = MinesweeperEnv(
+            max_board_size=(20, 35),
+            max_mines=130,
+            initial_board_size=(4, 4),
+            initial_mines=2
+        )
+    
+        # Test progression through stages
+        stages = [
+            (4, 4, 2, 1),    # Beginner
+            (6, 6, 4, 1),    # Intermediate
+            (9, 9, 10, 1),   # Easy
+            (16, 16, 40, 1), # Normal
+            (16, 30, 99, 0), # Hard (set mine_spacing=0)
+            (18, 24, 115, 0),# Expert (set mine_spacing=0)
+            (20, 35, 130, 0) # Chaotic (set mine_spacing=0)
+        ]
+    
+        for width, height, mines, spacing in stages:
+            # Update board size and mines
+            env.current_board_width = width
+            env.current_board_height = height
+            env.current_mines = mines
+            env.mine_spacing = spacing
+            env.reset()
+    
+            # Verify dimensions and mine count
+            assert env.current_board_width == width
+            assert env.current_board_height == height
+            assert env.current_mines == mines
+    
+            # Verify board shapes
+            assert env.board.shape == (height, width)
+            assert env.state.shape == (height, width)
+            assert env.flags.shape == (height, width)
+    
+            # Verify action space
+            expected_actions = width * height * 2
+            assert env.action_space.n == expected_actions
+    
+            # Verify observation space
+            assert env.observation_space.shape == (height, width)
+    
+            # Test mine placement
+            mine_count = np.sum(env.mines)
+>           assert mine_count == mines
+E           assert np.int64(0) == 2
+
+tests\test_minesweeper_env.py:232: AssertionError
+______________ TestMinesweeperEnv.test_win_condition_rectangular ______________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE672E350>
+
+    def test_win_condition_rectangular(self):
+        """Test win condition on rectangular boards."""
+        # Test with hard difficulty (16x30)
+        env = MinesweeperEnv(
+            max_board_size=(16, 30),
+            max_mines=99,
+            initial_board_size=(16, 30),
+            initial_mines=99,
+            mine_spacing=0  # Disable mine spacing for testing
+        )
+        env.reset()
+    
+        # Flag all mines
+        terminated = False
+        for y in range(env.current_board_height):
+            for x in range(env.current_board_width):
+                if env.mines[y, x]:
+                    action = y * env.current_board_width + x + env.current_board_width * env.current_board_height
+                    state, reward, terminated, truncated, info = env.step(action)
+                    if terminated:
+                        assert info['won']
+                        assert reward == REWARD_WIN
+                        break
+            if terminated:
+                break
+    
+        # If not terminated, reveal all non-mine cells
+        if not terminated:
+            for y in range(env.current_board_height):
+                for x in range(env.current_board_width):
+                    if not env.mines[y, x]:
+                        action = y * env.current_board_width + x
+                        state, reward, terminated, truncated, info = env.step(action)
+                        if terminated:
+>                           assert info['won']
+                                   ^^^^^^^^^^^
+E                           KeyError: 'won'
+
+tests\test_minesweeper_env.py:268: KeyError
+_____________________ TestMinesweeperEnv.test_flag_action _____________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE66FE5D0>
+
+    def test_flag_action(self):
+        """Test flag action behavior."""
+        self.env.reset()
+    
+        # Test flagging a mine
+        self.env.mines[1, 1] = True
+        action = 1 * self.env.current_board_width + 1 + self.env.current_board_width * self.env.current_board_height
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert self.env.flags[1, 1]
+>       assert reward > 0
+E       assert -1 > 0
+
+tests\test_minesweeper_env.py:337: AssertionError
+___________________ TestMinesweeperEnv.test_invalid_actions ___________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE67A3070>
+
+    def test_invalid_actions(self):
+        """Test invalid action handling."""
+        self.env.reset()
+    
+        # Test revealing a flagged cell
+        self.env.flags[1, 1] = True
+        action = 1 * self.env.current_board_width + 1
+        state, reward, terminated, truncated, info = self.env.step(action)
+>       assert not terminated
+E       assert not True
+
+tests\test_minesweeper_env.py:368: AssertionError
+_______________ TestMinesweeperEnv.test_board_boundary_actions ________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE67A3310>
+
+    def test_board_boundary_actions(self):
+        """Test actions at board boundaries."""
+        self.env.reset()
+    
+        # Test corner cells
+        corners = [(0, 0), (0, 3), (3, 0), (3, 3)]
+        for y, x in corners:
+            # Test reveal action
+            action = y * self.env.current_board_width + x
+            state, reward, terminated, truncated, info = self.env.step(action)
+    
+            if terminated:
+                # If we hit a mine, verify correct state and reward
+                assert state[y, x] == CELL_MINE_HIT
+                assert reward < 0
+            else:
+                # If safe, verify correct state and reward
+                assert state[y, x] != CELL_UNREVEALED
+                assert reward >= 0  # Safe reveal should give non-negative reward
+    
+                # Try to reveal the same cell again - should be invalid
+                state, reward, terminated, truncated, info = self.env.step(action)
+                assert reward == self.env.invalid_action_penalty
+>               assert not terminated
+E               assert not True
+
+tests\test_minesweeper_env.py:407: AssertionError
+_________________ TestMinesweeperEnv.test_game_over_condition _________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE675D710>
+
+    def test_game_over_condition(self):
+        """Test game over condition."""
+        self.env.reset()
+    
+        # Hit a mine
+        self.env.mines[1, 1] = True
+        self.env.board[1, 1] = CELL_MINE
+        self.env.is_first_move = False  # Ensure it's not the first move
+        action = 1 * self.env.current_board_width + 1
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert terminated
+>       assert not info['won']
+                   ^^^^^^^^^^^
+E       KeyError: 'won'
+
+tests\test_minesweeper_env.py:429: KeyError
+____________________ TestMinesweeperEnv.test_win_condition ____________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE67B0AD0>
+
+    def test_win_condition(self):
+        """Test win condition."""
+        self.env.reset()
+    
+        # First, reveal all safe cells
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if not self.env.mines[y, x]:
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:  # If we hit a mine, reset and try again
+                        self.env.reset()
+                        break
+    
+        # Then flag all mines
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.mines[y, x]:
+                    action = y * self.env.current_board_width + x + self.env.current_board_width * self.env.current_board_height
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:  # If we won, verify win condition
+                        assert info['won']
+                        assert reward == self.env.win_reward
+                        return
+    
+        # If we get here, we should have won
+        assert terminated
+>       assert info['won']
+               ^^^^^^^^^^^
+E       KeyError: 'won'
+
+tests\test_minesweeper_env.py:459: KeyError
+__________________ TestMinesweeperEnv.test_state_transitions __________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE67B0B90>
+
+    def test_state_transitions(self):
+        """Test state transitions during gameplay."""
+        self.env.reset()
+    
+        # Find an unrevealed cell
+        unrevealed_found = False
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test reveal action
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if not terminated:  # If it was safe
+                        assert state[y, x] != CELL_UNREVEALED
+                        unrevealed_found = True
+                        break
+            if unrevealed_found:
+                break
+    
+        # Find another unrevealed cell for flagging
+        if not unrevealed_found:
+            self.env.reset()
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test flag action
+                    action = y * self.env.current_board_width + x + self.env.current_board_width * self.env.current_board_height
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    assert not terminated
+                    assert self.env.flags[y, x]
+>                   assert state[y, x] == CELL_UNREVEALED
+E                   assert np.int64(-3) == -1
+
+tests\test_minesweeper_env.py:492: AssertionError
+________________ TestMinesweeperEnv.test_state_representation _________________
+
+self = <tests.test_minesweeper_env.TestMinesweeperEnv object at 0x000001EAE6791650>
+
+    def test_state_representation(self):
+        """Test state representation consistency."""
+        self.env.reset()
+    
+        # Verify initial state
+        assert np.all(self.env.state == CELL_UNREVEALED)
+        assert np.all(self.env.flags == False)
+    
+        # Find an unrevealed cell
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test reveal action
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:
+                        # If we hit a mine, verify correct state and reward
+                        assert state[y, x] == CELL_MINE_HIT
+                        assert reward < 0
+                    else:
+                        # If safe, verify correct state and reward
+                        assert state[y, x] != CELL_UNREVEALED
+                        assert state[y, x] >= 0 and state[y, x] <= 8
+                        assert reward >= 0
+    
+                    # Find another unrevealed cell for flagging
+                    for y2 in range(self.env.current_board_height):
+                        for x2 in range(self.env.current_board_width):
+                            if self.env.state[y2, x2] == CELL_UNREVEALED:
+                                # Test flag action
+                                action = y2 * self.env.current_board_width + x2 + self.env.current_board_width * self.env.current_board_height
+                                state, reward, terminated, truncated, info = self.env.step(action)
+                                assert not terminated
+                                assert self.env.flags[y2, x2]
+>                               assert state[y2, x2] == CELL_UNREVEALED
+E                               assert np.int64(-3) == -1
+
+tests\test_minesweeper_env.py:529: AssertionError
+_____________________ TestTrainAgent.test_invalid_action ______________________
+
+self = <tests.test_train_agent.TestTrainAgent object at 0x000001EAE673D370>
+env = SyncVectorEnv(num_envs=1)
+
+    def test_invalid_action(self, env):
+        """Test that the environment handles invalid actions"""
+        env.reset()
+>       with pytest.raises((ValueError, IndexError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (<class 'ValueError'>, <class 'IndexError'>)
+
+tests\test_train_agent.py:95: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_action_masking.py::test_reveal_already_revealed_cell - asse...
+FAILED tests/test_action_masking.py::test_reveal_flagged_cell - assert not True
+FAILED tests/test_action_masking.py::test_flag_revealed_cell - assert not True
+FAILED tests/test_action_masking.py::test_flag_already_flagged_cell - Asserti...
+FAILED tests/test_action_masking.py::test_reveal_after_game_over - AssertionE...
+FAILED tests/test_action_space.py::test_action_space_consistency - assert np....
+FAILED tests/test_core_mechanics.py::test_safe_cell_reveal - assert not True
+FAILED tests/test_core_mechanics.py::test_safe_cell_adjacent_mines - assert n...
+FAILED tests/test_environment.py::TestMinesweeperEnv::test_invalid_action - F...
+FAILED tests/test_environment.py::TestMinesweeperEnv::test_mine_reveal - Asse...
+FAILED tests/test_environment.py::test_initialization - assert np.False_
+FAILED tests/test_environment.py::test_reset - assert np.False_
+FAILED tests/test_environment.py::test_mine_count_initialization - assert np....
+FAILED tests/test_environment.py::test_board_creation - assert np.int64(0) == 1
+FAILED tests/test_environment.py::test_mine_placement - assert np.int64(0) == 1
+FAILED tests/test_environment.py::test_rectangular_board_actions - assert not...
+FAILED tests/test_environment.py::test_curriculum_progression - assert (3 > 3...
+FAILED tests/test_environment.py::test_win_condition - assert -0.1 > 0
+FAILED tests/test_flag_placement.py::test_flag_placement - assert np.int64(1)...
+FAILED tests/test_flag_placement.py::test_flag_removal - assert np.int64(1) =...
+FAILED tests/test_flag_placement.py::test_flag_on_revealed_cell - assert not ...
+FAILED tests/test_flag_placement.py::test_flag_count - KeyError: 'flags_remai...
+FAILED tests/test_flag_placement.py::test_flag_on_mine - assert np.int64(1) =...
+FAILED tests/test_initialization.py::test_invalid_board_size - AssertionError...
+FAILED tests/test_initialization.py::test_invalid_mine_count - AssertionError...
+FAILED tests/test_initialization.py::test_invalid_initial_parameters - Assert...
+FAILED tests/test_initialization.py::test_invalid_reward_parameters - Failed:...
+FAILED tests/test_mine_hits.py::test_mine_hit_termination - assert False
+FAILED tests/test_mine_hits.py::test_mine_hit_state_update - assert np.int64(...
+FAILED tests/test_mine_hits.py::test_mine_hit_reward_breakdown - assert False
+FAILED tests/test_mine_hits.py::test_first_move_mine_hit_reset - assert 5 == 0
+FAILED tests/test_mine_hits.py::test_first_move_behavior - assert 5 == 0
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_mine_placement
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_safe_cell_reveal
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_difficulty_levels
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_curriculum_progression
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_win_condition_rectangular
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_flag_action - ...
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_invalid_actions
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_board_boundary_actions
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_game_over_condition
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_win_condition
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_state_transitions
+FAILED tests/test_minesweeper_env.py::TestMinesweeperEnv::test_state_representation
+FAILED tests/test_train_agent.py::TestTrainAgent::test_invalid_action - Faile...
+======================== 45 failed, 27 passed in 5.00s ========================

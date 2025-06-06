@@ -251,7 +251,7 @@ class MinesweeperEnv(gym.Env):
                 nx, ny = x + dx, y + dy
                 if (0 <= nx < self.current_board_width and 
                     0 <= ny < self.current_board_height and 
-                    self.mines[ny, nx]):
+                    self.mines[ny, nx]):  # Note: mines array uses (y,x) indexing
                     count += 1
         return count
 
@@ -262,16 +262,26 @@ class MinesweeperEnv(gym.Env):
         if self.revealed[y, x] or self.flags[y, x]:
             return
 
+        print(f"\nRevealing cell ({x}, {y})")
+        print(f"Current board value: {self.board[y, x]}")
+        
         self.revealed[y, x] = True
         self.revealed_count += 1
         self.state[y, x] = self.board[y, x]
+        
+        print(f"State after reveal: {self.state[y, x]}")
 
         if self.board[y, x] == 0:
+            print(f"Empty cell detected at ({x}, {y}), starting cascade")
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
                     if dx == 0 and dy == 0:
                         continue
-                    self._reveal_cell(x + dx, y + dy)
+                    nx, ny = x + dx, y + dy
+                    if (0 <= nx < self.current_board_width and 
+                        0 <= ny < self.current_board_height):
+                        print(f"Attempting to reveal neighbor at ({nx}, {ny})")
+                        self._reveal_cell(nx, ny)
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
@@ -284,12 +294,16 @@ class MinesweeperEnv(gym.Env):
         x = pos % self.current_board_width
         y = pos // self.current_board_width
 
+        print(f"\nAction: {action}")
+        print(f"Action type: {action_type}")
+        print(f"Position: ({x}, {y})")
+
         # Handle invalid actions
         if not (0 <= x < self.current_board_width and 0 <= y < self.current_board_height):
-            return self.state, REWARD_INVALID_ACTION, True, False, {"error": "Invalid position"}
+            return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Invalid position"}
 
         if self.revealed[y, x]:
-            return self.state, REWARD_INVALID_ACTION, True, False, {"error": "Cell already revealed"}
+            return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Cell already revealed"}
 
         # Place mines on first move
         if self.is_first_move:
@@ -298,7 +312,7 @@ class MinesweeperEnv(gym.Env):
 
         if action_type == 0:  # Reveal
             if self.flags[y, x]:
-                return self.state, REWARD_INVALID_ACTION, True, False, {"error": "Cannot reveal flagged cell"}
+                return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Cannot reveal flagged cell"}
             
             if self.mines[y, x]:
                 self.terminated = True
@@ -318,7 +332,7 @@ class MinesweeperEnv(gym.Env):
 
         elif action_type == 1:  # Flag
             if self.revealed[y, x]:
-                return self.state, REWARD_INVALID_ACTION, True, False, {"error": "Cannot flag revealed cell"}
+                return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Cannot flag revealed cell"}
             
             if self.flags[y, x]:
                 self.flags[y, x] = False
@@ -327,7 +341,7 @@ class MinesweeperEnv(gym.Env):
                 return self.state, REWARD_UNFLAG, False, False, {}
             
             if self.flags_remaining <= 0:
-                return self.state, REWARD_INVALID_ACTION, True, False, {"error": "No flags remaining"}
+                return self.state, REWARD_INVALID_ACTION, False, False, {"error": "No flags remaining"}
             
             self.flags[y, x] = True
             self.flags_remaining -= 1
@@ -335,7 +349,7 @@ class MinesweeperEnv(gym.Env):
             reward = REWARD_FLAG_MINE if self.mines[y, x] else REWARD_FLAG_SAFE
             return self.state, reward, False, False, {}
 
-        return self.state, REWARD_INVALID_ACTION, True, False, {"error": "Invalid action type"}
+        return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Invalid action type"}
 
     def _check_win(self) -> bool:
         """Check if the game is won."""

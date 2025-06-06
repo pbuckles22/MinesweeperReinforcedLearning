@@ -9,6 +9,9 @@ from src.core.minesweeper_env import (
     MinesweeperEnv, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN, REWARD_HIT_MINE,
     CELL_UNREVEALED, CELL_MINE, CELL_FLAGGED, CELL_MINE_HIT
 )
+from src.core.constants import (
+    REWARD_SAFE_REVEAL
+)
 
 class TestMinesweeperEnv:
     """Test cases for the Minesweeper environment."""
@@ -57,7 +60,7 @@ class TestMinesweeperEnv:
         assert self.env.flags.shape[0] == self.env.flags.shape[1]
 
         # Check board is properly initialized with hidden cells
-        assert np.all(self.env.state == -1)  # All cells should be hidden initially
+        assert np.all(self.env.state == CELL_UNREVEALED)  # All cells should be hidden initially
         assert np.all(self.env.flags == 0)   # No flags should be placed initially
 
         # Verify board size matches current dimensions
@@ -92,18 +95,32 @@ class TestMinesweeperEnv:
     def test_safe_cell_reveal(self):
         """Test revealing a safe cell and its effects."""
         # Create a test board with known mine positions
-        test_board = np.zeros((4, 4), dtype=int)
-        test_board[0, 0] = 9  # Mine at top-left
-        test_board[2, 2] = 9  # Mine at center
-        self.env.board = test_board
+        self.env.board = np.zeros((4, 4), dtype=int)
         self.env.mines = np.zeros((4, 4), dtype=bool)
-        self.env.mines[0, 0] = True
-        self.env.mines[2, 2] = True
-        self.env._update_adjacent_counts()
-
+        self.env.mines[0, 0] = True  # Mine at top-left
+        self.env.mines[2, 2] = True  # Mine at center
+        
+        print("\nInitial mines setup:")
+        print("Mines array:")
+        print(self.env.mines)
+        
+        self.env._update_adjacent_counts()  # This will set the correct numbers in board
+        
+        print("\nAfter _update_adjacent_counts:")
+        print("Board array (adjacent counts):")
+        print(self.env.board)
+        
         # Test revealing a safe cell (1, 1) which should have 2 adjacent mines
         action = 1 * self.env.current_board_width + 1
+        print(f"\nRevealing cell (1,1) with action {action}")
         state, reward, terminated, truncated, info = self.env.step(action)
+        
+        print("\nAfter reveal:")
+        print("State array:")
+        print(state)
+        print(f"Cell (1,1) value: {state[1, 1]}")
+        print(f"Terminated: {terminated}")
+        print(f"Reward: {reward}")
 
         # Verify the cell was revealed with correct number
         assert state[1, 1] == 2  # Should show 2 adjacent mines

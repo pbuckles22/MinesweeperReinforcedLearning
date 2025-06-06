@@ -5,6 +5,17 @@ import numpy as np
 from stable_baselines3 import PPO
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.vec_env import DummyVecEnv
+from src.core.constants import (
+    CELL_UNREVEALED,
+    CELL_MINE,
+    CELL_FLAGGED,
+    CELL_MINE_HIT,
+    REWARD_FIRST_MOVE_SAFE,
+    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_SAFE_REVEAL,
+    REWARD_WIN,
+    REWARD_HIT_MINE
+)
 
 class TestTrainAgent:
     @pytest.fixture
@@ -39,7 +50,7 @@ class TestTrainAgent:
         """Test that the environment resets correctly"""
         obs, info = env.reset()
         assert obs.shape == (1, 4, 4)  # (num_envs, height, width)
-        assert np.all(obs == -1)  # All cells should be hidden
+        assert np.all(obs == CELL_UNREVEALED)  # All cells should be hidden
 
     def test_environment_step(self, env):
         """Test that the environment responds correctly to actions"""

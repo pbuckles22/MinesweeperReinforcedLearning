@@ -1,25 +1,30 @@
 import pytest
 import numpy as np
-from src.core.minesweeper_env import MinesweeperEnv
+from src.core.constants import (
+    CELL_UNREVEALED,
+    CELL_MINE,
+    CELL_FLAGGED,
+    CELL_MINE_HIT,
+    REWARD_FIRST_MOVE_SAFE,
+    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_SAFE_REVEAL,
+    REWARD_WIN,
+    REWARD_HIT_MINE
+)
 
-@pytest.fixture
-def env():
-    """Create a test environment with a known board state."""
-    env = MinesweeperEnv(
-        max_board_size=4,
-        max_mines=2,
-        initial_board_size=4,
-        initial_mines=2,
-        mine_spacing=1
-    )
-    env.reset()
-    return env
-
-def test_action_space_dimensions(env):
-    """Test that action space has correct dimensions."""
-    # Action space should be 2 * board area (reveal + flag actions)
-    expected_size = env.current_board_width * env.current_board_height * 2
+def test_action_space_size(env):
+    """Test that the action space size is correct."""
+    expected_size = env.current_board_width * env.current_board_height * 2  # 2 for reveal and flag
     assert env.action_space.n == expected_size
+
+def test_action_space_type(env):
+    """Test that the action space type is correct."""
+    assert env.action_space.__class__.__name__ == 'Discrete'
+
+def test_action_space_bounds(env):
+    """Test that the action space bounds are correct."""
+    assert env.action_space.start == 0
+    assert env.action_space.n == env.current_board_width * env.current_board_height * 2
 
 def test_action_space_boundaries(env):
     """Test that action space boundaries are correct."""

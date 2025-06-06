@@ -1,7 +1,16 @@
 import pytest
 import numpy as np
-from src.core.minesweeper_env import MinesweeperEnv
-from src.core.constants import CELL_UNREVEALED, CELL_FLAGGED
+from src.core.constants import (
+    CELL_UNREVEALED,
+    CELL_MINE,
+    CELL_FLAGGED,
+    CELL_MINE_HIT,
+    REWARD_FIRST_MOVE_SAFE,
+    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_SAFE_REVEAL,
+    REWARD_WIN,
+    REWARD_HIT_MINE
+)
 
 @pytest.fixture
 def env():
@@ -82,4 +91,37 @@ def test_reveal_after_game_over(env):
     assert reward < 0  # Should get negative reward for invalid action
     assert terminated  # Game should still be terminated
     assert not truncated
-    assert 'won' in info 
+    assert 'won' in info
+
+def test_action_masking_revealed_cells(env):
+    """Test that revealed cells are masked."""
+    # Reveal a cell
+    action = 0  # Reveal top-left cell
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Check that the revealed cell is masked
+    assert not env.action_masks[action]
+    assert not env.action_masks[action + env.current_board_width * env.current_board_height]  # Flag action
+
+def test_action_masking_flagged_cells(env):
+    """Test that flagged cells are masked."""
+    # Flag a cell
+    action = env.current_board_width * env.current_board_height  # Flag top-left cell
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Check that the flagged cell is masked
+    assert not env.action_masks[action]
+    assert not env.action_masks[action - env.current_board_width * env.current_board_height]  # Reveal action
+
+def test_action_masking_game_over(env):
+    """Test that all actions are masked when game is over."""
+    # Place mine at (0,0)
+    env.mines[0, 0] = True
+    env._update_adjacent_counts()
+    
+    # Hit mine
+    action = 0  # Reveal top-left cell
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Check that all actions are masked
+    assert all(not mask for mask in env.action_masks) 
