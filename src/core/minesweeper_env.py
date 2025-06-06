@@ -265,26 +265,28 @@ class MinesweeperEnv(gym.Env):
         print(f"\nRevealing cell ({x}, {y})")
         print(f"Current board value: {self.board[y, x]}")
         
-        self.revealed[y, x] = True
-        self.revealed_count += 1
-        self.state[y, x] = self.board[y, x]
+        # Use a stack for depth-first traversal
+        stack = [(x, y)]
+        visited = set()
         
-        print(f"State after reveal: {self.state[y, x]}")
-
-        # If this is an empty cell, reveal all neighbors
-        if self.board[y, x] == 0:
-            print(f"Empty cell detected at ({x}, {y}), starting cascade")
-            # Use a stack for depth-first traversal
-            stack = [(x, y)]
-            visited = set()
+        while stack:
+            cx, cy = stack.pop()
+            if (cx, cy) in visited:
+                continue
+            visited.add((cx, cy))
             
-            while stack:
-                cx, cy = stack.pop()
-                if (cx, cy) in visited:
-                    continue
-                visited.add((cx, cy))
-                
-                # Reveal all neighbors
+            # Reveal current cell
+            self.revealed[cy, cx] = True
+            self.revealed_count += 1
+            # Set state to board value (0-8) for revealed cells
+            self.state[cy, cx] = self.board[cy, cx]
+            
+            print(f"State after reveal: {self.state[cy, cx]}")
+            
+            # If this is an empty cell, add neighbors to stack
+            if self.board[cy, cx] == 0:
+                print(f"Empty cell detected at ({cx}, {cy}), adding neighbors to stack")
+                # Add all neighbors to stack
                 for dx in [-1, 0, 1]:
                     for dy in [-1, 0, 1]:
                         if dx == 0 and dy == 0:
@@ -294,13 +296,15 @@ class MinesweeperEnv(gym.Env):
                             0 <= ny < self.current_board_height and
                             not self.revealed[ny, nx] and 
                             not self.flags[ny, nx]):
-                            print(f"Attempting to reveal neighbor at ({nx}, {ny})")
-                            self.revealed[ny, nx] = True
-                            self.revealed_count += 1
-                            self.state[ny, nx] = self.board[ny, nx]
-                            # If neighbor is also empty, add to stack
-                            if self.board[ny, nx] == 0:
-                                stack.append((nx, ny))
+                            print(f"Adding neighbor to stack: ({nx}, {ny})")
+                            stack.append((nx, ny))
+
+    def _check_win(self) -> bool:
+        """Check if the game is won.
+        Win condition: All non-mine cells must be revealed.
+        Flag placement is not required for winning."""
+        # All non-mine cells must be revealed
+        return np.all((self.state == CELL_UNREVEALED) == self.mines)
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
@@ -339,9 +343,10 @@ class MinesweeperEnv(gym.Env):
             if self.mines[y, x]:
                 self.terminated = True
                 self.revealed[y, x] = True
-                self.state[y, x] = CELL_MINE_HIT
+                self.state[y, x] = CELL_MINE_HIT  # Use constant for mine hit
                 reward = REWARD_FIRST_MOVE_HIT_MINE if self.is_first_move else REWARD_HIT_MINE
-                return self.state, reward, True, False, {"message": "Game over - hit a mine"}
+                self.info['won'] = False
+                return self.state, reward, True, False, self.info
 
             self._reveal_cell(x, y)
             
@@ -349,9 +354,13 @@ class MinesweeperEnv(gym.Env):
             if self._check_win():
                 self.won = True
                 self.terminated = True
-                return self.state, REWARD_WIN, True, False, {"won": True}
+                self.info['won'] = True
+                return self.state, REWARD_WIN, True, False, self.info
             
-            return self.state, REWARD_SAFE_REVEAL, False, False, {}
+            # Set reward based on first move
+            reward = REWARD_FIRST_MOVE_SAFE if self.is_first_move else REWARD_SAFE_REVEAL
+            self.is_first_move = False
+            return self.state, reward, False, False, {}
 
         elif action_type == 1:  # Flag
             if self.revealed[y, x]:
@@ -360,45 +369,33 @@ class MinesweeperEnv(gym.Env):
             if self.flags[y, x]:
                 self.flags[y, x] = False
                 self.flags_remaining += 1
-                self.state[y, x] = CELL_UNREVEALED
+                self.state[y, x] = CELL_UNREVEALED  # Use constant for unrevealed
+                self.info['flags_remaining'] = self.flags_remaining
                 # Check for win after unflag
                 if self._check_win():
                     self.won = True
                     self.terminated = True
-                    return self.state, REWARD_WIN, True, False, {"won": True}
-                return self.state, REWARD_UNFLAG, False, False, {}
+                    self.info['won'] = True
+                    return self.state, REWARD_WIN, True, False, self.info
+                return self.state, REWARD_UNFLAG, False, False, self.info
             
             if self.flags_remaining <= 0:
                 return self.state, REWARD_INVALID_ACTION, False, False, {"error": "No flags remaining"}
             
             self.flags[y, x] = True
             self.flags_remaining -= 1
-            self.state[y, x] = CELL_FLAGGED
+            self.state[y, x] = CELL_FLAGGED  # Use constant for flagged
             reward = REWARD_FLAG_MINE if self.mines[y, x] else REWARD_FLAG_SAFE
+            self.info['flags_remaining'] = self.flags_remaining
             # Check for win after flag
             if self._check_win():
                 self.won = True
                 self.terminated = True
-                return self.state, REWARD_WIN, True, False, {"won": True}
-            return self.state, reward, False, False, {}
+                self.info['won'] = True
+                return self.state, REWARD_WIN, True, False, self.info
+            return self.state, reward, False, False, self.info
 
         return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Invalid action type"}
-
-    def _check_win(self) -> bool:
-        """Check if the game is won.
-        Win condition: All non-mine cells must be revealed.
-        Flag placement is not required for winning."""
-        # All non-mine cells must be revealed
-        all_safe_cells_revealed = np.all(
-            (self.state == CELL_UNREVEALED) == self.mines
-        )
-        
-        if all_safe_cells_revealed:
-            self.terminated = True
-            self.reward = REWARD_WIN
-            self.info['won'] = True
-        
-        return all_safe_cells_revealed
 
     def render(self):
         """Render the environment."""

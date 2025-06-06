@@ -21,13 +21,13 @@ def test_script_permissions(script_path):
 def test_script_syntax(script_path):
     """Test that the script has valid PowerShell syntax."""
     try:
-        # Use PowerShell to validate the script syntax
+        # Use PowerShell to check syntax without execution
         result = subprocess.run(
-            ["powershell", "-Command", f"Get-Content {script_path} | Out-String | Invoke-Expression"],
+            ["powershell", "-Command", f"Get-Content {script_path} | Out-String | Test-ScriptBlock"],
             capture_output=True,
             text=True
         )
-        assert result.returncode == 0
+        assert result.returncode == 0, f"Script syntax error: {result.stderr}"
     except subprocess.CalledProcessError as e:
         pytest.fail(f"Script syntax error: {e.stderr}")
 

@@ -3,24 +3,24 @@
 ## Priority 1: Core State Management & Mechanics
 - [x] Safe cell reveal: `assert not terminated` fails
 - [x] Safe cell cascade: Not explicitly listed, but likely related to state update issues
-- [ ] Safe cell adjacent mines: `assert np.int64(9) == 0`
+- [ ] Safe cell adjacent mines: `assert np.int64(9) == 0` (NEW: showing CELL_MINE_HIT instead of adjacent count)
 - [ ] Mine placement: `assert mine_count == self.env.current_mines`
 - [ ] Board initialization: `assert np.all(env.board == CELL_UNREVEALED)`
-- [ ] Flag placement on mine/safe cell: `assert state[1, 1] == CELL_FLAGGED`
-- [ ] Flag removal: `assert state[1, 1] == CELL_UNREVEALED`
-- [ ] Flag count in info: `KeyError: 'flags_remaining'`
-- [ ] Flag on revealed cell: `assert not terminated`
+- [x] Flag placement on mine/safe cell: `assert state[1, 1] == CELL_FLAGGED`
+- [x] Flag removal: `assert state[1, 1] == CELL_UNREVEALED`
+- [ ] Flag count in info: `KeyError: 'flags_remaining'` (NEW: missing in info dict)
+- [x] Flag on revealed cell: `assert not terminated`
 - [ ] Reveal flagged cell: `assert not terminated`
 - [ ] Reveal already revealed cell: `assert not terminated`
 - [ ] State transitions: `assert state[y, x] == CELL_UNREVEALED`
 - [ ] State representation: `assert state[y2, x2] == CELL_UNREVEALED`
 
 ## Priority 2: Game Logic & Win/Loss
-- [ ] Mine hit termination: `assert terminated`
-- [ ] Mine hit state update: `assert state[1, 1] == CELL_MINE_HIT`
-- [ ] Mine hit reward breakdown: `assert terminated`
-- [ ] First move mine hit reset: `assert reward == 0`
-- [ ] First move behavior: `assert reward == 0`
+- [ ] Mine hit termination: `assert terminated` (NEW: game not terminating on mine hit)
+- [ ] Mine hit state update: `assert state[1, 1] == CELL_MINE_HIT` (NEW: incorrect state value)
+- [ ] Mine hit reward breakdown: `assert terminated` (NEW: incorrect reward value)
+- [ ] First move mine hit reset: `assert reward == 0` (NEW: showing 5 instead of 0)
+- [ ] First move behavior: `assert reward == 0` (NEW: showing 5 instead of 0)
 - [ ] Win condition: `assert reward > 0`
 - [ ] Game over condition: `KeyError: 'won'`
 - [ ] Win condition (rectangular): `KeyError: 'won'`
@@ -49,6 +49,11 @@
 - [x] Mine placement method called in reset
 - [x] Board and state arrays initialized with CELL_UNREVEALED
 - [x] Action space and observation space updated on reset
+- [x] Safe cell reveal
+- [x] Safe cell cascade
+- [x] Flag placement on mine/safe cell
+- [x] Flag removal
+- [x] Flag on revealed cell
 
 ## Priority 7: Core Functionality (Already Implemented)
 ### Environment Initialization
