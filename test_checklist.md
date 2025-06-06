@@ -1,5 +1,22 @@
 # Test Checklist
 
+## High Priority Issues (Core Functionality)
+
+### Action Space and Board Size Issues
+- [ ] Fix `current_board_size` attribute references (use `current_board_width` and `current_board_height`)
+- [ ] Update action space calculations to use correct dimensions
+- [ ] Fix board size validation in initialization tests
+
+### Mine Hit and Game Termination
+- [ ] Fix mine hit state updates and rewards
+- [ ] Ensure proper game termination on mine hits
+- [ ] Fix first move behavior and reset logic
+
+### Invalid Action Handling
+- [ ] Implement proper error handling for invalid actions
+- [ ] Add reward breakdown in info dictionary
+- [ ] Fix invalid action penalties
+
 ## Core Environment Tests
 - [x] Environment initialization
 - [x] Board creation
@@ -70,24 +87,17 @@
 - Failed: 19
 - Errors: 6
 
-## Priority Fixes
-1. Action Space and Board Size Issues
-   - Fix current_board_size references
-   - Update action space calculations
-   - Fix board size validation
-
-2. Mine Hit and Game Termination
-   - Fix state updates and rewards
-   - Fix game termination logic
-   - Fix first move behavior
-
-3. Invalid Action Handling
-   - Implement error handling
-   - Add reward breakdown
-   - Fix invalid action penalties
-
-## Notes
-- Many failures are related to the transition from current_board_size to current_board_width/height
+## Implementation Notes
+- Many failures are related to the transition from `current_board_size` to `current_board_width`/`current_board_height`
 - Some tests need to be updated to match new error message formats
 - Core mechanics tests need board state initialization fixes
-- Flag placement tests need environment setup fixes 
+- Flag placement tests need environment setup fixes
+- Need to ensure consistent behavior across all test files
+
+## Next Steps
+1. Fix action space and board size issues first
+2. Address mine hit and game termination logic
+3. Implement proper invalid action handling
+4. Update core mechanics tests
+5. Fix flag placement tests
+6. Improve test infrastructure 
