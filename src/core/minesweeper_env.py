@@ -271,7 +271,7 @@ class MinesweeperEnv(gym.Env):
 
         if self.mines[y, x]:
             self.state[y, x] = CELL_MINE_HIT  # Use -2 for hit mine
-            self.game_over = True
+            self.terminated = True
             self.won = False
             return
 
@@ -295,13 +295,23 @@ class MinesweeperEnv(gym.Env):
         if self.terminated:
             return self.state, 0, True, False, {"won": self.won}
             
+        # Check if action is within bounds
+        if action < 0 or action >= self.current_board_width * self.current_board_height * 2:
+            return self.state, self.invalid_action_penalty, False, False, {}
+            
         # Convert action to coordinates and type (reveal or flag)
         is_flag_action = action >= self.current_board_width * self.current_board_height
         if is_flag_action:
             action = action - self.current_board_width * self.current_board_height
             
+        # Convert 1D action to 2D coordinates
         y = action // self.current_board_width
         x = action % self.current_board_width
+        
+        # Debug logging
+        self.logger.debug(f"Action: {action}, Is Flag: {is_flag_action}, Coords: ({y}, {x})")
+        self.logger.debug(f"Board: {self.current_board_width}x{self.current_board_height}")
+        self.logger.debug(f"Mines: {self.mines[y, x]}, State: {self.state[y, x]}")
         
         # Check if the action is valid
         if not (0 <= y < self.current_board_height and 0 <= x < self.current_board_width):
@@ -309,12 +319,29 @@ class MinesweeperEnv(gym.Env):
             
         # Handle flag actions
         if is_flag_action:
-            reward = self._handle_flag_action(x, y)
+            # Check if cell is already revealed
+            if self.state[y, x] != CELL_UNREVEALED:
+                return self.state, self.invalid_action_penalty, False, False, {}
+
+            # Toggle flag
+            self.flags[y, x] = not self.flags[y, x]
+            # Keep state as CELL_UNREVEALED for flagged cells
+            self.state[y, x] = CELL_UNREVEALED
+            
+            if self.flags[y, x]:  # Placing flag
+                if self.mines[y, x]:
+                    reward = self.flag_mine_reward
+                else:
+                    reward = self.flag_safe_penalty
+            else:  # Removing flag
+                reward = self.unflag_penalty
+
             # Check for win after flag action
             if self._check_win():
-                reward = REWARD_WIN
+                reward = self.win_reward
                 self.terminated = True
                 self.won = True
+                return self.state, reward, True, False, {"won": self.won}
         else:
             # Handle reveal actions
             if self.flags[y, x]:
@@ -324,20 +351,24 @@ class MinesweeperEnv(gym.Env):
                 return self.state, self.invalid_action_penalty, False, False, {}
                 
             if self.mines[y, x]:
+                # Update the state array to show the mine hit
+                self.state = np.copy(self.state)  # Create a copy to ensure the array is updated
                 self.state[y, x] = CELL_MINE_HIT
                 reward = REWARD_FIRST_MOVE_HIT_MINE if self.is_first_move else REWARD_HIT_MINE
                 self.terminated = True
                 self.won = False
+                self.is_first_move = False
+                return self.state, reward, True, False, {"won": False}
             else:
                 self._reveal_cell(x, y)
                 if self.is_first_move:
                     reward = REWARD_FIRST_MOVE_SAFE
                 else:
-                    reward = self.safe_reveal_base
+                    reward = REWARD_SAFE_REVEAL
                     
                 # Check for win
                 if self._check_win():
-                    reward = REWARD_WIN
+                    reward = self.win_reward
                     self.terminated = True
                     self.won = True
                     
@@ -348,25 +379,6 @@ class MinesweeperEnv(gym.Env):
             self._update_progress_display()
             
         return self.state, reward, self.terminated, False, {"won": self.won}
-
-    def _handle_flag_action(self, x, y):
-        """Handle flag placement/removal action."""
-        # Check if cell is already revealed
-        if self.state[y, x] != CELL_UNREVEALED:
-            return self.invalid_action_penalty
-
-        # Toggle flag
-        self.flags[y, x] = not self.flags[y, x]
-        
-        if self.flags[y, x]:  # Placing flag
-            if self.mines[y, x]:
-                reward = self.flag_mine_reward
-            else:
-                reward = self.flag_safe_penalty
-        else:  # Removing flag
-            reward = self.unflag_penalty
-
-        return reward
 
     def _check_win(self) -> bool:
         """Check if the game is won."""

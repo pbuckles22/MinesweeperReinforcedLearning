@@ -229,150 +229,290 @@ class IterationCallback(BaseCallback):
             
         return True
 
-def make_env(board_size, num_mines):
-    """Create and return a Minesweeper environment."""
-    env = MinesweeperEnv(max_board_size=board_size, max_mines=num_mines)
-    return env
+def make_env(max_board_size, max_mines):
+    """Create a wrapped environment"""
+    def _init():
+        env = MinesweeperEnv(
+            max_board_size=max_board_size,
+            max_mines=max_mines,
+            render_mode=None,
+            early_learning_mode=True,
+            early_learning_threshold=200,
+            early_learning_corner_safe=True,
+            early_learning_edge_safe=True,
+            mine_spacing=1,
+            initial_board_size=4,  # Start with 4x4
+            initial_mines=2,       # Start with 2 mines
+            invalid_action_penalty=-0.1,
+            mine_penalty=-10.0,
+            flag_mine_reward=5.0,
+            flag_safe_penalty=-1.0,
+            unflag_penalty=-0.1,
+            safe_reveal_base=5.0,
+            win_reward=100.0
+        )
+        env = Monitor(env)
+        return env
+    return _init
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--use-gpu', action='store_true', help='Use GPU for training')
-    parser.add_argument('--timesteps', type=int, default=100000, help='Number of timesteps to train for')
-    parser.add_argument('--test-mode', action='store_true', help='Run in test mode with reduced parameters')
-    parser.add_argument('--quick-test', action='store_true', help='Run a very quick test with minimal parameters')
-    parser.add_argument('--curriculum', action='store_true', help='Enable curriculum learning')
-    parser.add_argument('--board-size', type=int, default=8, help='Board size for training')
-    parser.add_argument('--max-mines', type=int, default=12, help='Maximum number of mines')
-    parser.add_argument('--debug-level', type=int, default=2, choices=[0,1,2,3,4], help='Debug level (0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG, 4=VERBOSE)')
-    parser.add_argument('--load-model', type=str, help='Path to previous model to continue training from')
-    parser.add_argument('--random-seed', type=int, help='Random seed for reproducibility')
-    # PPO hyperparameters
-    parser.add_argument('--learning-rate', type=float, default=0.0001, help='Learning rate for PPO')
-    parser.add_argument('--batch-size', type=int, default=64, help='Batch size for PPO')
-    parser.add_argument('--n-steps', type=int, default=2048, help='Number of steps to run for each environment per update')
-    parser.add_argument('--n-epochs', type=int, default=10, help='Number of epochs to run when optimizing the surrogate loss')
-    parser.add_argument('--gamma', type=float, default=0.99, help='Discount factor')
-    parser.add_argument('--gae-lambda', type=float, default=0.95, help='Factor for trade-off of bias vs variance for Generalized Advantage Estimator')
-    parser.add_argument('--clip-range', type=float, default=0.2, help='Clipping parameter for PPO')
-    parser.add_argument('--ent-coef', type=float, default=0.01, help='Entropy coefficient')
-    parser.add_argument('--vf-coef', type=float, default=0.5, help='Value function coefficient')
-    parser.add_argument('--max-grad-norm', type=float, default=0.5, help='Maximum gradient norm')
+    parser = argparse.ArgumentParser(description='Train a Minesweeper agent')
+    parser.add_argument('--total_timesteps', type=int, default=1000000,
+                      help='Total number of timesteps to train for')
+    parser.add_argument('--eval_freq', type=int, default=10000,
+                      help='Frequency of evaluation')
+    parser.add_argument('--n_eval_episodes', type=int, default=100,
+                      help='Number of episodes to evaluate on')
+    parser.add_argument('--save_freq', type=int, default=50000,
+                      help='Frequency of saving the model')
+    parser.add_argument('--learning_rate', type=float, default=0.0003,
+                      help='Learning rate for the agent')
+    parser.add_argument('--n_steps', type=int, default=2048,
+                      help='Number of steps to run for each environment per update')
+    parser.add_argument('--batch_size', type=int, default=64,
+                      help='Batch size for training')
+    parser.add_argument('--n_epochs', type=int, default=10,
+                      help='Number of epochs when optimizing the surrogate loss')
+    parser.add_argument('--gamma', type=float, default=0.99,
+                      help='Discount factor')
+    parser.add_argument('--gae_lambda', type=float, default=0.95,
+                      help='Factor for trade-off of bias vs variance for GAE')
+    parser.add_argument('--clip_range', type=float, default=0.2,
+                      help='Clipping parameter for PPO')
+    parser.add_argument('--clip_range_vf', type=float, default=None,
+                      help='Clipping parameter for value function')
+    parser.add_argument('--ent_coef', type=float, default=0.01,
+                      help='Entropy coefficient for the loss calculation')
+    parser.add_argument('--vf_coef', type=float, default=0.5,
+                      help='Value function coefficient for the loss calculation')
+    parser.add_argument('--max_grad_norm', type=float, default=0.5,
+                      help='Maximum norm for the gradient clipping')
+    parser.add_argument('--use_sde', type=bool, default=False,
+                      help='Whether to use generalized State Dependent Exploration')
+    parser.add_argument('--sde_sample_freq', type=int, default=-1,
+                      help='Sample a new noise matrix every n steps')
+    parser.add_argument('--target_kl', type=float, default=None,
+                      help='Limit the KL divergence between updates')
+    parser.add_argument('--tensorboard_log', type=str, default="./tensorboard/",
+                      help='Tensorboard log directory')
+    parser.add_argument('--policy', type=str, default="MlpPolicy",
+                      help='Policy architecture')
+    parser.add_argument('--verbose', type=int, default=1,
+                      help='Verbosity level')
+    parser.add_argument('--seed', type=int, default=None,
+                      help='Random seed')
+    parser.add_argument('--device', type=str, default="auto",
+                      help='Device to use for training')
+    parser.add_argument('--_init_setup_model', type=bool, default=True,
+                      help='Whether to initialize the model')
     return parser.parse_args()
 
 def main():
-    """Main training function."""
     args = parse_args()
     
-    # Set random seeds for reproducibility
-    if args.random_seed is not None:
-        np.random.seed(args.random_seed)
-        torch.manual_seed(args.random_seed)
-    
     # Create experiment tracker
-    tracker = ExperimentTracker()
+    experiment_tracker = ExperimentTracker()
     
-    # Save hyperparameters
-    hyperparameters = {
-        "timesteps": args.timesteps,
-        "board_size": args.board_size,
-        "max_mines": args.max_mines,
-        "use_gpu": args.use_gpu,
-        "random_seed": args.random_seed,
-        "learning_rate": args.learning_rate,
-        "n_steps": args.n_steps,
-        "batch_size": args.batch_size,
-        "n_epochs": args.n_epochs,
-        "gamma": args.gamma,
-        "gae_lambda": args.gae_lambda,
-        "clip_range": args.clip_range,
-        "ent_coef": args.ent_coef,
-        "vf_coef": args.vf_coef,
-        "max_grad_norm": args.max_grad_norm
+    # Define curriculum stages with detailed information
+    curriculum_stages = [
+        {
+            'name': 'Beginner',
+            'size': 4,
+            'mines': 2,
+            'win_rate_threshold': 0.7,
+            'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
+        },
+        {
+            'name': 'Intermediate',
+            'size': 6,
+            'mines': 4,
+            'win_rate_threshold': 0.6,
+            'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy'
+        },
+        {
+            'name': 'Easy',
+            'size': 9,
+            'mines': 10,
+            'win_rate_threshold': 0.5,
+            'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
+        },
+        {
+            'name': 'Normal',
+            'size': 16,
+            'mines': 40,
+            'win_rate_threshold': 0.4,
+            'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
+        },
+        {
+            'name': 'Hard',
+            'size': (16, 30),
+            'mines': 99,
+            'win_rate_threshold': 0.3,
+            'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
+        },
+        {
+            'name': 'Expert',
+            'size': (18, 24),
+            'mines': 115,
+            'win_rate_threshold': 0.2,
+            'description': '18x24 board with 115 mines - Expert level, handling high mine density'
+        },
+        {
+            'name': 'Chaotic',
+            'size': (20, 35),
+            'mines': 130,
+            'win_rate_threshold': 0.1,
+            'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
+        }
+    ]
+    
+    # Save curriculum information
+    experiment_tracker.metrics["curriculum"] = {
+        "stages": curriculum_stages,
+        "total_stages": len(curriculum_stages),
+        "expected_progression": "Beginner -> Intermediate -> Easy -> Normal -> Hard -> Expert -> Chaotic"
     }
+    experiment_tracker._save_metrics()
     
-    tracker.start_new_run(hyperparameters)
+    # Initialize environment with first stage
+    current_stage = 0
+    env = DummyVecEnv([make_env(
+        max_board_size=curriculum_stages[current_stage]['size'],
+        max_mines=curriculum_stages[current_stage]['mines']
+    )])
     
-    # Set up logging
-    log_dir = "logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    
-    # Create and wrap the environment
-    env = make_env(board_size=args.board_size, num_mines=args.max_mines)
-    env = Monitor(env, log_dir)
-    
-    # Create or load the agent
-    if args.load_model and os.path.exists(args.load_model):
-        print(f"\nLoading previous model from: {args.load_model}")
-        model = PPO.load(
-            args.load_model,
-            env=env,
-            tensorboard_log=log_dir,
-            device="cuda" if args.use_gpu and torch.cuda.is_available() else "cpu"
-        )
-        print("Model loaded successfully")
-    else:
-        print("\nCreating new model")
-        model = PPO(
-            "MlpPolicy",
-            env,
-            learning_rate=0.0003,
-            n_steps=1024,
-            batch_size=32,
-            n_epochs=10,
-            gamma=0.99,
-            gae_lambda=0.95,
-            clip_range=0.2,
-            ent_coef=0.02,
-            vf_coef=0.5,
-            max_grad_norm=0.5,
-            policy_kwargs=dict(
-                net_arch=[dict(pi=[256, 256], vf=[256, 256])]
-            ),
-            verbose=1,
-            tensorboard_log=log_dir,
-            device="cuda" if args.use_gpu and torch.cuda.is_available() else "cpu"
-        )
-    
-    # Train the agent
-    total_timesteps = args.timesteps
-    if args.test_mode:
-        total_timesteps = 10000
-    elif args.quick_test:
-        total_timesteps = 1000
-    
-    # Add callback for monitoring with debug level
-    callback = IterationCallback(debug_level=args.debug_level, experiment_tracker=tracker)
-    
-    model.learn(
-        total_timesteps=total_timesteps,
-        progress_bar=True,
-        callback=callback
+    # Create model
+    model = PPO(
+        policy=args.policy,
+        env=env,
+        learning_rate=args.learning_rate,
+        n_steps=args.n_steps,
+        batch_size=args.batch_size,
+        n_epochs=args.n_epochs,
+        gamma=args.gamma,
+        gae_lambda=args.gae_lambda,
+        clip_range=args.clip_range,
+        clip_range_vf=args.clip_range_vf,
+        ent_coef=args.ent_coef,
+        vf_coef=args.vf_coef,
+        max_grad_norm=args.max_grad_norm,
+        use_sde=args.use_sde,
+        sde_sample_freq=args.sde_sample_freq,
+        target_kl=args.target_kl,
+        tensorboard_log=args.tensorboard_log,
+        verbose=args.verbose,
+        seed=args.seed,
+        device=args.device,
+        _init_setup_model=args._init_setup_model
     )
     
-    # Evaluate the trained agent
-    print("\nEvaluating trained agent...")
-    eval_results = evaluate_model(model, env)
+    # Create evaluation environment
+    eval_env = DummyVecEnv([make_env(
+        max_board_size=curriculum_stages[current_stage]['size'],
+        max_mines=curriculum_stages[current_stage]['mines']
+    )])
     
-    # Save evaluation results
-    tracker.add_validation_metric("win_rate", eval_results["win_rate"])
-    tracker.add_validation_metric("avg_reward", eval_results["avg_reward"], 
-                                eval_results["reward_ci"])
-    tracker.add_validation_metric("avg_length", eval_results["avg_length"],
-                                eval_results["length_ci"])
+    # Create evaluation callback
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path="./best_model",
+        log_path="./logs/",
+        eval_freq=args.eval_freq,
+        n_eval_episodes=args.n_eval_episodes,
+        deterministic=True,
+        render=False
+    )
     
-    # Print evaluation results
-    print("\nEvaluation Results:")
-    print(f"Win Rate: {eval_results['win_rate']:.1f}%")
-    print(f"Average Reward: {eval_results['avg_reward']:.2f}")
-    print(f"95% CI for Reward: [{eval_results['reward_ci'][0]:.2f}, {eval_results['reward_ci'][1]:.2f}]")
-    print(f"Average Length: {eval_results['avg_length']:.1f}")
-    print(f"95% CI for Length: [{eval_results['length_ci'][0]:.1f}, {eval_results['length_ci'][1]:.1f}]")
+    # Create iteration callback
+    iteration_callback = IterationCallback(
+        verbose=args.verbose,
+        debug_level=2,
+        experiment_tracker=experiment_tracker
+    )
     
-    # Save the trained model
-    model_path = os.path.join(tracker.current_run, "model.zip")
-    model.save(model_path)
-    print(f"\nModel saved to: {model_path}")
+    # Start training
+    total_timesteps = args.total_timesteps
+    timesteps_per_stage = total_timesteps // len(curriculum_stages)
+    
+    print("\n=== Minesweeper Training Curriculum ===")
+    print("Expected progression through difficulty levels:")
+    for i, stage in enumerate(curriculum_stages):
+        print(f"\nStage {i + 1}: {stage['name']}")
+        print(f"Board: {stage['size'] if isinstance(stage['size'], int) else f'{stage['size'][0]}x{stage['size'][1]}'}")
+        print(f"Mines: {stage['mines']}")
+        print(f"Target Win Rate: {stage['win_rate_threshold']*100:.0f}%")
+        print(f"Description: {stage['description']}")
+    print("\n=====================================")
+    
+    for stage in range(len(curriculum_stages)):
+        current_stage_info = curriculum_stages[stage]
+        print(f"\n{'='*50}")
+        print(f"Starting Stage {stage + 1}/{len(curriculum_stages)}: {current_stage_info['name']}")
+        print(f"Board: {current_stage_info['size'] if isinstance(current_stage_info['size'], int) else f'{current_stage_info['size'][0]}x{current_stage_info['size'][1]}'}")
+        print(f"Mines: {current_stage_info['mines']}")
+        print(f"Target Win Rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+        print(f"Description: {current_stage_info['description']}")
+        print(f"{'='*50}\n")
+        
+        # Update environment for current stage
+        env = DummyVecEnv([make_env(
+            max_board_size=current_stage_info['size'],
+            max_mines=current_stage_info['mines']
+        )])
+        model.set_env(env)
+        
+        # Train for this stage
+        model.learn(
+            total_timesteps=timesteps_per_stage,
+            callback=[eval_callback, iteration_callback],
+            progress_bar=True
+        )
+        
+        # Evaluate current stage
+        mean_reward, std_reward = evaluate_model(model, env, n_episodes=args.n_eval_episodes)
+        win_rate = mean_reward / current_stage_info['win_rate_threshold']
+        
+        print(f"\nStage {stage + 1} Results:")
+        print(f"Mean reward: {mean_reward:.2f} +/- {std_reward:.2f}")
+        print(f"Win rate: {win_rate:.2%}")
+        print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+        
+        # Save stage results
+        experiment_tracker.add_validation_metric(
+            f"stage_{stage + 1}_mean_reward",
+            mean_reward,
+            confidence_interval=std_reward
+        )
+        experiment_tracker.add_validation_metric(
+            f"stage_{stage + 1}_win_rate",
+            win_rate
+        )
+        
+        # Save model for this stage
+        model.save(f"models/stage_{stage + 1}")
+        
+        # Add stage completion to metrics
+        experiment_tracker.metrics["stage_completion"] = {
+            f"stage_{stage + 1}": {
+                "name": current_stage_info['name'],
+                "win_rate": win_rate,
+                "mean_reward": mean_reward,
+                "std_reward": std_reward,
+                "completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+        }
+        experiment_tracker._save_metrics()
+    
+    # Save final model
+    model.save("models/final_model")
+    print("\nTraining completed!")
+    print("\nFinal Stage Progression:")
+    for stage in range(len(curriculum_stages)):
+        stage_info = experiment_tracker.metrics["stage_completion"][f"stage_{stage + 1}"]
+        print(f"\nStage {stage + 1}: {stage_info['name']}")
+        print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
+        print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['std_reward']:.2f}")
+        print(f"Completed at: {stage_info['completed_at']}")
 
 def evaluate_model(model, env, n_episodes=100):
     """Evaluate model with proper statistical analysis"""

@@ -44,7 +44,7 @@ class MinesweeperVisualizer:
         pygame.display.set_caption("Minesweeper RL Agent")
         
         # Initialize environment and model
-        self.env = DummyVecEnv([lambda: MinesweeperEnv(board_size=board_size, num_mines=num_mines)])
+        self.env = DummyVecEnv([lambda: MinesweeperEnv(max_board_size=board_size, max_mines=num_mines)])
         self.model = PPO("MlpPolicy", self.env, verbose=0)
         
         # Game state

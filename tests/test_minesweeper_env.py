@@ -5,7 +5,10 @@ See TEST_CHECKLIST.md for comprehensive test coverage plan.
 
 import pytest
 import numpy as np
-from src.core.minesweeper_env import MinesweeperEnv, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN, REWARD_HIT_MINE
+from src.core.minesweeper_env import (
+    MinesweeperEnv, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN, REWARD_HIT_MINE,
+    CELL_UNREVEALED, CELL_MINE, CELL_FLAGGED, CELL_MINE_HIT
+)
 
 class TestMinesweeperEnv:
     """Test cases for the Minesweeper environment."""
@@ -266,4 +269,262 @@ class TestMinesweeperEnv:
                             assert reward == REWARD_WIN
                             break
                 if terminated:
-                    break 
+                    break
+
+    def test_reveal_action(self):
+        """Test reveal action behavior."""
+        self.env.reset()
+        
+        # Test first move behavior
+        action = 0  # First cell
+        state, reward, terminated, truncated, info = self.env.step(action)
+        if terminated:
+            # If the first move is a mine, verify correct state and reward
+            assert state[0, 0] == CELL_MINE_HIT
+            assert reward < 0
+        else:
+            # If the first move is safe, verify correct state and reward
+            assert state[0, 0] != CELL_UNREVEALED
+            assert reward >= 0
+        
+        # Test non-first move mine reveal
+        # Find a mine that wasn't the first move
+        mine_found = False
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.mines[y, x] and (y != 0 or x != 0):  # Not the first cell
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    assert terminated
+                    assert state[y, x] == CELL_MINE_HIT
+                    assert reward < 0
+                    mine_found = True
+                    break
+            if mine_found:
+                break
+                
+        # If no mine was found, reset and try again
+        if not mine_found:
+            self.env.reset()
+            # Test first move behavior again
+            action = 0
+            state, reward, terminated, truncated, info = self.env.step(action)
+            if not terminated:  # If first move was safe
+                # Now find a mine
+                for y in range(self.env.current_board_height):
+                    for x in range(self.env.current_board_width):
+                        if self.env.mines[y, x]:
+                            action = y * self.env.current_board_width + x
+                            state, reward, terminated, truncated, info = self.env.step(action)
+                            assert terminated
+                            assert state[y, x] == CELL_MINE_HIT
+                            assert reward < 0
+                            mine_found = True
+                            break
+                    if mine_found:
+                        break
+
+    def test_flag_action(self):
+        """Test flag action behavior."""
+        self.env.reset()
+        
+        # Test flagging a mine
+        self.env.mines[1, 1] = True
+        action = 1 * self.env.current_board_width + 1 + self.env.current_board_width * self.env.current_board_height
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert self.env.flags[1, 1]
+        assert reward > 0
+        
+        # Test flagging a safe cell
+        action = 2 * self.env.current_board_width + 2 + self.env.current_board_width * self.env.current_board_height
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert self.env.flags[2, 2]
+        assert reward < 0
+
+    def test_unflag_action(self):
+        """Test unflag action behavior."""
+        self.env.reset()
+        
+        # First flag a cell
+        action = 1 * self.env.current_board_width + 1 + self.env.current_board_width * self.env.current_board_height
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert self.env.flags[1, 1]
+        
+        # Then unflag it
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not self.env.flags[1, 1]
+        assert reward < 0
+
+    def test_invalid_actions(self):
+        """Test invalid action handling."""
+        self.env.reset()
+        
+        # Test revealing a flagged cell
+        self.env.flags[1, 1] = True
+        action = 1 * self.env.current_board_width + 1
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert reward < 0
+        
+        # Test revealing an already revealed cell
+        self.env.state[2, 2] = 0
+        action = 2 * self.env.current_board_width + 2
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert reward < 0
+        
+        # Test out of bounds action
+        action = self.env.current_board_width * self.env.current_board_height * 2
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert not terminated
+        assert reward < 0
+
+    def test_board_boundary_actions(self):
+        """Test actions at board boundaries."""
+        self.env.reset()
+
+        # Test corner cells
+        corners = [(0, 0), (0, 3), (3, 0), (3, 3)]
+        for y, x in corners:
+            # Test reveal action
+            action = y * self.env.current_board_width + x
+            state, reward, terminated, truncated, info = self.env.step(action)
+            
+            if terminated:
+                # If we hit a mine, verify correct state and reward
+                assert state[y, x] == CELL_MINE_HIT
+                assert reward < 0
+            else:
+                # If safe, verify correct state and reward
+                assert state[y, x] != CELL_UNREVEALED
+                assert reward >= 0  # Safe reveal should give non-negative reward
+                
+                # Try to reveal the same cell again - should be invalid
+                state, reward, terminated, truncated, info = self.env.step(action)
+                assert reward == self.env.invalid_action_penalty
+                assert not terminated
+                
+                # Try to flag the revealed cell - should be invalid
+                flag_action = y * self.env.current_board_width + x + self.env.current_board_width * self.env.current_board_height
+                state, reward, terminated, truncated, info = self.env.step(flag_action)
+                assert reward == self.env.invalid_action_penalty
+                assert not terminated
+                
+                # Reset for next corner test
+                self.env.reset()
+
+    def test_game_over_condition(self):
+        """Test game over condition."""
+        self.env.reset()
+        
+        # Hit a mine
+        self.env.mines[1, 1] = True
+        self.env.board[1, 1] = CELL_MINE
+        self.env.is_first_move = False  # Ensure it's not the first move
+        action = 1 * self.env.current_board_width + 1
+        state, reward, terminated, truncated, info = self.env.step(action)
+        assert terminated
+        assert not info['won']
+        assert reward == REWARD_HIT_MINE
+
+    def test_win_condition(self):
+        """Test win condition."""
+        self.env.reset()
+        
+        # First, reveal all safe cells
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if not self.env.mines[y, x]:
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:  # If we hit a mine, reset and try again
+                        self.env.reset()
+                        break
+        
+        # Then flag all mines
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.mines[y, x]:
+                    action = y * self.env.current_board_width + x + self.env.current_board_width * self.env.current_board_height
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:  # If we won, verify win condition
+                        assert info['won']
+                        assert reward == self.env.win_reward
+                        return
+                        
+        # If we get here, we should have won
+        assert terminated
+        assert info['won']
+        assert reward == self.env.win_reward
+
+    def test_state_transitions(self):
+        """Test state transitions during gameplay."""
+        self.env.reset()
+
+        # Find an unrevealed cell
+        unrevealed_found = False
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test reveal action
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if not terminated:  # If it was safe
+                        assert state[y, x] != CELL_UNREVEALED
+                        unrevealed_found = True
+                        break
+            if unrevealed_found:
+                break
+
+        # Find another unrevealed cell for flagging
+        if not unrevealed_found:
+            self.env.reset()
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test flag action
+                    action = y * self.env.current_board_width + x + self.env.current_board_width * self.env.current_board_height
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    assert not terminated
+                    assert self.env.flags[y, x]
+                    assert state[y, x] == CELL_UNREVEALED
+                    return
+
+    def test_state_representation(self):
+        """Test state representation consistency."""
+        self.env.reset()
+
+        # Verify initial state
+        assert np.all(self.env.state == CELL_UNREVEALED)
+        assert np.all(self.env.flags == False)
+
+        # Find an unrevealed cell
+        for y in range(self.env.current_board_height):
+            for x in range(self.env.current_board_width):
+                if self.env.state[y, x] == CELL_UNREVEALED:
+                    # Test reveal action
+                    action = y * self.env.current_board_width + x
+                    state, reward, terminated, truncated, info = self.env.step(action)
+                    if terminated:
+                        # If we hit a mine, verify correct state and reward
+                        assert state[y, x] == CELL_MINE_HIT
+                        assert reward < 0
+                    else:
+                        # If safe, verify correct state and reward
+                        assert state[y, x] != CELL_UNREVEALED
+                        assert state[y, x] >= 0 and state[y, x] <= 8
+                        assert reward >= 0
+
+                    # Find another unrevealed cell for flagging
+                    for y2 in range(self.env.current_board_height):
+                        for x2 in range(self.env.current_board_width):
+                            if self.env.state[y2, x2] == CELL_UNREVEALED:
+                                # Test flag action
+                                action = y2 * self.env.current_board_width + x2 + self.env.current_board_width * self.env.current_board_height
+                                state, reward, terminated, truncated, info = self.env.step(action)
+                                assert not terminated
+                                assert self.env.flags[y2, x2]
+                                assert state[y2, x2] == CELL_UNREVEALED
+                                return 
