@@ -1,6 +1,56 @@
-# Minesweeper Environment Test Checklist
+# Minesweeper Test Checklist (Updated)
 
-## Priority 1: Core Functionality (Already Implemented)
+## Priority 1: Core State Management & Mechanics
+- [ ] Safe cell reveal: `assert not terminated` fails
+- [ ] Safe cell cascade: Not explicitly listed, but likely related to state update issues
+- [ ] Safe cell adjacent mines: `assert np.int64(9) == 0`
+- [ ] Mine placement: `assert mine_count == self.env.current_mines`
+- [ ] Board initialization: `assert np.all(env.board == CELL_UNREVEALED)`
+- [ ] Flag placement on mine/safe cell: `assert state[1, 1] == CELL_FLAGGED`
+- [ ] Flag removal: `assert state[1, 1] == CELL_UNREVEALED`
+- [ ] Flag count in info: `KeyError: 'flags_remaining'`
+- [ ] Flag on revealed cell: `assert not terminated`
+- [ ] Reveal flagged cell: `assert not terminated`
+- [ ] Reveal already revealed cell: `assert not terminated`
+- [ ] State transitions: `assert state[y, x] == CELL_UNREVEALED`
+- [ ] State representation: `assert state[y2, x2] == CELL_UNREVEALED`
+
+## Priority 2: Game Logic & Win/Loss
+- [ ] Mine hit termination: `assert terminated`
+- [ ] Mine hit state update: `assert state[1, 1] == CELL_MINE_HIT`
+- [ ] Mine hit reward breakdown: `assert terminated`
+- [ ] First move mine hit reset: `assert reward == 0`
+- [ ] First move behavior: `assert reward == 0`
+- [ ] Win condition: `assert reward > 0`
+- [ ] Game over condition: `KeyError: 'won'`
+- [ ] Win condition (rectangular): `KeyError: 'won'`
+- [ ] Curriculum progression: `assert (3 > 3 or 3 > 3 or 1 > 1)`
+- [ ] Difficulty levels: `assert 96 == 99`
+- [ ] Rectangular board actions: `assert not terminated`
+- [ ] Board boundary actions: `assert not terminated`
+
+## Priority 3: Initialization & Parameter Validation
+- [ ] Invalid board size: Regex mismatch (`'Board size must be positive'` vs `'Board dimensions must be positive'`)
+- [ ] Invalid mine count: Regex mismatch (`'Mine count cannot exceed board size squared'` vs `'Mine count cannot exceed board area'`)
+- [ ] Invalid initial parameters: Regex mismatch (`'Initial board size cannot exceed max board size'` vs `'Mine count cannot exceed board area'`)
+- [ ] Invalid reward parameters: Did not raise ValueError
+
+## Priority 4: Action Space & Masking
+- [ ] Action space boundaries: `assert np.int64(32) != np.int64(32)`
+- [ ] Action space mapping: Not explicitly listed, but related to above
+- [ ] Invalid action handling: Did not raise ValueError/IndexError
+- [ ] Reveal after game over: `assert 'won' in info`
+- [ ] Flag already flagged cell: `assert 'won' in {}`
+
+## Priority 5: Regression (Previously Passing, Now Failing)
+- [ ] None detected in this run
+
+## Priority 6: Cleared Issues (Now Passing)
+- [x] Mine placement method called in reset
+- [x] Board and state arrays initialized with CELL_UNREVEALED
+- [x] Action space and observation space updated on reset
+
+## Priority 7: Core Functionality (Already Implemented)
 ### Environment Initialization
 - [x] Test with default parameters
 - [x] Test with custom parameters
@@ -16,7 +66,7 @@
 - [x] Test adjacent mine counting
 - [x] Test state updates
 
-## Priority 2: Game Rules and Actions
+## Priority 8: Game Rules and Actions
 ### Action Tests
 - [ ] Test reveal action
 - [ ] Test flag action
@@ -32,7 +82,7 @@
 - [ ] Test state transitions
 - [ ] Test state representation
 
-## Priority 3: Difficulty Levels
+## Priority 9: Difficulty Levels
 ### Board Size Tests
 - [ ] Test Easy (9x9, 10 mines)
 - [ ] Test Normal (16x16, 40 mines)
@@ -47,7 +97,7 @@
 - [ ] Test board layouts
 - [ ] Test mine placement
 
-## Priority 4: Reward System
+## Priority 10: Reward System
 ### Reward Tests
 - [ ] Test first move reward
 - [ ] Test reveal reward
@@ -57,7 +107,7 @@
 - [ ] Test loss penalty
 - [ ] Test reward scaling with board size
 
-## Priority 5: Curriculum Learning
+## Priority 11: Curriculum Learning
 ### Progression Tests
 - [ ] Test progression through difficulty levels
 - [ ] Test win rate thresholds
@@ -66,7 +116,7 @@
 - [ ] Test stage transitions
 - [ ] Test performance metrics
 
-## Priority 6: Edge Cases
+## Priority 12: Edge Cases
 ### Boundary Tests
 - [ ] Test minimum board size
 - [ ] Test maximum board size
@@ -75,7 +125,7 @@
 - [ ] Test invalid configurations
 - [ ] Test boundary conditions
 
-## Priority 7: Performance
+## Priority 13: Performance
 ### Performance Tests
 - [ ] Test large board performance
 - [ ] Test many mines performance
@@ -84,7 +134,7 @@
 - [ ] Test memory usage
 - [ ] Test CPU usage
 
-## Priority 8: Integration
+## Priority 14: Integration
 ### Integration Tests
 - [ ] Test with different agents
 - [ ] Test with different learning algorithms
@@ -93,7 +143,7 @@
 - [ ] Test with different action spaces
 - [ ] Test with different training configurations
 
-## Priority 9: Rendering
+## Priority 15: Rendering
 ### Rendering Tests
 - [ ] Test board visualization
 - [ ] Test state visualization
