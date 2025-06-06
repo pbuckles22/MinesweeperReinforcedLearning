@@ -152,6 +152,9 @@ class MinesweeperEnv(gym.Env):
             dtype=np.int8
         )
         
+        # Initialize info dictionary
+        self.info = {}
+        
         # Initialize the environment
         self.reset()
 
@@ -235,25 +238,22 @@ class MinesweeperEnv(gym.Env):
         self._update_adjacent_counts()
 
     def _update_adjacent_counts(self):
-        """Update the numbers on the board based on adjacent mines."""
-        for y in range(self.current_board_height):
-            for x in range(self.current_board_width):
-                if not self.mines[y, x]:
-                    self.board[y, x] = self._count_adjacent_mines(x, y)
-
-    def _count_adjacent_mines(self, x: int, y: int) -> int:
-        """Count the number of mines adjacent to a cell."""
-        count = 0
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                if dx == 0 and dy == 0:
-                    continue
-                nx, ny = x + dx, y + dy
-                if (0 <= nx < self.current_board_width and 
-                    0 <= ny < self.current_board_height and 
-                    self.mines[ny, nx]):  # Note: mines array uses (y,x) indexing
-                    count += 1
-        return count
+        """Update the board with the count of adjacent mines for each cell."""
+        # Reset the board to zeros
+        self.board.fill(0)
+        
+        # For each mine, increment the count of adjacent cells
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if self.mines[i, j]:
+                    # Increment count for all adjacent cells
+                    for di in [-1, 0, 1]:
+                        for dj in [-1, 0, 1]:
+                            ni, nj = i + di, j + dj
+                            if (0 <= ni < self.current_board_height and 
+                                0 <= nj < self.current_board_width and 
+                                not self.mines[ni, nj]):
+                                self.board[ni, nj] += 1
 
     def _reveal_cell(self, x: int, y: int) -> None:
         """Reveal a cell and its neighbors if it's empty."""
@@ -271,23 +271,45 @@ class MinesweeperEnv(gym.Env):
         
         print(f"State after reveal: {self.state[y, x]}")
 
+        # If this is an empty cell, reveal all neighbors
         if self.board[y, x] == 0:
             print(f"Empty cell detected at ({x}, {y}), starting cascade")
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    if dx == 0 and dy == 0:
-                        continue
-                    nx, ny = x + dx, y + dy
-                    if (0 <= nx < self.current_board_width and 
-                        0 <= ny < self.current_board_height):
-                        print(f"Attempting to reveal neighbor at ({nx}, {ny})")
-                        self._reveal_cell(nx, ny)
+            # Use a stack for depth-first traversal
+            stack = [(x, y)]
+            visited = set()
+            
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in visited:
+                    continue
+                visited.add((cx, cy))
+                
+                # Reveal all neighbors
+                for dx in [-1, 0, 1]:
+                    for dy in [-1, 0, 1]:
+                        if dx == 0 and dy == 0:
+                            continue
+                        nx, ny = cx + dx, cy + dy
+                        if (0 <= nx < self.current_board_width and 
+                            0 <= ny < self.current_board_height and
+                            not self.revealed[ny, nx] and 
+                            not self.flags[ny, nx]):
+                            print(f"Attempting to reveal neighbor at ({nx}, {ny})")
+                            self.revealed[ny, nx] = True
+                            self.revealed_count += 1
+                            self.state[ny, nx] = self.board[ny, nx]
+                            # If neighbor is also empty, add to stack
+                            if self.board[ny, nx] == 0:
+                                stack.append((nx, ny))
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
         Take a step in the environment.
         action: integer representing the action to take
         """
+        # Reset info at the start of each step
+        self.info = {}
+        
         # Convert action to (x, y, action_type)
         action_type = action // (self.current_board_width * self.current_board_height)
         pos = action % (self.current_board_width * self.current_board_height)
@@ -323,10 +345,11 @@ class MinesweeperEnv(gym.Env):
 
             self._reveal_cell(x, y)
             
+            # Check for win after reveal
             if self._check_win():
                 self.won = True
                 self.terminated = True
-                return self.state, REWARD_WIN, True, False, {"message": "Game won!"}
+                return self.state, REWARD_WIN, True, False, {"won": True}
             
             return self.state, REWARD_SAFE_REVEAL, False, False, {}
 
@@ -338,6 +361,11 @@ class MinesweeperEnv(gym.Env):
                 self.flags[y, x] = False
                 self.flags_remaining += 1
                 self.state[y, x] = CELL_UNREVEALED
+                # Check for win after unflag
+                if self._check_win():
+                    self.won = True
+                    self.terminated = True
+                    return self.state, REWARD_WIN, True, False, {"won": True}
                 return self.state, REWARD_UNFLAG, False, False, {}
             
             if self.flags_remaining <= 0:
@@ -347,13 +375,30 @@ class MinesweeperEnv(gym.Env):
             self.flags_remaining -= 1
             self.state[y, x] = CELL_FLAGGED
             reward = REWARD_FLAG_MINE if self.mines[y, x] else REWARD_FLAG_SAFE
+            # Check for win after flag
+            if self._check_win():
+                self.won = True
+                self.terminated = True
+                return self.state, REWARD_WIN, True, False, {"won": True}
             return self.state, reward, False, False, {}
 
         return self.state, REWARD_INVALID_ACTION, False, False, {"error": "Invalid action type"}
 
     def _check_win(self) -> bool:
-        """Check if the game is won."""
-        return np.all((self.revealed | self.mines) & ~(self.revealed & self.mines))
+        """Check if the game is won.
+        Win condition: All non-mine cells must be revealed.
+        Flag placement is not required for winning."""
+        # All non-mine cells must be revealed
+        all_safe_cells_revealed = np.all(
+            (self.state == CELL_UNREVEALED) == self.mines
+        )
+        
+        if all_safe_cells_revealed:
+            self.terminated = True
+            self.reward = REWARD_WIN
+            self.info['won'] = True
+        
+        return all_safe_cells_revealed
 
     def render(self):
         """Render the environment."""
