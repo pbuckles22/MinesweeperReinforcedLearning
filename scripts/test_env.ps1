@@ -16,9 +16,9 @@ if (Test-Path "requirements.txt") {
     exit 1
 }
 
-# Run environment tests
+# Run tests
 Write-Host "Running environment tests..."
-python ../tests/test_environment.py
+python -m pytest tests/integration/test_environment.py -v
 
 # Exit with the same code as the test script
 exit $LASTEXITCODE 

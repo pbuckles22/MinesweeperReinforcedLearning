@@ -53,6 +53,10 @@ New-Item -ItemType Directory -Force -Path "logs" | Out-Null
 Write-Host "Running environment tests..."
 python tests/test_environment.py
 
+# Run tests
+Write-Host "Running tests..."
+python -m pytest tests/unit/core tests/unit/agent tests/integration tests/functional tests/scripts -v
+
 # Run training script
 Write-Host "Starting training..."
 python src/core/train_agent.py `
