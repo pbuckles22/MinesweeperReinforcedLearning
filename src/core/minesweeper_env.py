@@ -17,14 +17,25 @@ from .constants import (
     REWARD_FIRST_MOVE_HIT_MINE,
     CELL_UNREVEALED,
     CELL_MINE,
-    CELL_FLAGGED
+    CELL_FLAGGED,
+    CELL_MINE_HIT
 )
+
+# Difficulty level constants
+DIFFICULTY_LEVELS = {
+    'easy': {'size': 9, 'mines': 10},
+    'normal': {'size': 16, 'mines': 40},
+    'hard': {'size': (16, 30), 'mines': 99},
+    'expert': {'size': (18, 24), 'mines': 115},
+    'chaotic': {'size': (20, 35), 'mines': 130}
+}
 
 class MinesweeperEnv(gym.Env):
     """
     A Minesweeper environment for reinforcement learning with flagging, realistic win condition, and fixed observation/action space for curriculum learning.
+    Supports multiple difficulty levels from easy to chaotic.
     """
-    def __init__(self, max_board_size=10, max_mines=10, render_mode=None,
+    def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
                  early_learning_mode=False, early_learning_threshold=200,
                  early_learning_corner_safe=True, early_learning_edge_safe=True,
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
@@ -34,30 +45,61 @@ class MinesweeperEnv(gym.Env):
         """Initialize the Minesweeper environment."""
         super().__init__()
         
+        # Initialize progress tracking variables
+        self.last_progress_update = time.time()
+        self.progress_interval = 1.0  # Update every second
+        self.win_count = 0
+        self.total_games = 0
+        self.recent_rewards = deque(maxlen=100)
+        self.recent_episode_lengths = deque(maxlen=100)
+        self.last_win_rate = 0
+        self.last_avg_reward = 0
+        self.last_avg_length = 0
+        self.games_at_current_size = 0
+        
+        # Initialize training health variables
+        self.min_win_rate = 0.1  # Minimum expected win rate
+        self.consecutive_mine_hits = 0
+        self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
+        
+        # Handle tuple board sizes
+        if isinstance(max_board_size, tuple):
+            self.max_board_width, self.max_board_height = max_board_size
+            self.max_board_size = max(max_board_size)
+        else:
+            self.max_board_width = self.max_board_height = max_board_size
+            self.max_board_size = max_board_size
+            
         # Validate board size
-        if max_board_size <= 0:
-            raise ValueError("Board size must be positive")
-        if max_board_size > 100:
-            raise ValueError("Board size too large")
+        if self.max_board_width <= 0 or self.max_board_height <= 0:
+            raise ValueError("Board dimensions must be positive")
+        if self.max_board_width > 100 or self.max_board_height > 100:
+            raise ValueError("Board dimensions too large")
             
         # Validate mine count
         if max_mines <= 0:
             raise ValueError("Mine count must be positive")
-        if max_mines > max_board_size * max_board_size:
-            raise ValueError("Mine count cannot exceed board size squared")
+        if max_mines > self.max_board_width * self.max_board_height:
+            raise ValueError("Mine count cannot exceed board area")
             
         # Validate mine spacing
         if mine_spacing < 0:
             raise ValueError("Mine spacing must be non-negative")
-        if mine_spacing >= max_board_size:
+        if mine_spacing >= self.max_board_size:
             raise ValueError("Mine spacing too large for board size")
             
         # Validate initial parameters
-        if initial_board_size > max_board_size:
+        if isinstance(initial_board_size, tuple):
+            self.initial_board_width, self.initial_board_height = initial_board_size
+        else:
+            self.initial_board_width = self.initial_board_height = initial_board_size
+            
+        if self.initial_board_width > self.max_board_width or self.initial_board_height > self.max_board_height:
             raise ValueError("Initial board size cannot exceed max board size")
+            
         if initial_mines > max_mines:
             raise ValueError("Initial mine count cannot exceed max mines")
-        if initial_mines > initial_board_size * initial_board_size:
+        if initial_mines > self.initial_board_width * self.initial_board_height:
             raise ValueError("Initial mine count cannot exceed initial board size squared")
             
         # Validate reward parameters
@@ -69,7 +111,8 @@ class MinesweeperEnv(gym.Env):
             raise ValueError("Unflag penalty must be negative")
         
         # Store parameters
-        self.max_board_size = max_board_size
+        self.max_board_width = self.max_board_width
+        self.max_board_height = self.max_board_height
         self.max_mines = max_mines
         self.render_mode = render_mode
         self.early_learning_mode = early_learning_mode
@@ -77,7 +120,13 @@ class MinesweeperEnv(gym.Env):
         self.early_learning_corner_safe = early_learning_corner_safe
         self.early_learning_edge_safe = early_learning_edge_safe
         self.mine_spacing = mine_spacing
-        self.initial_board_size = initial_board_size
+        
+        # Handle initial board size
+        if isinstance(initial_board_size, tuple):
+            self.initial_board_width, self.initial_board_height = initial_board_size
+        else:
+            self.initial_board_width = self.initial_board_height = initial_board_size
+            
         self.initial_mines = initial_mines
         self.invalid_action_penalty = invalid_action_penalty
         self.mine_penalty = mine_penalty
@@ -88,7 +137,8 @@ class MinesweeperEnv(gym.Env):
         self.win_reward = win_reward
         
         # Initialize game state
-        self.current_board_size = initial_board_size
+        self.current_board_width = self.initial_board_width
+        self.current_board_height = self.initial_board_height
         self.current_mines = initial_mines
         self.state = None
         self.board = None
@@ -96,8 +146,6 @@ class MinesweeperEnv(gym.Env):
         self.flags = None
         self.revealed_count = 0
         self.won = False
-        self.total_games = 0
-        self.games_at_current_size = 0
         self.terminated = False  # Track if the game is over
         self.is_first_move = True  # Track if this is the first move
         
@@ -111,11 +159,12 @@ class MinesweeperEnv(gym.Env):
             self.logger.addHandler(handler)
         
         # Define action and observation spaces
-        self.action_space = spaces.Discrete(self.current_board_size * self.current_board_size * 2)
+        # Action space: [0, width*height-1] for reveal, [width*height, 2*width*height-1] for flag
+        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height * 2)
         self.observation_space = spaces.Box(
             low=-2,
             high=8,
-            shape=(self.current_board_size, self.current_board_size),
+            shape=(self.current_board_height, self.current_board_width),
             dtype=np.int8
         )
         
@@ -126,7 +175,8 @@ class MinesweeperEnv(gym.Env):
         if self.render_mode == "human":
             pygame.init()
             self.cell_size = 40
-            self.screen = pygame.display.set_mode((self.current_board_size * self.cell_size, self.current_board_size * self.cell_size))
+            self.screen = pygame.display.set_mode((self.current_board_width * self.cell_size, 
+                                                 self.current_board_height * self.cell_size))
             pygame.display.set_caption("Minesweeper")
             self.clock = pygame.time.Clock()
 
@@ -137,26 +187,37 @@ class MinesweeperEnv(gym.Env):
         self.won = False
         self.terminated = False  # Reset game over state
         self.is_first_move = True  # Reset first move flag
-        self.state = np.full((self.current_board_size, self.current_board_size), CELL_UNREVEALED, dtype=int)
-        self.board = np.zeros((self.current_board_size, self.current_board_size), dtype=int)
-        self.mines = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
-        self.flags = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
+        self.state = np.full((self.current_board_height, self.current_board_width), CELL_UNREVEALED, dtype=int)
+        self.board = np.zeros((self.current_board_height, self.current_board_width), dtype=int)
+        self.mines = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
+        self.flags = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         self._place_mines()
         self._update_adjacent_counts()
         # Ensure state is all -1 after all operations
-        self.state = np.full((self.current_board_size, self.current_board_size), CELL_UNREVEALED, dtype=int)
+        self.state = np.full((self.current_board_height, self.current_board_width), CELL_UNREVEALED, dtype=int)
+        
+        # Update action space to match current board size
+        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height * 2)
+        # Update observation space to match current board size
+        self.observation_space = spaces.Box(
+            low=-2,
+            high=8,
+            shape=(self.current_board_height, self.current_board_width),
+            dtype=np.int8
+        )
+        
         return self.state, {}
 
     def _place_mines(self):
         """Place mines on the board with minimum spacing."""
-        self.mines = np.zeros((self.current_board_size, self.current_board_size), dtype=bool)
+        self.mines = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         mines_placed = 0
         attempts = 0
-        max_attempts = self.current_board_size * self.current_board_size * 10
+        max_attempts = self.current_board_width * self.current_board_height * 10
 
         while mines_placed < self.current_mines and attempts < max_attempts:
-            row = np.random.randint(0, self.current_board_size)
-            col = np.random.randint(0, self.current_board_size)
+            row = np.random.randint(0, self.current_board_height)
+            col = np.random.randint(0, self.current_board_width)
 
             # Check if position is valid (not already a mine and respects spacing)
             if not self.mines[row, col]:
@@ -164,8 +225,8 @@ class MinesweeperEnv(gym.Env):
                 for dr in range(-self.mine_spacing, self.mine_spacing + 1):
                     for dc in range(-self.mine_spacing, self.mine_spacing + 1):
                         r, c = row + dr, col + dc
-                        if (0 <= r < self.current_board_size and 
-                            0 <= c < self.current_board_size and 
+                        if (0 <= r < self.current_board_height and 
+                            0 <= c < self.current_board_width and 
                             self.mines[r, c]):
                             valid_position = False
                             break
@@ -180,7 +241,7 @@ class MinesweeperEnv(gym.Env):
             attempts += 1
 
         if mines_placed < self.current_mines:
-            print(f"Warning: Could not place {self.current_mines} mines with spacing {self.mine_spacing} on a {self.current_board_size}x{self.current_board_size} board.")
+            print(f"Warning: Could not place {self.current_mines} mines with spacing {self.mine_spacing} on a {self.current_board_width}x{self.current_board_height} board.")
             print(f"Placed {mines_placed} mines instead.")
             self.current_mines = mines_placed
 
@@ -188,10 +249,8 @@ class MinesweeperEnv(gym.Env):
 
     def _update_adjacent_counts(self):
         """Update the adjacent mine counts for each cell."""
-        # Debug print: Log adjacent counts update
-        print("Updating adjacent mine counts...")
-        for y in range(self.current_board_size):
-            for x in range(self.current_board_size):
+        for y in range(self.current_board_height):
+            for x in range(self.current_board_width):
                 if not self.mines[y, x]:
                     count = 0
                     for dy in [-1, 0, 1]:
@@ -199,100 +258,102 @@ class MinesweeperEnv(gym.Env):
                             if dy == 0 and dx == 0:
                                 continue
                             ny, nx = y + dy, x + dx
-                            if 0 <= ny < self.current_board_size and 0 <= nx < self.current_board_size and self.mines[ny, nx]:
+                            if (0 <= ny < self.current_board_height and 
+                                0 <= nx < self.current_board_width and 
+                                self.mines[ny, nx]):
                                 count += 1
                     self.board[y, x] = count
-                    print(f"Cell at (x, y): ({x}, {y}) has {count} adjacent mines")
 
-    def _reveal_cell(self, y: int, x: int, info: Dict) -> None:
-        """Reveal a cell and handle cascade effect."""
-        # Debug print: Log cell reveal
-        print(f"Revealing cell at (x, y): ({x}, {y})")
+    def _reveal_cell(self, x: int, y: int) -> None:
+        """Reveal a cell and handle cascading."""
         if self.state[y, x] != CELL_UNREVEALED or self.flags[y, x]:
-            print(f"Cell at (x, y): ({x}, {y}) already revealed or flagged, skipping")
             return
 
+        if self.mines[y, x]:
+            self.state[y, x] = CELL_MINE_HIT  # Use -2 for hit mine
+            self.game_over = True
+            self.won = False
+            return
+
+        # Reveal the cell
         self.state[y, x] = self.board[y, x]
-        info['revealed_cells'].add((y, x))
-        print(f"Cell at (x, y): ({x}, {y}) revealed with value {self.board[y, x]}")
+        self.revealed_count += 1  # Increment revealed count
+
+        # If it's a safe cell (0), cascade to adjacent cells
         if self.board[y, x] == 0:
-            info['adjacent_mines'].add((y, x))
             for dy in [-1, 0, 1]:
                 for dx in [-1, 0, 1]:
-                    if dy == 0 and dx == 0:
+                    if dx == 0 and dy == 0:
                         continue
-                    ny, nx = y + dy, x + dx
-                    if 0 <= ny < self.current_board_size and 0 <= nx < self.current_board_size:
-                        # Debug print: Log cascade attempt
-                        print(f"Attempting to cascade to cell at (x, y): ({nx}, {ny})")
-                        # Check if the cell is adjacent to a mine
-                        is_adjacent_to_mine = False
-                        for my in range(max(0, ny - 1), min(self.current_board_size, ny + 2)):
-                            for mx in range(max(0, nx - 1), min(self.current_board_size, nx + 2)):
-                                if self.mines[my, mx]:
-                                    is_adjacent_to_mine = True
-                                    break
-                            if is_adjacent_to_mine:
-                                break
-                        if not is_adjacent_to_mine:
-                            print(f"Cascading to cell at (x, y): ({nx}, {ny})")
-                            self._reveal_cell(ny, nx, info)
-                        else:
-                            print(f"Cell at (x, y): ({nx}, {ny}) adjacent to mine, revealing with count")
-                            self.state[ny, nx] = self.board[ny, nx]
-                            info['revealed_cells'].add((ny, nx))
-                            info['adjacent_mines'].add((ny, nx))
-        else:
-            info['adjacent_mines'].add((y, x))
+                    new_x, new_y = x + dx, y + dy
+                    if 0 <= new_x < self.current_board_width and 0 <= new_y < self.current_board_height:
+                        if self.state[new_y, new_x] == CELL_UNREVEALED and not self.flags[new_y, new_x]:
+                            self._reveal_cell(new_x, new_y)
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
-        """Take a step in the environment."""
-        # Debug print: Log action
-        print(f"Action: {action}, is_first_move: {self.is_first_move}")
-        # Convert action to coordinates
-        y, x = action // self.current_board_size, action % self.current_board_size
-        # Debug print: Log coordinates
-        print(f"Coordinates: (x, y): ({x}, {y})")
+        """Execute one time step within the environment."""
+        if self.terminated:
+            return self.state, 0, True, False, {"won": self.won}
+            
+        # Convert action to coordinates and type (reveal or flag)
+        is_flag_action = action >= self.current_board_width * self.current_board_height
+        if is_flag_action:
+            action = action - self.current_board_width * self.current_board_height
+            
+        y = action // self.current_board_width
+        x = action % self.current_board_width
+        
         # Check if the action is valid
-        if not (0 <= y < self.current_board_size and 0 <= x < self.current_board_size):
-            raise ValueError(f"Invalid action: {action}")
-        # Check if the cell is already revealed or flagged
-        if self.state[y, x] != CELL_UNREVEALED or self.flags[y, x]:
-            raise ValueError(f"Cell already revealed or flagged: {action}")
-        # Check if the cell is a mine
-        if self.mines[y, x]:
-            self.state[y, x] = CELL_MINE  # Mark mine
-            self.won = False
-            # First move hit mine gets 0 reward
-            if self.is_first_move:
-                self.is_first_move = False
-                return self.state, REWARD_FIRST_MOVE_HIT_MINE, True, False, {'reward_breakdown': {'first_move_hit_mine': REWARD_FIRST_MOVE_HIT_MINE}}
-            return self.state, REWARD_HIT_MINE, True, False, {'reward_breakdown': {'hit_mine': REWARD_HIT_MINE}}
-        # Reveal the cell
-        info = {'revealed_cells': set(), 'adjacent_mines': set(), 'reward_breakdown': {}}
-        self._reveal_cell(y, x, info)
-        # Debug print: Log state array after move
-        print("State array after move:")
-        print(self.state)
-        # Check if the game is won
-        if self._check_win():
-            self.won = True
-            return self.state, REWARD_WIN, True, False, {'reward_breakdown': {'win': REWARD_WIN}}
-        # First move safe reveal
-        if self.is_first_move:
-            self.is_first_move = False
-            return self.state, REWARD_FIRST_MOVE_SAFE, False, False, {'reward_breakdown': {'first_move_safe_reveal': REWARD_FIRST_MOVE_SAFE}}
-        return self.state, REWARD_SAFE_REVEAL, False, False, {'reward_breakdown': {'safe_reveal': REWARD_SAFE_REVEAL}}
+        if not (0 <= y < self.current_board_height and 0 <= x < self.current_board_width):
+            return self.state, self.invalid_action_penalty, False, False, {}
+            
+        # Handle flag actions
+        if is_flag_action:
+            reward = self._handle_flag_action(x, y)
+            # Check for win after flag action
+            if self._check_win():
+                reward = REWARD_WIN
+                self.terminated = True
+                self.won = True
+        else:
+            # Handle reveal actions
+            if self.flags[y, x]:
+                return self.state, self.unflag_penalty, False, False, {}
+                
+            if self.state[y, x] != CELL_UNREVEALED:
+                return self.state, self.invalid_action_penalty, False, False, {}
+                
+            if self.mines[y, x]:
+                self.state[y, x] = CELL_MINE_HIT
+                reward = REWARD_FIRST_MOVE_HIT_MINE if self.is_first_move else REWARD_HIT_MINE
+                self.terminated = True
+                self.won = False
+            else:
+                self._reveal_cell(x, y)
+                if self.is_first_move:
+                    reward = REWARD_FIRST_MOVE_SAFE
+                else:
+                    reward = self.safe_reveal_base
+                    
+                # Check for win
+                if self._check_win():
+                    reward = REWARD_WIN
+                    self.terminated = True
+                    self.won = True
+                    
+        self.is_first_move = False
+        
+        # Update progress display if in human render mode
+        if self.render_mode == "human":
+            self._update_progress_display()
+            
+        return self.state, reward, self.terminated, False, {"won": self.won}
 
     def _handle_flag_action(self, x, y):
         """Handle flag placement/removal action."""
         # Check if cell is already revealed
         if self.state[y, x] != CELL_UNREVEALED:
-            return self.state, self.invalid_action_penalty, False, False, {
-                'reward_breakdown': {'invalid_action': self.invalid_action_penalty},
-                'revealed_cells': set(),
-                'adjacent_mines': set()
-            }
+            return self.invalid_action_penalty
 
         # Toggle flag
         self.flags[y, x] = not self.flags[y, x]
@@ -300,58 +361,30 @@ class MinesweeperEnv(gym.Env):
         if self.flags[y, x]:  # Placing flag
             if self.mines[y, x]:
                 reward = self.flag_mine_reward
-                info = {
-                    'reward_breakdown': {'correct_flag': self.flag_mine_reward},
-                    'revealed_cells': set(),
-                    'adjacent_mines': set()
-                }
             else:
                 reward = self.flag_safe_penalty
-                info = {
-                    'reward_breakdown': {'incorrect_flag': self.flag_safe_penalty},
-                    'revealed_cells': set(),
-                    'adjacent_mines': set()
-                }
         else:  # Removing flag
             reward = self.unflag_penalty
-            info = {
-                'reward_breakdown': {'unflag': self.unflag_penalty},
-                'revealed_cells': set(),
-                'adjacent_mines': set()
-            }
 
-        # Check for win after flagging
-        if self._check_win():
-            reward += self.win_reward
-            info['reward_breakdown']['win'] = self.win_reward
-            self.won = True
-            self.total_games += 1
-            self.terminated = True
-            return self.state, reward, True, False, info
-
-        return self.state, reward, False, False, info
+        return reward
 
     def _check_win(self) -> bool:
         """Check if the game is won."""
-        print("\n=== Checking Win Condition ===")
-        print("Current state array:")
-        print(self.state)
-        print("\nMines array:")
-        print(self.mines)
+        # Count unrevealed safe cells and incorrectly flagged cells
+        unrevealed_safe_cells = 0
+        incorrect_flags = 0
         
-        unrevealed_safe_cells = []
-        for y in range(self.current_board_size):
-            for x in range(self.current_board_size):
-                if not self.mines[y, x] and self.state[y, x] == CELL_UNREVEALED:
-                    unrevealed_safe_cells.append((x, y))
-                    print(f"Found unrevealed safe cell at (x, y): ({x}, {y})")
+        for y in range(self.current_board_height):
+            for x in range(self.current_board_width):
+                if not self.mines[y, x]:  # Safe cell
+                    if self.state[y, x] == CELL_UNREVEALED:
+                        unrevealed_safe_cells += 1
+                else:  # Mine cell
+                    if not self.flags[y, x]:
+                        incorrect_flags += 1
         
-        if unrevealed_safe_cells:
-            print(f"\nGame not won: Found {len(unrevealed_safe_cells)} unrevealed safe cells")
-            return False
-        
-        print("\nGame won: All safe cells revealed")
-        return True
+        # Win if all safe cells are revealed and all mines are flagged
+        return unrevealed_safe_cells == 0 and incorrect_flags == 0
 
     def _update_progress_display(self):
         """Update the progress display with current training stats."""
@@ -378,7 +411,7 @@ class MinesweeperEnv(gym.Env):
                 self.logger.info("="*50)
                 
                 # Game Configuration
-                self.logger.info(f"Board: {self.current_board_size}x{self.current_board_size} | Mines: {self.current_mines}")
+                self.logger.info(f"Board: {self.current_board_width}x{self.current_board_height} | Mines: {self.current_mines}")
                 
                 # Performance Metrics
                 self.logger.info(f"Win Rate: {win_rate:.1%} | Avg Reward: {avg_reward:.1f} | Avg Length: {avg_length:.0f}")
@@ -419,21 +452,22 @@ class MinesweeperEnv(gym.Env):
         return len(warnings) == 0
         
     def render(self):
-        for x in range(self.current_board_size):
-            for y in range(self.current_board_size):
-                if self.flags[x, y] and self.state[x, y] == CELL_UNREVEALED:
+        """Render the current state of the environment."""
+        for y in range(self.current_board_height):
+            for x in range(self.current_board_width):
+                if self.flags[y, x] and self.state[y, x] == CELL_UNREVEALED:
                     print('⚑', end=' ')
-                elif self.state[x, y] == CELL_UNREVEALED:
+                elif self.state[y, x] == CELL_UNREVEALED:
                     print('□', end=' ')
-                elif self.state[x, y] == CELL_MINE:
+                elif self.state[y, x] == CELL_MINE:
                     print('💣', end=' ')
                 else:
-                    print(self.state[x, y], end=' ')
+                    print(self.state[y, x], end=' ')
             print()
 
 def main():
     # Create and test the environment
-    env = MinesweeperEnv(board_size=8, num_mines=12)
+    env = MinesweeperEnv(max_board_size=8, max_mines=12)
     state, _ = env.reset()
     
     print("Initial state:")
