@@ -52,6 +52,7 @@ def test_safe_cell_cascade(env):
     # Clear all mines first
     env.mines.fill(False)
     env.is_first_move = False  # Disable first move mine placement
+    env.first_move_done = True  # Prevent mine placement in step()
 
     # Place mine at (0,0)
     env.mines[0, 0] = True
