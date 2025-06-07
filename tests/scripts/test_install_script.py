@@ -21,13 +21,17 @@ def test_script_permissions(script_path):
 def test_script_syntax(script_path):
     """Test that the script has valid PowerShell syntax."""
     try:
-        # Use PowerShell to validate the script syntax
+        # Use PowerShell to check script syntax without executing it
         result = subprocess.run(
-            ["powershell", "-Command", f"Get-Content {script_path} | Out-String | Invoke-Expression"],
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", 
+             f"$ErrorActionPreference = 'Stop'; $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -Raw {script_path}), [ref]$null)"],
             capture_output=True,
-            text=True
+            text=True,
+            timeout=5  # Set a very short timeout since this should be quick
         )
-        assert result.returncode == 0
+        assert result.returncode == 0, f"Script syntax validation failed: {result.stderr}"
+    except subprocess.TimeoutExpired:
+        pytest.fail("Script syntax check timed out after 5 seconds")
     except subprocess.CalledProcessError as e:
         pytest.fail(f"Script syntax error: {e.stderr}")
 
