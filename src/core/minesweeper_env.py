@@ -366,8 +366,11 @@ class MinesweeperEnv(gym.Env):
         row = action // self.current_board_width
         col = action % self.current_board_width
 
+        # Check if this is a first move before any state changes
+        is_first_move = not self.first_move_done and not is_flag
+
         # Handle first move
-        if not self.first_move_done and not is_flag:  # Only place mines on first reveal
+        if is_first_move:  # Only place mines on first reveal
             self._place_mines(first_x=col, first_y=row)
             self._update_adjacent_counts()
             self.first_move_done = True
@@ -390,7 +393,7 @@ class MinesweeperEnv(gym.Env):
             if self.state[row, col] == CELL_UNREVEALED:
                 if self.mines[row, col]:
                     # Handle mine hit
-                    if not self.first_move_done:
+                    if is_first_move:
                         # Reset on first move mine hit
                         state, _ = self.reset()
                         return state, REWARD_FIRST_MOVE_HIT_MINE, False, False, {"won": False}
@@ -403,7 +406,7 @@ class MinesweeperEnv(gym.Env):
                 else:
                     # Handle safe cell reveal
                     self._reveal_cell(row, col)
-                    reward = REWARD_FIRST_MOVE_SAFE if not self.first_move_done else REWARD_SAFE_REVEAL
+                    reward = REWARD_FIRST_MOVE_SAFE if is_first_move else REWARD_SAFE_REVEAL
                     # Check win condition after revealing a cell
                     if self._check_win():
                         self.terminated = True
