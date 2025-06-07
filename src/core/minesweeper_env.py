@@ -348,16 +348,12 @@ class MinesweeperEnv(gym.Env):
         """Check if the game is won.
         Win condition: All non-mine cells must be revealed.
         Flag placement is not required for winning."""
-        # All non-mine cells must be revealed
-        return np.all((self.state == CELL_UNREVEALED) == self.mines)
-
-    def _check_win_condition(self) -> bool:
-        """Check if all non-mine cells have been revealed."""
-        for i in range(self.current_board_height):
-            for j in range(self.current_board_width):
-                if not self.mines[i, j] and not self.revealed[i, j]:
-                    return False
-        return True
+        # Game is won if all non-mine cells are revealed
+        # A cell is "done" if it's either:
+        # 1. Revealed (self.revealed)
+        # 2. A mine (self.mines)
+        # 3. Flagged (self.state == CELL_FLAGGED)
+        return np.all(self.revealed | self.mines | (self.state == CELL_FLAGGED))
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """Take a step in the environment."""
@@ -409,7 +405,7 @@ class MinesweeperEnv(gym.Env):
                     self._reveal_cell(row, col)
                     reward = REWARD_FIRST_MOVE_SAFE if not self.first_move_done else REWARD_SAFE_REVEAL
                     # Check win condition after revealing a cell
-                    if self._check_win_condition():
+                    if self._check_win():
                         self.terminated = True
                         reward = REWARD_WIN
             else:
