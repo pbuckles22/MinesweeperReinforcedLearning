@@ -245,4 +245,44 @@
 - Tests should be independent and repeatable
 - Tests should cover both success and failure cases
 - Tests should verify all edge cases
-- Tests should be efficient and not take too long to run 
+- Tests should be efficient and not take too long to run
+
+## Priority 21: Test Coverage Improvements
+### Core Environment Coverage
+- [ ] Increase coverage of minesweeper_env.py (currently 84%)
+  - [ ] Add tests for lines 73, 94, 97, 99 (initialization)
+  - [ ] Add tests for lines 163-168 (mine placement)
+  - [ ] Add tests for lines 261, 263 (state updates)
+  - [ ] Add tests for lines 329, 367 (game logic)
+  - [ ] Add tests for lines 402-428 (action handling)
+  - [ ] Add tests for lines 432-446 (reward calculation)
+  - [ ] Add tests for lines 449 (info dict updates)
+
+### Agent Coverage
+- [ ] Add tests for train_agent.py (currently 0%)
+  - [ ] Test agent initialization
+  - [ ] Test training loop
+  - [ ] Test action selection
+  - [ ] Test reward handling
+  - [ ] Test state transitions
+  - [ ] Test model updates
+
+### Integration Coverage
+- [ ] Add tests for vec_env.py edge cases
+- [ ] Add tests for environment interactions
+- [ ] Add tests for curriculum learning
+- [ ] Add tests for difficulty progression
+
+### Functional Coverage
+- [ ] Add tests for complete game scenarios
+- [ ] Add tests for win/loss conditions
+- [ ] Add tests for flag interactions
+- [ ] Add tests for mine placement
+- [ ] Add tests for board initialization
+
+### Performance Coverage
+- [ ] Add tests for large board performance
+- [ ] Add tests for many mines performance
+- [ ] Add tests for rapid actions
+- [ ] Add tests for memory usage
+- [ ] Add tests for CPU usage 

@@ -56,12 +56,14 @@ def test_safe_cell_cascade(env):
     # Place mine at (0,0)
     env.mines[0, 0] = True
     env._update_adjacent_counts()
+    env.mines_placed = True  # Prevent automatic mine placement in step()
     
     print("\nBoard state after mine placement:")
     print("Mines:")
     print(env.mines)
     print("Adjacent counts:")
     print(env.board)
+    print("Mines placed flag:", env.mines_placed)
     
     # Pick (3,3) as the cascade cell (should be 0)
     assert not env.mines[3, 3], "Cell (3,3) should not be a mine"
@@ -69,12 +71,15 @@ def test_safe_cell_cascade(env):
     
     # Reveal the safe cell at (3,3)
     action = 3 * env.current_board_width + 3
+    print(f"\nRevealing cell (3,3) with action {action}")
     state, reward, terminated, truncated, info = env.step(action)
     
     print("\nState after revealing (3,3):")
     print(state)
     print("\nMine locations:")
     print(env.mines)
+    print("\nRevealed cells:")
+    print(env.revealed)
     
     # Check that all non-mine cells are revealed
     unrevealed_cells = []

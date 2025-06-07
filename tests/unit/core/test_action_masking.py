@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
@@ -9,7 +10,10 @@ from src.core.constants import (
     REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
-    REWARD_HIT_MINE
+    REWARD_HIT_MINE,
+    REWARD_FLAG_PLACED,
+    REWARD_FLAG_REMOVED,
+    REWARD_INVALID_ACTION
 )
 
 @pytest.fixture
