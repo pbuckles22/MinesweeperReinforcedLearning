@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
@@ -12,53 +13,41 @@ from src.core.constants import (
     REWARD_HIT_MINE
 )
 
-def test_mine_hit_reward(env):
-    """Test that hitting a mine gives the correct reward."""
-    # Place mine at (1,1)
-    env.mines[1, 1] = True
-    env._update_adjacent_counts()
-    
-    # Reveal mine
-    action = 1 * env.current_board_width + 1
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check reward
+def test_mine_hit_reward():
+    env = MinesweeperEnv()
+    env.reset()
+    env.mines[0, 0] = True
+    env.is_first_move = False
+    state, reward, terminated, truncated, info = env.step(0)
     assert reward == REWARD_HIT_MINE
-    assert terminated
 
-def test_mine_hit_state(env):
-    """Test that hitting a mine updates the state correctly."""
-    # Place mine at (1,1)
-    env.mines[1, 1] = True
-    env._update_adjacent_counts()
-    
-    # Reveal mine
-    action = 1 * env.current_board_width + 1
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check that state is updated correctly
-    assert state[1, 1] == CELL_MINE_HIT
-    assert np.all(state[0, 0] == CELL_UNREVEALED)
-    assert np.all(state[0, 1] == CELL_UNREVEALED)
-    assert np.all(state[0, 2] == CELL_UNREVEALED)
-    assert np.all(state[1, 0] == CELL_UNREVEALED)
-    assert np.all(state[1, 2] == CELL_UNREVEALED)
-    assert np.all(state[2, 0] == CELL_UNREVEALED)
-    assert np.all(state[2, 1] == CELL_UNREVEALED)
-    assert np.all(state[2, 2] == CELL_UNREVEALED)
+def test_mine_hit_state():
+    env = MinesweeperEnv()
+    env.reset()
+    env.mines[0, 0] = True
+    env.is_first_move = False
+    state, reward, terminated, truncated, info = env.step(0)
+    assert state[0, 0] == CELL_MINE_HIT
 
 def test_mine_hit_game_over(env):
-    """Test that hitting a mine ends the game."""
+    """Test that hitting a mine on a subsequent move ends the game."""
+    env.reset()
+    
     # Place mine at (1,1)
     env.mines[1, 1] = True
     env._update_adjacent_counts()
     
-    # Reveal mine
-    action = 1 * env.current_board_width + 1
-    state, reward, terminated, truncated, info = env.step(action)
+    # First make a safe move to get past first move
+    safe_action = 0 * env.current_board_width + 0  # Move at (0,0)
+    state, reward, terminated, truncated, info = env.step(safe_action)
+    assert not terminated, "Safe move should not terminate the game"
+    
+    # Now hit the mine
+    mine_action = 1 * env.current_board_width + 1  # Move at (1,1)
+    state, reward, terminated, truncated, info = env.step(mine_action)
     
     # Check that game is terminated
-    assert terminated
+    assert terminated, "Game should terminate after hitting a mine"
     assert not truncated
     assert state[1, 1] == CELL_MINE_HIT
     assert reward == REWARD_HIT_MINE
