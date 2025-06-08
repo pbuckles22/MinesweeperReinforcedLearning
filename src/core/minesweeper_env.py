@@ -165,7 +165,7 @@ class MinesweeperEnv(gym.Env):
             pygame.display.set_caption("Minesweeper")
             self.clock = pygame.time.Clock()
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, options=None):
         """Reset the environment."""
         super().reset(seed=seed)
         
@@ -193,6 +193,9 @@ class MinesweeperEnv(gym.Env):
         self.first_move_done = False
         self.mines_placed = False
         self.flags_remaining = self.initial_mines
+        
+        # Place mines unconditionally
+        self._place_mines()
         
         # Initialize info dict
         self.info = {
@@ -236,8 +239,10 @@ class MinesweeperEnv(gym.Env):
         for y, x in valid_positions:
             if mines_placed >= self.current_mines:
                 break
-            self.mines[y, x] = True
-            mines_placed += 1
+            if not self.mines[y, x]:  # Ensure no mine is already placed at this position
+                self.mines[y, x] = True
+                mines_placed += 1
+                print(f"Placed mine at ({y}, {x})")
 
         # Update current_mines if we couldn't place all mines
         if mines_placed < self.current_mines:
@@ -256,6 +261,8 @@ class MinesweeperEnv(gym.Env):
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
                 if self.mines[i, j]:
+                    # Set the mine cell to 9 (representing a mine)
+                    self.board[i, j] = 9
                     # Increment count for all adjacent cells
                     for di in [-1, 0, 1]:
                         for dj in [-1, 0, 1]:
@@ -351,14 +358,14 @@ class MinesweeperEnv(gym.Env):
 
     def _check_win(self) -> bool:
         """Check if the game is won.
-        Win condition: All non-mine cells must be revealed.
-        Flag placement is not required for winning."""
-        # Game is won if all non-mine cells are revealed
-        # A cell is "done" if it's either:
-        # 1. Revealed (self.revealed)
-        # 2. A mine (self.mines)
-        # 3. Flagged (self.state == CELL_FLAGGED)
-        return np.all(self.revealed | self.mines | (self.state == CELL_FLAGGED))
+        Win condition: All non-mine cells must be revealed and all mines must be flagged."""
+        # Game is won if:
+        # 1. All non-mine cells are revealed
+        # 2. All mines are flagged
+        # 3. No incorrect flags are placed
+        non_mine_cells_revealed = np.all(self.revealed | self.mines)  # All non-mine cells are revealed
+        all_mines_flagged = np.all(self.mines == self.flags)  # All mines are flagged and no incorrect flags
+        return non_mine_cells_revealed and all_mines_flagged
 
     def step(self, action):
         """Take a step in the environment."""
@@ -381,12 +388,14 @@ class MinesweeperEnv(gym.Env):
                 # Remove flag
                 self.flags[row, col] = False
                 self.flags_remaining += 1
+                self.state[row, col] = CELL_UNREVEALED  # Update state array
                 return self.state, REWARD_UNFLAG, False, False, {'flags_remaining': self.flags_remaining}
             else:
                 # Place flag
                 if self.flags_remaining > 0:
                     self.flags[row, col] = True
                     self.flags_remaining -= 1
+                    self.state[row, col] = CELL_FLAGGED  # Update state array
                     reward = REWARD_FLAG_MINE if self.mines[row, col] else REWARD_FLAG_SAFE
                     return self.state, reward, False, False, {'flags_remaining': self.flags_remaining}
                 else:
@@ -428,16 +437,14 @@ class MinesweeperEnv(gym.Env):
             for j in range(self.current_board_width):
                 # Reveal action
                 reveal_idx = i * self.current_board_width + j
-                if self.state[i, j] != CELL_UNREVEALED:
+                if self.revealed[i, j] or self.flags[i, j]:  # Can't reveal revealed or flagged cells
                     masks[reveal_idx] = False
                 
                 # Flag action
                 flag_idx = (self.current_board_width * self.current_board_height) + reveal_idx
-                if self.state[i, j] != CELL_UNREVEALED and self.state[i, j] != CELL_FLAGGED:
+                if self.revealed[i, j]:  # Can't flag revealed cells
                     masks[flag_idx] = False
-                if self.state[i, j] == CELL_FLAGGED and self.flags_remaining == 0:
-                    masks[flag_idx] = False
-                if self.flags_remaining == 0 and self.state[i, j] == CELL_UNREVEALED:
+                if self.flags_remaining == 0 and not self.flags[i, j]:  # Can't place new flags if none remaining
                     masks[flag_idx] = False
                     
         return masks
@@ -488,12 +495,16 @@ class MinesweeperEnv(gym.Env):
         if not (0 <= row < self.current_board_height and 0 <= col < self.current_board_width):
             return False
 
-        # Check if cell is already revealed
-        if self.state[row, col] != CELL_UNREVEALED:
-            return False
+        # Handle flag actions
+        if action_type == 1:
+            if self.revealed[row, col]:  # Can't flag revealed cells
+                return False
+            if self.flags[row, col]:  # Can unflag flagged cells
+                return True
+            return self.flags_remaining > 0  # Can only place flag if flags remaining
 
-        # Check if cell is flagged
-        if self.flags[row, col]:
+        # Handle reveal actions
+        if self.revealed[row, col] or self.flags[row, col]:  # Can't reveal revealed or flagged cells
             return False
 
         return True
