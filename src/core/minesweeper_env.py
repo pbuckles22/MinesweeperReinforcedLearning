@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import pygame
+import warnings
 from typing import Tuple, Dict, Optional, List, Set
 from src.core.constants import (
     CELL_UNREVEALED,
@@ -123,7 +124,6 @@ class MinesweeperEnv(gym.Env):
         self.mines = None
         self.flags = None
         self.revealed = None
-        self.flags_remaining = initial_mines
         self.revealed_count = 0
         self.won = False
         self.terminated = False
@@ -192,14 +192,12 @@ class MinesweeperEnv(gym.Env):
         self.truncated = False
         self.first_move_done = False
         self.mines_placed = False
-        self.flags_remaining = self.initial_mines
         
         # Place mines unconditionally
         self._place_mines()
         
         # Initialize info dict
         self.info = {
-            "flags_remaining": self.flags_remaining,
             "won": False
         }
         
@@ -274,28 +272,16 @@ class MinesweeperEnv(gym.Env):
                                 self.board[ni, nj] += 1
 
     def handle_mine_hit(self, col, row, is_first_move):
-        """Handle a mine hit.
-        Args:
-            col: Column coordinate
-            row: Row coordinate
-            is_first_move: Whether this is the first move
-        Returns:
-            Tuple of (reward, terminated)
-        """
-        print(f"\nHandling mine hit at ({row}, {col})")
+        """Handle a mine hit."""
+        print(f"Handling mine hit at ({row}, {col})")
         print(f"is_first_move: {is_first_move}")
         
         if is_first_move:
             print("First move mine hit - resetting board")
-            # Reset the board if the first move is a mine
             self._place_mines(col, row)
-            self._update_adjacent_counts()
-            return REWARD_FIRST_MOVE_HIT_MINE, False
+            return 0, False
         else:
-            print("Subsequent move mine hit - ending game")
-            # Update state to indicate mine hit
-            self.state[row, col] = CELL_MINE_HIT
-            self.revealed[row, col] = True
+            self.state[row, col] = CELL_MINE_HIT  # Set to -4 for mine hit
             return REWARD_HIT_MINE, True
 
     def _reveal_cell(self, row: int, col: int) -> None:
@@ -358,17 +344,15 @@ class MinesweeperEnv(gym.Env):
 
     def _check_win(self) -> bool:
         """Check if the game is won.
-        Win condition: All non-mine cells must be revealed and all mines must be flagged."""
-        # Game is won if:
-        # 1. All non-mine cells are revealed
-        # 2. All mines are flagged
-        # 3. No incorrect flags are placed
-        non_mine_cells_revealed = np.all(self.revealed | self.mines)  # All non-mine cells are revealed
-        all_mines_flagged = np.all(self.mines == self.flags)  # All mines are flagged and no incorrect flags
-        return non_mine_cells_revealed and all_mines_flagged
+        Win condition: All non-mine cells must be revealed."""
+        # Game is won if all non-mine cells are revealed
+        return np.all(self.revealed | self.mines)  # All non-mine cells are revealed
 
     def step(self, action):
         """Take a step in the environment."""
+        # Initialize info dict with flags_remaining
+        info = {}
+
         # Convert action to (x, y) coordinates and action type
         action_type = action // (self.current_board_width * self.current_board_height)
         action_index = action % (self.current_board_width * self.current_board_height)
@@ -380,37 +364,34 @@ class MinesweeperEnv(gym.Env):
 
         # Check if action is valid
         if not self._is_valid_action(action):
-            return self.state, REWARD_INVALID_ACTION, False, False, {}
+            info['won'] = False
+            return self.state, REWARD_INVALID_ACTION, False, False, info
 
-        # Handle flag placement/removal
-        if action_type == 1:  # Flag action
-            if self.flags[row, col]:
-                # Remove flag
+        # Handle flag actions
+        if action_type == 1:
+            if self.revealed[row, col]:  # Can't flag revealed cells
+                return self.state, REWARD_INVALID_ACTION, False, False, info
+            if self.flags[row, col]:  # Can unflag flagged cells
                 self.flags[row, col] = False
-                self.flags_remaining += 1
                 self.state[row, col] = CELL_UNREVEALED  # Update state array
-                return self.state, REWARD_UNFLAG, False, False, {'flags_remaining': self.flags_remaining}
+                return self.state, 0, False, False, info  # No reward for unflagging
             else:
                 # Place flag
-                if self.flags_remaining > 0:
-                    self.flags[row, col] = True
-                    self.flags_remaining -= 1
-                    self.state[row, col] = CELL_FLAGGED  # Update state array
-                    reward = REWARD_FLAG_MINE if self.mines[row, col] else REWARD_FLAG_SAFE
-                    return self.state, reward, False, False, {'flags_remaining': self.flags_remaining}
-                else:
-                    return self.state, REWARD_INVALID_ACTION, False, False, {'flags_remaining': self.flags_remaining}
+                self.flags[row, col] = True
+                self.state[row, col] = CELL_FLAGGED  # Update state array
+                return self.state, 0, False, False, info  # No reward for flagging
 
         # Handle cell reveal
-        if self.flags[row, col]:
-            return self.state, REWARD_INVALID_ACTION, False, False, {'flags_remaining': self.flags_remaining}
-
-        # Check if it's a mine
-        if self.mines[row, col]:
-            print("Mine hit detected")
-            reward, terminated = self.handle_mine_hit(col, row, self.is_first_move)
-            print(f"After handle_mine_hit: reward={reward}, terminated={terminated}")
-            return self.state, reward, terminated, False, {'flags_remaining': self.flags_remaining, 'won': False}
+        if action_type == 0:
+            if self.flags[row, col]:  # Can't reveal flagged cells
+                return self.state, REWARD_INVALID_ACTION, False, False, info
+            if self.revealed[row, col]:  # Can't reveal already revealed cells
+                return self.state, REWARD_INVALID_ACTION, False, False, info
+            if self.mines[row, col]:  # Hit a mine
+                self.state[row, col] = CELL_MINE_HIT  # Set state to CELL_MINE_HIT
+                self.revealed[row, col] = True  # Mark the cell as revealed
+                reward = REWARD_FIRST_MOVE_HIT_MINE if self.is_first_move else REWARD_HIT_MINE
+                return self.state, reward, True, False, info
 
         # Reveal the cell
         self._reveal_cell(col, row)
@@ -418,12 +399,14 @@ class MinesweeperEnv(gym.Env):
         # Check for win
         if self._check_win():
             self.is_first_move = False
-            return self.state, REWARD_WIN, True, False, {'flags_remaining': self.flags_remaining, 'won': True}
+            info['won'] = True
+            return self.state, REWARD_WIN, True, False, info
 
         # Determine reward based on whether this is the first move
         reward = REWARD_FIRST_MOVE_SAFE if self.is_first_move else REWARD_SAFE_REVEAL
         self.is_first_move = False
-        return self.state, reward, False, False, {'flags_remaining': self.flags_remaining, 'won': False}
+        info['won'] = False
+        return self.state, reward, False, False, info
 
     @property
     def action_masks(self):
@@ -443,8 +426,6 @@ class MinesweeperEnv(gym.Env):
                 # Flag action
                 flag_idx = (self.current_board_width * self.current_board_height) + reveal_idx
                 if self.revealed[i, j]:  # Can't flag revealed cells
-                    masks[flag_idx] = False
-                if self.flags_remaining == 0 and not self.flags[i, j]:  # Can't place new flags if none remaining
                     masks[flag_idx] = False
                     
         return masks
@@ -501,11 +482,15 @@ class MinesweeperEnv(gym.Env):
                 return False
             if self.flags[row, col]:  # Can unflag flagged cells
                 return True
-            return self.flags_remaining > 0  # Can only place flag if flags remaining
+            return True  # Can flag any unrevealed cell
 
         # Handle reveal actions
-        if self.revealed[row, col] or self.flags[row, col]:  # Can't reveal revealed or flagged cells
-            return False
+        if action_type == 0:
+            if self.flags[row, col]:  # Can't reveal flagged cells
+                return False
+            if self.revealed[row, col]:  # Can't reveal already revealed cells
+                return False
+            return True
 
         return True
 
