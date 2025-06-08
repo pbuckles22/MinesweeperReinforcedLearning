@@ -14,7 +14,8 @@ from src.core.constants import (
     REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
-    REWARD_HIT_MINE
+    REWARD_HIT_MINE,
+    REWARD_INVALID_ACTION
 )
 
 class TestTrainAgent:
@@ -103,8 +104,10 @@ class TestTrainAgent:
     def test_invalid_action(self, env):
         """Test that the environment handles invalid actions"""
         env.reset()
-        with pytest.raises((ValueError, IndexError)):
-            env.step([100])  # Action out of bounds
+        obs, reward, terminated, truncated, info = env.step([100])  # Action out of bounds
+        assert reward[0] == REWARD_INVALID_ACTION  # Should return invalid action penalty
+        assert not terminated[0]  # Should not terminate the game
+        assert not truncated[0]   # Should not truncate the game
 
 if __name__ == '__main__':
     pytest.main() 

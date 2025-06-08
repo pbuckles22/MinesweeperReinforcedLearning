@@ -30,6 +30,9 @@ def test_safe_cell_reveal(env):
     # Place mine at (1,1)
     env.mines[1, 1] = True
     env._update_adjacent_counts()
+    env.is_first_move = False  # Disable first move mine placement
+    env.first_move_done = True  # Prevent mine placement in step()
+    env.mines_placed = True  # Prevent automatic mine placement in step()
     
     # Reveal safe cell at (0,0)
     action = 0 * env.current_board_width + 0
