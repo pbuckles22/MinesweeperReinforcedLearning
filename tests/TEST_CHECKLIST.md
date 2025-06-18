@@ -1,5 +1,7 @@
 # Minesweeper Test Checklist (Updated)
 
+> **Note:** As of the latest test run, 33 tests are failing, mostly related to action masking, flag logic, parameter validation, and script checks. Performance tests are all passing. See inline notes for details.
+
 ## Priority 1: Core State Management & Mechanics
 - [x] Safe cell reveal: `assert not terminated` fails
 - [x] Safe cell cascade: Not explicitly listed, but likely related to state update issues
@@ -7,11 +9,11 @@
 - [ ] Mine placement: `assert mine_count == self.env.current_mines`
 - [ ] Board initialization: `assert np.all(env.board == CELL_UNREVEALED)`
 - [x] Flag placement on mine/safe cell: `assert state[1, 1] == CELL_FLAGGED`
-- [x] Flag removal: `assert state[1, 1] == CELL_UNREVEALED`
+- [ ] Flag removal: `assert state[1, 1] == CELL_UNREVEALED` (NEW: fails, cell not set to UNREVEALED)
 - [ ] Flag count in info: `KeyError: 'flags_remaining'` (NEW: missing in info dict)
 - [x] Flag on revealed cell: `assert not terminated`
-- [ ] Reveal flagged cell: `assert not terminated`
-- [ ] Reveal already revealed cell: `assert not terminated`
+- [ ] Reveal flagged cell: `assert not terminated` (NEW: fails, reward not negative or not masked)
+- [ ] Reveal already revealed cell: `assert not terminated` (NEW: fails, reward not negative or not masked)
 - [ ] State transitions: `assert state[y, x] == CELL_UNREVEALED`
 - [ ] State representation: `assert state[y2, x2] == CELL_UNREVEALED`
 
@@ -30,7 +32,7 @@
 - [ ] Board boundary actions: `assert not terminated`
 
 ## Priority 3: Initialization & Parameter Validation
-- [ ] Invalid board size: Regex mismatch (`'Board size must be positive'` vs `'Board dimensions must be positive'`)
+- [ ] Invalid board size: Regex mismatch (`'Board size must be positive'` vs `'Board dimensions too large'`)
 - [ ] Invalid mine count: Regex mismatch (`'Mine count cannot exceed board size squared'` vs `'Mine count cannot exceed board area'`)
 - [ ] Invalid initial parameters: Regex mismatch (`'Initial board size cannot exceed max board size'` vs `'Mine count cannot exceed board area'`)
 - [ ] Invalid reward parameters: Did not raise ValueError
@@ -38,7 +40,7 @@
 ## Priority 4: Action Space & Masking
 - [ ] Action space boundaries: `assert np.int64(32) != np.int64(32)`
 - [ ] Action space mapping: Not explicitly listed, but related to above
-- [ ] Invalid action handling: Did not raise ValueError/IndexError
+- [ ] Invalid action handling: Did not raise ValueError/IndexError (NEW: IndexError seen for out-of-bounds action)
 - [ ] Reveal after game over: `assert 'won' in info`
 - [ ] Flag already flagged cell: `assert 'won' in {}`
 
@@ -132,12 +134,12 @@
 
 ## Priority 13: Performance
 ### Performance Tests
-- [ ] Test large board performance
-- [ ] Test many mines performance
-- [ ] Test action speed
-- [ ] Test state updates
-- [ ] Test memory usage
-- [ ] Test CPU usage
+- [x] Test large board performance
+- [x] Test many mines performance
+- [x] Test action speed
+- [x] Test state updates
+- [x] Test memory usage
+- [ ] Test CPU usage (not explicitly tested)
 
 ## Priority 14: Integration
 ### Integration Tests

@@ -80,11 +80,15 @@ def test_flag_already_flagged_cell(env):
 
 def test_reveal_after_game_over(env):
     """Test that revealing after game over is invalid."""
-    # Place mine at (0,0)
+    # First, make a safe move to get past first move
+    action = 0
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Place mine at (0,0) and hit it
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     
-    # Hit the mine
+    # Hit the mine (this should terminate the game)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
@@ -119,12 +123,16 @@ def test_action_masking_flagged_cells(env):
 
 def test_action_masking_game_over(env):
     """Test that all actions are masked when game is over."""
-    # Place mine at (0,0)
+    # First, make a safe move to get past first move
+    action = 0
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Place mine at (0,0) and hit it
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     
-    # Hit mine
-    action = 0  # Reveal top-left cell
+    # Hit mine (this should terminate the game)
+    action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
     # Check that all actions are masked

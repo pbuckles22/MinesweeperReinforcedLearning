@@ -61,12 +61,18 @@ def test_memory_usage(env):
     # Play 100 games
     for _ in range(100):
         env.reset()
-        # Play until game over
-        while True:
+        # Play until game over with a maximum limit to prevent infinite loops
+        max_steps = 1000  # Maximum steps per game
+        step_count = 0
+        while step_count < max_steps:
             action = np.random.randint(0, env.action_space.n)
             _, _, terminated, _, _ = env.step(action)
+            step_count += 1
             if terminated:
                 break
+        
+        # If we hit the maximum steps, something is wrong
+        assert step_count < max_steps, f"Game did not terminate within {max_steps} steps"
     
     final_memory = process.memory_info().rss
     memory_increase = final_memory - initial_memory
