@@ -285,43 +285,21 @@ class MinesweeperEnv(gym.Env):
             return REWARD_HIT_MINE, True
 
     def _reveal_cell(self, row: int, col: int) -> None:
-        """Reveal a cell and cascade through empty cells."""
-        if self.revealed[row, col] or self.state[row, col] == CELL_FLAGGED:
+        """Reveal a cell and its neighbors if it's empty."""
+        if not (0 <= row < self.current_board_height and 0 <= col < self.current_board_width):
+            return
+        if self.revealed[row, col] or self.flags[row, col]:
             return
 
-        print(f"\nStarting reveal at ({row}, {col})")
-        print(f"Initial board value: {self.board[row, col]}")
-        
-        # Initialize queue with the starting cell
-        queue = [(row, col)]
-        visited = {(row, col)}
+        self.revealed[row, col] = True
+        self.state[row, col] = self._get_cell_value(row, col)
 
-        while queue:
-            r, c = queue.pop(0)
-            print(f"\nProcessing cell ({r}, {c})")
-            
-            # Skip if already revealed or flagged
-            if self.revealed[r, c] or self.state[r, c] == CELL_FLAGGED:
-                continue
-                
-            # Reveal the cell
-            self.revealed[r, c] = True
-            self.state[r, c] = self.board[r, c]
-            print(f"Revealed cell ({r}, {c}) with value {self.board[r, c]}")
-            
-            # If the cell is empty (value == 0), cascade to neighbors
-            if self.board[r, c] == 0:
-                # Get all neighbors
-                for nr, nc in self._get_neighbors(r, c):
-                    if (nr, nc) not in visited:
-                        visited.add((nr, nc))
-                        queue.append((nr, nc))
-                        print(f"Adding neighbor ({nr}, {nc}) to queue")
-
-        print("\nFinal state after cascade:")
-        print(self.state)
-        print("\nRevealed cells:")
-        print(self.revealed)
+        if self._get_cell_value(row, col) == 0:
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    if dr == 0 and dc == 0:
+                        continue
+                    self._reveal_cell(row + dr, col + dc)
 
     def _get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
         """Get all valid neighbors of a cell.
@@ -344,9 +322,17 @@ class MinesweeperEnv(gym.Env):
 
     def _check_win(self) -> bool:
         """Check if the game is won.
-        Win condition: All non-mine cells must be revealed."""
-        # Game is won if all non-mine cells are revealed
-        return np.all(self.revealed | self.mines)  # All non-mine cells are revealed
+        Win condition: All non-mine cells must be revealed.
+        Returns:
+            bool: True if all non-mine cells are revealed, False otherwise.
+        """
+        # For each cell that is not a mine, it must be revealed
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if not self.mines[i, j] and not self.revealed[i, j]:
+                    print(f"[DEBUG] Not revealed but not a mine: ({i}, {j})")
+                    return False
+        return True
 
     def step(self, action):
         """Take a step in the environment."""
@@ -369,7 +355,9 @@ class MinesweeperEnv(gym.Env):
 
         # Handle flag actions
         if action_type == 1:
+            print(f"[DEBUG] Attempting to flag cell ({row}, {col}). Revealed: {self.revealed[row, col]}")
             if self.revealed[row, col]:  # Can't flag revealed cells
+                print(f"[DEBUG] Cell ({row}, {col}) is already revealed. Flag not allowed.")
                 return self.state, REWARD_INVALID_ACTION, False, False, info
             if self.flags[row, col]:  # Can unflag flagged cells
                 self.flags[row, col] = False
@@ -390,13 +378,20 @@ class MinesweeperEnv(gym.Env):
             if self.mines[row, col]:  # Hit a mine
                 self.state[row, col] = CELL_MINE_HIT  # Set state to CELL_MINE_HIT
                 self.revealed[row, col] = True  # Mark the cell as revealed
-                reward = REWARD_FIRST_MOVE_HIT_MINE if self.is_first_move else REWARD_HIT_MINE
-                return self.state, reward, True, False, info
+                if self.is_first_move:
+                    # On first move, reset the game instead of terminating
+                    self.reset()
+                    return self.state, REWARD_FIRST_MOVE_HIT_MINE, False, False, info
+                else:
+                    return self.state, REWARD_HIT_MINE, True, False, info
 
         # Reveal the cell
-        self._reveal_cell(col, row)
+        self._reveal_cell(row, col)
 
-        # Check for win
+        # Debug print revealed array after reveal
+        print(f"[DEBUG] Revealed array after reveal:\n{self.revealed}")
+
+        # Always check for win after all reveals (including cascades)
         if self._check_win():
             self.is_first_move = False
             info['won'] = True
@@ -493,6 +488,16 @@ class MinesweeperEnv(gym.Env):
             return True
 
         return True
+
+    def _get_cell_value(self, row: int, col: int) -> int:
+        """Get the value of a cell (number of adjacent mines).
+        Args:
+            row (int): Row index of the cell.
+            col (int): Column index of the cell.
+        Returns:
+            int: The value of the cell (number of adjacent mines).
+        """
+        return self.board[row, col]
 
 def main():
     # Create and test the environment
