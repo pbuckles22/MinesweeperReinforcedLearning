@@ -345,6 +345,11 @@ class MinesweeperEnv(gym.Env):
             print(f"[DEBUG] Game already over (terminated={self.terminated}, truncated={self.truncated}). Returning invalid action reward.")
             return self.state, REWARD_INVALID_ACTION, True, False, info
 
+        # Check if action is within bounds first
+        if action < 0 or action >= self.action_space.n:
+            print(f"[DEBUG] Action {action} is out of bounds (0-{self.action_space.n-1}). Returning invalid action reward.")
+            return self.state, REWARD_INVALID_ACTION, False, False, info
+
         # Check if action is valid using action masks
         if not self.action_masks[action]:
             print(f"[DEBUG] Invalid action {action} detected via action masks. Returning invalid action reward.")
