@@ -28,8 +28,9 @@ def test_first_move_mine_hit(env):
     state, reward, terminated, truncated, info = env.step(action)
     
     assert reward == REWARD_FIRST_MOVE_HIT_MINE
-    assert state[0, 0, 0] == CELL_MINE_HIT
-    assert env.revealed[0, 0] == True
+    # After first move mine hit, the environment resets, so all cells should be unrevealed
+    assert np.all(state[0] == CELL_UNREVEALED), "State should be reset to all unrevealed after first move mine hit"
+    assert not terminated
 
 def test_mine_hit_after_first_move(env):
     """Test hitting a mine after first move."""
@@ -39,7 +40,8 @@ def test_mine_hit_after_first_move(env):
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Place mine at (1,0) and hit it
+    # Place mine at (1,0) and hit it (after reset and first move)
+    env.mines.fill(False)
     env.mines[1, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
@@ -97,21 +99,17 @@ def test_mine_hit_state_consistency(env):
 
 def test_mine_hit_reward_consistency(env):
     """Test that mine hit rewards are consistent."""
-    env.reset()
-    
-    # Place mine and hit it multiple times
-    env.mines[0, 0] = True
-    env._update_adjacent_counts()
-    env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
-    
     rewards = []
     for _ in range(3):
         env.reset()
+        env.mines.fill(False)
+        env.mines[0, 0] = True
+        env._update_adjacent_counts()
+        env.mines_placed = True
+        env.is_first_move = False
+        env.first_move_done = True
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         rewards.append(reward)
-    
     # All rewards should be the same
     assert all(r == REWARD_HIT_MINE for r in rewards) 
