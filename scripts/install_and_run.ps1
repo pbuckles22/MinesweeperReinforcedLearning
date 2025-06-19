@@ -33,6 +33,10 @@ if (-not (Test-Path "venv")) {
 Write-Host "Activating virtual environment..."
 & "venv\Scripts\Activate.ps1"
 
+# Upgrade pip to latest version
+Write-Host "Upgrading pip to latest version..."
+python -m pip install --upgrade pip
+
 # Handle -NoCache parameter: Clear pip cache and install without using cache
 if ($NoCache) {
     Write-Host "NoCache flag detected. Clearing pip cache and installing without cache..."
@@ -46,12 +50,29 @@ if ($NoCache) {
 # Add src directory to Python path
 $env:PYTHONPATH = "src;$env:PYTHONPATH"
 
+# Permanently set PYTHONPATH in the virtual environment activation script
+$activateScript = "venv\Scripts\Activate.ps1"
+if (Test-Path $activateScript) {
+    # Add PYTHONPATH line at the very end of the activation script (before signature block)
+    $pyPathLine = '$env:PYTHONPATH = "src;$env:PYTHONPATH"'
+    
+    # Check if PYTHONPATH is already set in the activation script
+    $content = Get-Content $activateScript -Raw
+    if ($content -notcontains $pyPathLine) {
+        Write-Host "Setting PYTHONPATH in virtual environment activation script..."
+        # Add the PYTHONPATH line at the end, before any signature block
+        Add-Content -Path $activateScript -Value ""
+        Add-Content -Path $activateScript -Value "# Set project PYTHONPATH"
+        Add-Content -Path $activateScript -Value $pyPathLine
+    }
+}
+
 # Create logs directory
 New-Item -ItemType Directory -Force -Path "logs" | Out-Null
 
 # Run environment tests
 Write-Host "Running environment tests..."
-python tests/test_environment.py
+python -m pytest tests/integration/test_environment.py -v
 
 # Run tests
 Write-Host "Running tests..."
@@ -60,20 +81,21 @@ python -m pytest tests/unit/core tests/unit/agent tests/integration tests/functi
 # Run training script
 Write-Host "Starting training..."
 python src/core/train_agent.py `
-    --board-size 8 `
-    --max-mines 12 `
-    --timesteps 1000000 `
-    --learning-rate 0.0001 `
-    --batch-size 64 `
-    --n-steps 2048 `
-    --n-epochs 10 `
+    --total_timesteps 1000000 `
+    --learning_rate 0.0003 `
+    --batch_size 64 `
+    --n_steps 2048 `
+    --n_epochs 10 `
     --gamma 0.99 `
-    --gae-lambda 0.95 `
-    --clip-range 0.2 `
-    --ent-coef 0.01 `
-    --vf-coef 0.5 `
-    --max-grad-norm 0.5 `
-    --debug-level 2
+    --gae_lambda 0.95 `
+    --clip_range 0.2 `
+    --ent_coef 0.01 `
+    --vf_coef 0.5 `
+    --max_grad_norm 0.5 `
+    --eval_freq 10000 `
+    --n_eval_episodes 100 `
+    --save_freq 50000 `
+    --verbose 1
 
 # Deactivate virtual environment
 deactivate 

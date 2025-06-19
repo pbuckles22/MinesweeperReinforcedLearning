@@ -541,6 +541,7 @@ def evaluate_model(model, env, n_episodes=100):
         done = False
         episode_reward = 0
         episode_length = 0
+        episode_won = False
         
         while not done:
             action, _ = model.predict(obs)
@@ -556,11 +557,14 @@ def evaluate_model(model, env, n_episodes=100):
             done = terminated or truncated
             episode_reward += reward
             episode_length += 1
+            
+            # Check if the episode was won from the info dictionary
+            if info.get('won', False):
+                episode_won = True
         
         rewards.append(episode_reward)
         lengths.append(episode_length)
-        # Check if the game was won using the environment's won state
-        if hasattr(env, 'won') and env.won:
+        if episode_won:
             wins += 1
     
     # Calculate statistics

@@ -7,4 +7,15 @@ pygame>=2.5.0
 matplotlib>=3.7.0
 pandas>=2.0.0
 tensorboard>=2.13.0
-cloudpickle>=2.2.1 
+cloudpickle>=2.2.1
+
+# Testing dependencies
+pytest>=8.0.0
+pytest-cov>=6.0.0
+coverage>=7.0.0
+
+# Development and monitoring dependencies
+opencv-python>=4.10.0
+psutil>=6.0.0
+rich>=13.0.0
+tqdm>=4.60.0 

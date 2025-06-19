@@ -240,8 +240,9 @@ def test_reward_with_early_learning():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get normal first move reward even in early learning mode
-    assert reward == REWARD_FIRST_MOVE_SAFE or reward == REWARD_FIRST_MOVE_HIT_MINE
+    # In early learning mode with small board, first move could win the game
+    # Should get either first move reward or win reward
+    assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN]
 
 def test_reward_edge_cases():
     """Test reward edge cases."""
