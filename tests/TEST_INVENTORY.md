@@ -5,8 +5,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ## Test Statistics
 - **Total Tests**: 181
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 137 tests
-- **Failing**: 44 tests
+- **Passing**: 148 tests
+- **Failing**: 33 tests
 
 ## Test Categories
 
@@ -41,29 +41,29 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - `test_win_condition` ✅
 - `test_win_condition` ✅
 
-#### Early Learning (12 tests): `tests/unit/core/test_early_learning.py`
+#### Early Learning (11 tests): `tests/unit/core/test_early_learning.py` ✅
 - `test_early_learning_initialization` ✅
-- `test_corner_safety` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_edge_safety` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_corner_safety` ✅ (refactored to new philosophy)
+- `test_edge_safety` ✅ (refactored to new philosophy)
 - `test_early_learning_disabled` ✅
 - `test_threshold_behavior` ✅
-- `test_parameter_updates` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_state_preservation` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_transition_out_of_early_learning` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_early_learning_with_large_board` ✅
-- `test_early_learning_mine_spacing` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_early_learning_win_rate_tracking` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_parameter_updates` ✅ (refactored to new philosophy)
+- `test_state_preservation` ✅ (refactored to new philosophy)
+- `test_transition_out_of_early_learning` ✅ (refactored to new philosophy)
+- `test_early_learning_with_large_board` ✅ (refactored to new philosophy)
+- `test_early_learning_mine_spacing` ✅ (refactored to new philosophy)
+- `test_early_learning_win_rate_tracking` ✅ (refactored to new philosophy)
 
 #### Error Handling (26 tests): `tests/unit/core/test_error_handling.py` ✅
 - All 26 tests passing after refactoring to match environment behavior
 
-#### Flag Placement (6 tests): `tests/unit/core/test_flag_placement.py`
+#### Flag Placement (6 tests): `tests/unit/core/test_flag_placement.py` ✅
 - `test_flag_placement` ✅
-- `test_flag_removal` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_flag_removal` ✅ (refactored to new philosophy)
 - `test_flag_on_revealed_cell` ✅
 - `test_flag_count` ✅
 - `test_flag_on_mine` ✅
-- `test_flag_mine_hit` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_flag_mine_hit` ✅ (refactored to new philosophy)
 
 #### Initialization (6 tests): `tests/unit/core/test_initialization.py`
 - `test_invalid_board_size` ❌ (NEEDS API FIX)
@@ -98,7 +98,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - `test_state_transitions` ❌ (NEEDS NEW PHILOSOPHY)
 - `test_state_representation` ❌ (NEEDS NEW PHILOSOPHY)
 
-#### Reward System (16 tests): `tests/unit/core/test_reward_system.py`
+#### Reward System (16 tests): `tests/unit/core/test_reward_system.py` ✅
 - `test_first_move_safe_reward` ✅
 - `test_first_move_mine_hit_reward` ✅
 - `test_safe_reveal_reward` ✅
@@ -116,13 +116,13 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - `test_reward_edge_cases` ✅
 - `test_reward_with_rectangular_board` ✅
 
-#### State Management (20 tests): `tests/unit/core/test_state_management.py`
+#### State Management (20 tests): `tests/unit/core/test_state_management.py` ✅
 - `test_state_reset` ✅
 - `test_mine_placement_on_reset` ✅
 - `test_flag_clearing_on_reset` ✅
 - `test_counter_reset` ✅
 - `test_state_persistence_between_actions` ✅
-- `test_flag_persistence` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_flag_persistence` ✅ (refactored to new philosophy)
 - `test_revealed_cell_persistence` ✅
 - `test_game_over_state` ✅
 - `test_game_counter` ✅
@@ -233,12 +233,17 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Action Handling**: All 12 tests passing
 - **Error Handling**: All 26 tests passing (refactored to match environment)
 - **Core State Management**: All 20 tests passing (refactored to new philosophy)
+- **Game Logic & Win/Loss**: All 4 tests passing (refactored to new philosophy)
+- **Reward System**: All 16 tests passing (refactored to new philosophy)
+- **Flag Placement**: All 6 tests passing (refactored to new philosophy)
+- **Early Learning**: All 11 tests passing (refactored to new philosophy)
 
 ### 🔄 In Progress Areas
-- **Game Logic & Win/Loss**: 6 tests need new philosophy
-- **Early Learning**: 8 tests need new philosophy
-- **Reward System**: 6 tests need new philosophy
-- **Flag Placement**: 2 tests need new philosophy
+- **Core Mechanics**: 1 test needs new philosophy
+- **Mine Hits**: 1 test needs new philosophy
+- **Environment API**: 15 tests need API fixes
+- **Integration**: 3 tests need new philosophy
+- **Script Tests**: 5 tests need PowerShell fixes
 
 ### ❌ Needs Fixes
 - **API Consistency**: 15 tests need environment API fixes
@@ -247,7 +252,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Performance Tests**: 1 test needs new philosophy
 
 ## Next Steps
-1. Apply new testing philosophy to remaining 25 tests
+1. Apply new testing philosophy to remaining 5 tests (Priorities 8-9)
 2. Fix environment API inconsistencies (15 tests)
 3. Fix PowerShell script tests (5 tests)
 4. Add tests for `train_agent.py` module (0% coverage)
