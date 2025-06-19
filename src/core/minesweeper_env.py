@@ -13,25 +13,19 @@ from typing import Tuple, Dict, Optional, List, Set
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
     REWARD_FIRST_MOVE_SAFE,
     REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
-    REWARD_FLAG_PLACED,
-    REWARD_FLAG_REMOVED,
-    REWARD_FLAG_MINE,
-    REWARD_FLAG_SAFE,
-    REWARD_UNFLAG,
     REWARD_INVALID_ACTION,
     DIFFICULTY_LEVELS
 )
 
 class MinesweeperEnv(gym.Env):
     """
-    A Minesweeper environment for reinforcement learning with flagging, realistic win condition, and fixed observation/action space for curriculum learning.
+    A Minesweeper environment for reinforcement learning with realistic win condition and fixed observation/action space for curriculum learning.
     Supports multiple difficulty levels from easy to chaotic.
     """
     def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
@@ -39,8 +33,7 @@ class MinesweeperEnv(gym.Env):
                  early_learning_corner_safe=True, early_learning_edge_safe=True,
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
-                 flag_mine_reward=REWARD_FLAG_MINE, flag_safe_penalty=REWARD_FLAG_SAFE,
-                 unflag_penalty=REWARD_UNFLAG, safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
+                 safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
         """Initialize the Minesweeper environment."""
         super().__init__()
         
@@ -109,9 +102,6 @@ class MinesweeperEnv(gym.Env):
         self.initial_mines = initial_mines
         self.reward_invalid_action = invalid_action_penalty
         self.reward_hit_mine = mine_penalty
-        self.reward_flag_mine = flag_mine_reward
-        self.reward_flag_safe = flag_safe_penalty
-        self.reward_unflag = unflag_penalty
         self.reward_safe_reveal = safe_reveal_base
         self.reward_win = win_reward
         
@@ -122,7 +112,6 @@ class MinesweeperEnv(gym.Env):
         self.state = None
         self.board = None
         self.mines = None
-        self.flags = None
         self.revealed = None
         self.revealed_count = 0
         self.won = False
@@ -142,7 +131,7 @@ class MinesweeperEnv(gym.Env):
             self.logger.addHandler(handler)
         
         # Define action and observation spaces
-        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height * 2)
+        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
         self.observation_space = spaces.Box(
             low=-4,  # CELL_MINE_HIT
             high=8,  # Maximum number of adjacent mines
@@ -170,7 +159,7 @@ class MinesweeperEnv(gym.Env):
         super().reset(seed=seed)
         
         # Initialize or update action space based on current board size
-        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height * 2)
+        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
         
         # Initialize state space
         self.observation_space = spaces.Box(
@@ -185,7 +174,6 @@ class MinesweeperEnv(gym.Env):
         self.board = np.zeros((self.current_board_height, self.current_board_width), dtype=np.int8)
         self.mines = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         self.revealed = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
-        self.flags = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         
         # Reset game state
         self.terminated = False
@@ -284,7 +272,7 @@ class MinesweeperEnv(gym.Env):
         """Reveal a cell and its neighbors if it's empty."""
         if not (0 <= row < self.current_board_height and 0 <= col < self.current_board_width):
             return
-        if self.revealed[row, col] or self.flags[row, col]:
+        if self.revealed[row, col]:
             return
 
         self.revealed[row, col] = True
@@ -351,39 +339,24 @@ class MinesweeperEnv(gym.Env):
                 return self.state, REWARD_INVALID_ACTION, True, False, info
             return self.state, REWARD_INVALID_ACTION, False, False, info
 
-        # Convert action to (x, y) coordinates and action type
-        action_type = action // (self.current_board_width * self.current_board_height)
-        action_index = action % (self.current_board_width * self.current_board_height)
-        col = action_index % self.current_board_width
-        row = action_index // self.current_board_width
-
-        # Handle flag actions
-        if action_type == 1:
-            if self.flags[row, col]:  # Unflag
-                # Trying to flag an already flagged cell is invalid
-                return self.state, REWARD_INVALID_ACTION, False, False, info
-            else:  # Place flag
-                self.flags[row, col] = True
-                self.state[row, col] = CELL_FLAGGED
-                reward = REWARD_FLAG_MINE if self.mines[row, col] else REWARD_FLAG_SAFE
-                return self.state, reward, False, False, info
+        # Convert action to (x, y) coordinates
+        col = action % self.current_board_width
+        row = action // self.current_board_width
 
         # Handle cell reveal
-        if action_type == 0:
-            if self.mines[row, col]:  # Hit a mine
-                self.state[row, col] = CELL_MINE_HIT
-                self.revealed[row, col] = True
-                if self.is_first_move:
-                    # On first move, reset the game instead of terminating
-                    self.reset()
-                    # After reset, all cells should be unrevealed and unflagged
-                    # Action masks should allow all actions
-                    return self.state, REWARD_FIRST_MOVE_HIT_MINE, False, False, info
-                else:
-                    # Game over - hit a mine
-                    self.terminated = True
-                    info['won'] = False
-                    return self.state, REWARD_HIT_MINE, True, False, info
+        if self.mines[row, col]:  # Hit a mine
+            self.state[row, col] = CELL_MINE_HIT
+            self.revealed[row, col] = True
+            if self.is_first_move:
+                # On first move, reset the game instead of terminating
+                self.reset()
+                # After reset, all cells should be unrevealed
+                return self.state, REWARD_FIRST_MOVE_HIT_MINE, False, False, info
+            else:
+                # Game over - hit a mine
+                self.terminated = True
+                info['won'] = False
+                return self.state, REWARD_HIT_MINE, True, False, info
 
         # Reveal the cell
         self._reveal_cell(row, col)
@@ -413,14 +386,8 @@ class MinesweeperEnv(gym.Env):
             for j in range(self.current_board_width):
                 # Reveal action
                 reveal_idx = i * self.current_board_width + j
-                if self.revealed[i, j] or self.flags[i, j]:  # Can't reveal revealed or flagged cells
+                if self.revealed[i, j]:  # Can't reveal revealed cells
                     masks[reveal_idx] = False
-                
-                # Flag action
-                flag_idx = (self.current_board_width * self.current_board_height) + reveal_idx
-                if self.revealed[i, j]:  # Can't flag revealed cells
-                    masks[flag_idx] = False
-                # Note: We allow flagging unflagged cells AND unflagging flagged cells
         return masks
 
     def render(self):
@@ -435,9 +402,7 @@ class MinesweeperEnv(gym.Env):
                 rect = pygame.Rect(x * self.cell_size, y * self.cell_size, 
                                  self.cell_size, self.cell_size)
                 
-                if self.flags[y, x]:
-                    pygame.draw.rect(self.screen, (255, 0, 0), rect)  # Red for flags
-                elif not self.revealed[y, x]:
+                if not self.revealed[y, x]:
                     pygame.draw.rect(self.screen, (128, 128, 128), rect)  # Gray for unrevealed
                 else:
                     if self.mines[y, x]:
@@ -459,32 +424,17 @@ class MinesweeperEnv(gym.Env):
         if action < 0 or action >= self.action_space.n:
             return False
 
-        # Convert action to (x, y) coordinates and action type
-        action_type = action // (self.current_board_width * self.current_board_height)
-        action_index = action % (self.current_board_width * self.current_board_height)
-        col = action_index % self.current_board_width
-        row = action_index // self.current_board_width
+        # Convert action to (x, y) coordinates
+        col = action % self.current_board_width
+        row = action // self.current_board_width
 
         # Check if coordinates are valid
         if not (0 <= row < self.current_board_height and 0 <= col < self.current_board_width):
             return False
 
-        # Handle flag actions
-        if action_type == 1:
-            if self.revealed[row, col]:  # Can't flag revealed cells
-                return False
-            if self.flags[row, col]:  # Can unflag flagged cells
-                return True
-            return True  # Can flag any unrevealed cell
-
         # Handle reveal actions
-        if action_type == 0:
-            if self.flags[row, col]:  # Can't reveal flagged cells
-                return False
-            if self.revealed[row, col]:  # Can't reveal already revealed cells
-                return False
-            return True
-
+        if self.revealed[row, col]:  # Can't reveal already revealed cells
+            return False
         return True
 
     def _get_cell_value(self, row: int, col: int) -> int:
