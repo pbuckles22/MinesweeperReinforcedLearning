@@ -65,9 +65,9 @@ def test_action_space_consistency(env):
     # Get initial action space size
     initial_size = env.action_space.n
     
-    # Change board size
-    env.current_board_width = 4
-    env.current_board_height = 4
+    # Change board size to something different than default (4x4)
+    env.current_board_width = 5
+    env.current_board_height = 5
     env.reset()
     
     # Action space should be updated

@@ -241,7 +241,6 @@ class MinesweeperEnv(gym.Env):
             if not self.mines[y, x]:  # Ensure no mine is already placed at this position
                 self.mines[y, x] = True
                 mines_placed += 1
-                print(f"Placed mine at ({y}, {x})")
 
         # Update current_mines if we couldn't place all mines
         if mines_placed < self.current_mines:
@@ -274,11 +273,7 @@ class MinesweeperEnv(gym.Env):
 
     def handle_mine_hit(self, col, row, is_first_move):
         """Handle a mine hit."""
-        print(f"Handling mine hit at ({row}, {col})")
-        print(f"is_first_move: {is_first_move}")
-        
         if is_first_move:
-            print("First move mine hit - resetting board")
             self._place_mines(col, row)
             return 0, False
         else:
@@ -331,7 +326,6 @@ class MinesweeperEnv(gym.Env):
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
                 if not self.mines[i, j] and not self.revealed[i, j]:
-                    print(f"[DEBUG] Not revealed but not a mine: ({i}, {j})")
                     return False
         return True
 
@@ -342,20 +336,16 @@ class MinesweeperEnv(gym.Env):
 
         # If game is over, all actions are invalid and return negative reward
         if self.terminated or self.truncated:
-            print(f"[DEBUG] Game already over (terminated={self.terminated}, truncated={self.truncated}). Returning invalid action reward.")
             return self.state, REWARD_INVALID_ACTION, True, False, info
 
         # Check if action is within bounds first
         if action < 0 or action >= self.action_space.n:
-            print(f"[DEBUG] Action {action} is out of bounds (0-{self.action_space.n-1}). Returning invalid action reward.")
             return self.state, REWARD_INVALID_ACTION, False, False, info
 
         # Check if action is valid using action masks
         if not self.action_masks[action]:
-            print(f"[DEBUG] Invalid action {action} detected via action masks. Returning invalid action reward.")
             # Check if ALL actions are invalid - if so, terminate the game
             if not np.any(self.action_masks):
-                print(f"[DEBUG] All actions are invalid - terminating game")
                 self.terminated = True
                 info['won'] = False
                 return self.state, REWARD_INVALID_ACTION, True, False, info
@@ -367,15 +357,10 @@ class MinesweeperEnv(gym.Env):
         col = action_index % self.current_board_width
         row = action_index // self.current_board_width
 
-        print(f"\nStep: action={action}, type={action_type}, pos=({row}, {col})")
-        print(f"is_first_move: {self.is_first_move}")
-
         # Handle flag actions
         if action_type == 1:
-            print(f"[DEBUG] Attempting to flag cell ({row}, {col}). Revealed: {self.revealed[row, col]}")
             if self.flags[row, col]:  # Unflag
                 # Trying to flag an already flagged cell is invalid
-                print(f"[DEBUG] Cell ({row}, {col}) is already flagged. Returning invalid action reward.")
                 return self.state, REWARD_INVALID_ACTION, False, False, info
             else:  # Place flag
                 self.flags[row, col] = True
@@ -386,19 +371,16 @@ class MinesweeperEnv(gym.Env):
         # Handle cell reveal
         if action_type == 0:
             if self.mines[row, col]:  # Hit a mine
-                print(f"[DEBUG] Hit mine at ({row}, {col}). is_first_move: {self.is_first_move}")
                 self.state[row, col] = CELL_MINE_HIT
                 self.revealed[row, col] = True
                 if self.is_first_move:
                     # On first move, reset the game instead of terminating
-                    print(f"[DEBUG] First move mine hit - resetting game")
                     self.reset()
                     # After reset, all cells should be unrevealed and unflagged
                     # Action masks should allow all actions
                     return self.state, REWARD_FIRST_MOVE_HIT_MINE, False, False, info
                 else:
                     # Game over - hit a mine
-                    print(f"[DEBUG] Non-first move mine hit - terminating game")
                     self.terminated = True
                     info['won'] = False
                     return self.state, REWARD_HIT_MINE, True, False, info
@@ -406,12 +388,8 @@ class MinesweeperEnv(gym.Env):
         # Reveal the cell
         self._reveal_cell(row, col)
 
-        # Debug print revealed array after reveal
-        print(f"[DEBUG] Revealed array after reveal:\n{self.revealed}")
-
         # Always check for win after all reveals (including cascades)
         if self._check_win():
-            print(f"[DEBUG] Win condition detected - terminating game")
             self.is_first_move = False
             self.terminated = True
             info['won'] = True
@@ -440,8 +418,9 @@ class MinesweeperEnv(gym.Env):
                 
                 # Flag action
                 flag_idx = (self.current_board_width * self.current_board_height) + reveal_idx
-                if self.revealed[i, j] or self.flags[i, j]:  # Can't flag revealed cells or already flagged cells
+                if self.revealed[i, j]:  # Can't flag revealed cells
                     masks[flag_idx] = False
+                # Note: We allow flagging unflagged cells AND unflagging flagged cells
         return masks
 
     def render(self):
