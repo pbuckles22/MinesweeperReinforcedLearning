@@ -108,10 +108,15 @@ class TestMinesweeperEnv:
         assert env.mine_spacing == 2
 
     def test_invalid_action(self, env):
-        """Test that invalid actions are handled (should not crash)"""
+        """Test that invalid actions are handled gracefully with penalty"""
         env.reset()
-        with pytest.raises((ValueError, IndexError)):
-            env.step(100)  # Out of bounds
+        # Test out of bounds action - should return penalty, not raise exception
+        state, reward, terminated, truncated, info = env.step(100)  # Out of bounds
+        assert not terminated
+        assert not truncated
+        assert reward == env.reward_invalid_action
+        assert isinstance(state, np.ndarray)
+        assert isinstance(info, dict)
 
     def test_mine_reveal(self, env):
         """Test revealing a mine."""
