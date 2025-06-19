@@ -54,8 +54,8 @@
 ### Priority 8: Core Mechanics ✅ **COMPLETED**
 - [x] Test safe cell reveal (refactored to new philosophy)
 
-### Priority 9: Mine Hits 🔄 **IN PROGRESS**
-- [ ] Test first move behavior (NEEDS NEW PHILOSOPHY)
+### Priority 9: Mine Hits ✅ **COMPLETED**
+- [x] Test first move behavior (refactored to new philosophy)
 
 ### Priority 10: Environment API Fixes 🔄 **IN PROGRESS**
 - [ ] Test invalid board size (NEEDS API FIX)

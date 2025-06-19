@@ -5,8 +5,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ## Test Statistics
 - **Total Tests**: 181
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 149 tests
-- **Failing**: 32 tests
+- **Passing**: 150 tests
+- **Failing**: 31 tests
 
 ## Test Categories
 
@@ -72,12 +72,12 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - `test_invalid_initial_parameters` ❌ (NEEDS API FIX)
 - `test_invalid_reward_parameters` ❌ (NEEDS API FIX)
 
-#### Mine Hits (5 tests): `tests/unit/core/test_mine_hits.py`
+#### Mine Hits (5 tests): `tests/unit/core/test_mine_hits.py` ✅
 - `test_mine_hit_reward` ✅
 - `test_mine_hit_state` ✅
 - `test_mine_hit_game_over` ✅
 - `test_first_move_mine_hit_reset` ✅
-- `test_first_move_behavior` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_first_move_behavior` ✅ (refactored to new philosophy)
 
 #### Minesweeper Environment (18 tests): `tests/unit/core/test_minesweeper_env.py`
 - `test_initialization` ✅
@@ -238,9 +238,9 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Flag Placement**: All 6 tests passing (refactored to new philosophy)
 - **Early Learning**: All 11 tests passing (refactored to new philosophy)
 - **Core Mechanics**: All 7 tests passing (refactored to new philosophy)
+- **Mine Hits**: All 5 tests passing (refactored to new philosophy)
 
 ### 🔄 In Progress Areas
-- **Mine Hits**: 1 test needs new philosophy
 - **Environment API**: 15 tests need API fixes
 - **Integration**: 3 tests need new philosophy
 - **Script Tests**: 5 tests need PowerShell fixes
@@ -252,7 +252,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Performance Tests**: 1 test needs new philosophy
 
 ## Next Steps
-1. **Apply new philosophy** to remaining 4 tests (Priorities 9-11)
+1. **Apply new philosophy** to remaining 3 tests (Priority 11)
 2. **Fix environment API inconsistencies** (15 tests)
 3. **Fix PowerShell script tests** (5 tests)
 4. **Add tests for `train_agent.py`** module (0% coverage)
