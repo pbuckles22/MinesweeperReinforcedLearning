@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.minesweeper_env import MinesweeperEnv
-from src.core.vec_env import DummyVecEnv
 
 @pytest.fixture
 def env():

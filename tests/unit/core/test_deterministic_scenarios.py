@@ -142,10 +142,19 @@ class TestDeterministicScenarios:
         state, reward, terminated, truncated, info = self.env.step(action)
         
         # Verify deterministic outcome: mine should be relocated and cell revealed
-        assert reward == REWARD_FIRST_MOVE_SAFE, f"Should get first move safe reward, got {reward}"
+        # Note: First move mine hit can result in win if cascade reveals all cells
+        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_WIN], f"Should get first move safe or win reward, got {reward}"
         assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed after mine relocation"
         assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
         assert not self.env.mines[0, 0], "Mine should be removed from original position"
+        
+        # If it's a win, verify the game is terminated and marked as won
+        if reward == REWARD_WIN:
+            assert terminated, "Game should be terminated on win"
+            assert info.get('won', False), "Game should be marked as won"
+        else:
+            assert not terminated, "Game should not terminate on safe first move"
+            assert not info.get('won', False), "Game should not be marked as won"
         
         print("✅ Deterministic first move mine hit passed")
     
