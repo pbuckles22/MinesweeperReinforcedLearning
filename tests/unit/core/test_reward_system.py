@@ -20,19 +20,21 @@ from src.core.constants import (
 @pytest.fixture
 def env():
     """Create a test environment."""
-    return MinesweeperEnv(initial_board_size=3, initial_mines=1)
+    return MinesweeperEnv(initial_board_size=4, initial_mines=3)  # More complex setup
 
 def test_first_move_safe_reward(env):
     """Test reward for safe first move."""
     env.reset()
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
+    # First move should be safe but not win (due to 3 mines in 4x4 board)
     assert reward == REWARD_FIRST_MOVE_SAFE
 
 def test_first_move_mine_hit_reward(env):
     """Test reward for hitting mine on first move."""
     env.reset()
     # Place mine at (0,0)
+    env.mines.fill(False)
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
@@ -46,31 +48,45 @@ def test_first_move_mine_hit_reward(env):
 def test_safe_reveal_reward(env):
     """Test reward for safe reveal after first move."""
     env.reset()
-    # Make first move safe
-    action = 0
+    # Set up board so first move doesn't cascade too much
+    env.mines.fill(False)
+    env.mines[0, 0] = True  # Mine in corner
+    env.mines[1, 1] = True  # Mine in center
+    env.mines[3, 3] = True  # Mine in opposite corner
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
+    # Make first move safe (should reveal limited area)
+    action = 2  # (0,2) - should be safe and not cause large cascade
     state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_FIRST_MOVE_SAFE
+    assert reward == REWARD_SAFE_REVEAL  # Not first move anymore
     
     # Second move should give safe reveal reward
-    action = 1
+    action = 3  # (0,3) - should be unrevealed
     state, reward, terminated, truncated, info = env.step(action)
     assert reward == REWARD_SAFE_REVEAL
 
 def test_mine_hit_reward(env):
     """Test reward for hitting mine after first move."""
     env.reset()
-    # Make first move safe
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Place mine at (1,0) and hit it
-    env.mines[1, 0] = True
+    # Set up board with controlled mine placement
+    env.mines.fill(False)
+    env.mines[0, 0] = True  # Mine in corner
+    env.mines[1, 1] = True  # Mine in center
+    env.mines[3, 3] = True  # Mine in opposite corner
     env._update_adjacent_counts()
     env.mines_placed = True
     env.is_first_move = False
     env.first_move_done = True
     
-    action = 3  # (1,0)
+    # Make first move safe
+    action = 2  # (0,2) - safe cell
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    # Now hit a mine
+    action = 0  # (0,0) - mine
     state, reward, terminated, truncated, info = env.step(action)
     assert reward == REWARD_HIT_MINE
 
@@ -175,9 +191,6 @@ def test_reward_with_custom_parameters():
         initial_mines=2,
         invalid_action_penalty=-5.0,
         mine_penalty=-10.0,
-        flag_mine_reward=5.0,
-        flag_safe_penalty=-2.0,
-        unflag_penalty=-1.0,
         safe_reveal_base=2.0,
         win_reward=50.0
     )

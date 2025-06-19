@@ -23,7 +23,7 @@
 - [x] Fix edge cases tests (10/10 passing)
 - [x] Fix mine hits tests (5/5 passing)
 - [x] Fix error handling edge cases (26/26 passing)
-- [ ] Fix reward system tests (3/16 failing)
+- [x] Fix reward system tests (15/15 passing)
 
 ### Priority 2: Deterministic Scenarios ✅ **COMPLETED**
 - [x] All deterministic scenario tests passing (10/10)
@@ -85,6 +85,10 @@
 - **RL Test Suite**: All 11 tests passing (moved to `tests/unit/rl/`)
 - **Core Mechanics**: All 7 tests passing
 - **Action Masking**: All 6 tests passing
+- **Edge Cases**: All 10 tests passing
+- **Mine Hits**: All 5 tests passing
+- **Error Handling**: All 26 tests passing
+- **Reward System**: All 15 tests passing
 
 ### 🟦 In Progress Areas (Priority 1)
 - **Edge Cases**: 0/10 tests failing
@@ -98,10 +102,9 @@
 - **Training Agent**: 0% coverage - needs comprehensive tests
 
 ## Next Steps
-1. **Fix all failing edge case, mine hit, error handling, and reward system tests** (Priority 1 - 10 tests)
-2. **Ensure all core mechanics and edge cases are working correctly**
-3. **Move to RL training tests** only after mechanics are clean
-4. **Target 60% coverage** by end of audit
+1. **All Priority 1 tests are now passing** ✅
+2. **Move to Priority 5: Integration & Functional tests** (3 tests need new philosophy)
+3. **Target 60% coverage** by end of audit
 
 ## Test Inventory
 See `tests/TEST_INVENTORY.md` for detailed test breakdown and status. 

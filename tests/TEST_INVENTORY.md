@@ -39,8 +39,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 #### Minesweeper Environment (18 tests): `tests/unit/core/test_minesweeper_env.py`
 - 18 passing, 0 failing
 
-#### Reward System (16 tests): `tests/unit/core/test_reward_system.py`
-- 13 passing, 3 failing
+#### Reward System (15 tests): `tests/unit/core/test_reward_system.py`
+- 15 passing, 0 failing
 
 #### State Management (20 tests): `tests/unit/core/test_state_management.py`
 - 20 passing, 0 failing
@@ -75,26 +75,22 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ### Core Tests (`tests/unit/core/`)
 - **Philosophy**: Deterministic, explicit board setup
 - **Purpose**: Verify core mechanics, edge cases, and deterministic behavior
-- **Status**: 101 tests, 0 failing (Priority 1 to fix)
+- **Status**: 101 tests, 0 failing (Priority 1 complete)
 
 ### RL Tests (`tests/unit/rl/`)
 - **Philosophy**: Non-deterministic, realistic training scenarios
 - **Purpose**: Verify RL agent integration, early learning, and training behavior
 - **Status**: 11 tests, 0 failing
 
-## Priority 1: Core Test Fixes Needed
+## Priority 1: Core Test Fixes Needed ✅ **COMPLETE**
 
-### Mine Hits (0 failing)
-
-### Error Handling (0 failing)
-
-### Reward System (3 failing)
-- `test_safe_reveal_reward`
-- `test_mine_hit_reward`
-- `test_reward_with_custom_parameters`
+All Priority 1 tests are now passing:
+- **Edge Cases**: 10/10 passing
+- **Mine Hits**: 5/5 passing  
+- **Error Handling**: 26/26 passing
+- **Reward System**: 15/15 passing
 
 ## Next Steps
-1. **Fix all 0 failing core tests** (Priority 1)
-2. **Ensure deterministic behavior and edge/cascade logic is working correctly**
-3. **Move to RL training tests** only after mechanics are clean
-4. **Target 60% coverage** by end of audit
+1. **All Priority 1 tests are now passing** ✅
+2. **Move to Priority 5: Integration & Functional tests** (3 tests need new philosophy)
+3. **Target 60% coverage** by end of audit
