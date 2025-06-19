@@ -4,7 +4,6 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
     REWARD_FIRST_MOVE_SAFE,
     REWARD_FIRST_MOVE_HIT_MINE,
