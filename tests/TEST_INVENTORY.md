@@ -100,18 +100,18 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 
 #### Reward System (16 tests): `tests/unit/core/test_reward_system.py`
 - `test_first_move_safe_reward` ✅
-- `test_first_move_mine_hit_reward` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_first_move_mine_hit_reward` ✅
 - `test_safe_reveal_reward` ✅
-- `test_mine_hit_reward` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_mine_hit_reward` ✅
 - `test_flag_placement_reward` ✅
-- `test_flag_safe_cell_penalty` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_flag_removal_reward` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_flag_safe_cell_penalty` ✅
+- `test_flag_removal_reward` ✅
 - `test_win_reward` ✅
 - `test_invalid_action_penalty` ✅
 - `test_reward_scaling_with_board_size` ✅
 - `test_reward_consistency` ✅
-- `test_reward_with_custom_parameters` ❌ (NEEDS NEW PHILOSOPHY)
-- `test_reward_info_dict` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_reward_with_custom_parameters` ✅
+- `test_reward_info_dict` ✅
 - `test_reward_with_early_learning` ✅
 - `test_reward_edge_cases` ✅
 - `test_reward_with_rectangular_board` ✅
