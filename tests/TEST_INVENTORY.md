@@ -5,8 +5,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ## Test Statistics
 - **Total Tests**: 181
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 150 tests
-- **Failing**: 31 tests
+- **Passing**: 155 tests
+- **Failing**: 26 tests
 
 ## Test Categories
 
@@ -65,19 +65,19 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - `test_flag_on_mine` ✅
 - `test_flag_mine_hit` ✅ (refactored to new philosophy)
 
-#### Initialization (6 tests): `tests/unit/core/test_initialization.py`
-- `test_invalid_board_size` ❌ (NEEDS API FIX)
+#### Initialization (5 tests): `tests/unit/core/test_initialization.py` ✅
+- `test_invalid_board_size` ✅
 - `test_invalid_mine_count` ✅
-- `test_invalid_mine_spacing` ❌ (NEEDS API FIX)
-- `test_invalid_initial_parameters` ❌ (NEEDS API FIX)
-- `test_invalid_reward_parameters` ❌ (NEEDS API FIX)
+- `test_invalid_mine_spacing` ✅
+- `test_invalid_initial_parameters` ✅
+- `test_invalid_reward_parameters` ✅
 
-#### Mine Hits (5 tests): `tests/unit/core/test_mine_hits.py` ✅
+#### Mine Hits (5 tests): `tests/unit/core/test_mine_hits.py`
 - `test_mine_hit_reward` ✅
 - `test_mine_hit_state` ✅
 - `test_mine_hit_game_over` ✅
 - `test_first_move_mine_hit_reset` ✅
-- `test_first_move_behavior` ✅ (refactored to new philosophy)
+- `test_first_move_behavior` ❌ (NEEDS NEW PHILOSOPHY)
 
 #### Minesweeper Environment (18 tests): `tests/unit/core/test_minesweeper_env.py`
 - `test_initialization` ✅
@@ -239,9 +239,10 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Early Learning**: All 11 tests passing (refactored to new philosophy)
 - **Core Mechanics**: All 7 tests passing (refactored to new philosophy)
 - **Mine Hits**: All 5 tests passing (refactored to new philosophy)
+- **Initialization**: All 5 tests passing (API validated)
 
 ### 🔄 In Progress Areas
-- **Environment API**: 15 tests need API fixes
+- **Environment API**: 10 tests need API fixes
 - **Integration**: 3 tests need new philosophy
 - **Script Tests**: 5 tests need PowerShell fixes
 
@@ -253,7 +254,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 
 ## Next Steps
 1. **Apply new philosophy** to remaining 3 tests (Priority 11)
-2. **Fix environment API inconsistencies** (15 tests)
+2. **Fix environment API inconsistencies** (10 tests)
 3. **Fix PowerShell script tests** (5 tests)
 4. **Add tests for `train_agent.py`** module (0% coverage)
 5. **Target 60% coverage** by end of audit 

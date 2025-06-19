@@ -3,8 +3,8 @@
 ## Overview
 - **Total Tests**: 181
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 148 tests
-- **Failing**: 33 tests
+- **Passing**: 155 tests
+- **Failing**: 26 tests
 - **Target Coverage**: 60% by end of audit
 
 ## Testing Philosophy
@@ -57,7 +57,10 @@
 ### Priority 9: Mine Hits ✅ **COMPLETED**
 - [x] Test first move behavior (refactored to new philosophy)
 
-### Priority 10: Environment API Fixes 🔄 **IN PROGRESS**
+### Priority 10: Initialization/API ✅ **COMPLETED**
+- [x] All initialization and API validation tests passing (5/5)
+
+### Priority 11: Environment API Fixes 🔄 **IN PROGRESS**
 - [ ] Test invalid board size (NEEDS API FIX)
 - [ ] Test invalid mine spacing (NEEDS API FIX)
 - [ ] Test invalid initial parameters (NEEDS API FIX)
@@ -77,19 +80,19 @@
 - [ ] Test state transitions (NEEDS NEW PHILOSOPHY)
 - [ ] Test state representation (NEEDS NEW PHILOSOPHY)
 
-### Priority 11: Integration & Functional (Integration Layer) 🔄 **IN PROGRESS**
+### Priority 12: Integration & Functional (Integration Layer) 🔄 **IN PROGRESS**
 - [ ] Test early learning progression (NEEDS NEW PHILOSOPHY)
 - [ ] Test win rate tracking (NEEDS NEW PHILOSOPHY)
 - [ ] Test memory usage (NEEDS NEW PHILOSOPHY)
 
-### Priority 12: Script Tests 🔄 **IN PROGRESS**
+### Priority 13: Script Tests 🔄 **IN PROGRESS**
 - [ ] Test script syntax (NEEDS SCRIPT FIX)
 - [ ] Test script parameters (NEEDS SCRIPT FIX)
 - [ ] Test script environment check (NEEDS SCRIPT FIX)
 - [ ] Test script output handling (NEEDS SCRIPT FIX)
 - [ ] Test script error handling (NEEDS SCRIPT FIX)
 
-### Priority 13: Agent Training (New Module) 📋 **TODO**
+### Priority 14: Agent Training (New Module) 📋 **TODO**
 - [ ] Add comprehensive tests for `train_agent.py` module (0% coverage)
 - [ ] Test training loop functionality
 - [ ] Test model saving/loading
