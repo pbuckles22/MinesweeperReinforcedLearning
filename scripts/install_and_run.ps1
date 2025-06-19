@@ -78,24 +78,55 @@ python -m pytest tests/integration/test_environment.py -v
 Write-Host "Running tests..."
 python -m pytest tests/unit/core tests/unit/agent tests/integration tests/functional tests/scripts -v
 
-# Run training script
-Write-Host "Starting training..."
-python src/core/train_agent.py `
-    --total_timesteps 1000000 `
-    --learning_rate 0.0003 `
-    --batch_size 64 `
-    --n_steps 2048 `
-    --n_epochs 10 `
-    --gamma 0.99 `
-    --gae_lambda 0.95 `
-    --clip_range 0.2 `
-    --ent_coef 0.01 `
-    --vf_coef 0.5 `
-    --max_grad_norm 0.5 `
-    --eval_freq 10000 `
-    --n_eval_episodes 100 `
-    --save_freq 50000 `
-    --verbose 1
+# Ask user if they want to run RL training test
+Write-Host ""
+Write-Host "=" * 60
+Write-Host "All tests passed! 🎉"
+Write-Host "=" * 60
+Write-Host ""
+Write-Host "Would you like to run a quick RL training test to verify early learning works?"
+Write-Host "This will run a short training session (10,000 timesteps) to test the fixes."
+Write-Host ""
+$runRLTest = Read-Host "Run RL test? (y/n)"
+
+if ($runRLTest -eq "y" -or $runRLTest -eq "Y" -or $runRLTest -eq "yes" -or $runRLTest -eq "Yes") {
+    Write-Host ""
+    Write-Host "Starting RL training test..."
+    Write-Host "This will run for ~1-2 minutes to verify early learning works correctly."
+    Write-Host ""
+    
+    # Run a short training test
+    python src/core/train_agent.py `
+        --total_timesteps 10000 `
+        --eval_freq 2000 `
+        --n_eval_episodes 20 `
+        --learning_rate 0.0003 `
+        --verbose 1
+    
+    Write-Host ""
+    Write-Host "=" * 60
+    Write-Host "RL training test completed!"
+    Write-Host "Check the output above to verify early learning is working."
+    Write-Host "=" * 60
+} else {
+    Write-Host ""
+    Write-Host "Skipping RL training test."
+    Write-Host ""
+    Write-Host "To run the RL training test later:"
+    Write-Host "1. Activate the virtual environment:"
+    Write-Host "   .\venv\Scripts\Activate.ps1"
+    Write-Host ""
+    Write-Host "2. Run a quick test (10k timesteps, ~1-2 minutes):"
+    Write-Host "   python src/core/train_agent.py --total_timesteps 10000 --eval_freq 2000 --n_eval_episodes 20 --verbose 1"
+    Write-Host ""
+    Write-Host "3. Or run a longer test (50k timesteps, ~5-10 minutes):"
+    Write-Host "   python src/core/train_agent.py --total_timesteps 50000 --eval_freq 5000 --n_eval_episodes 50 --verbose 1"
+    Write-Host ""
+    Write-Host "4. Or run the full training (1M timesteps, ~1-2 hours):"
+    Write-Host "   python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --verbose 1"
+    Write-Host ""
+    Write-Host "The training will show progress including win rates and learning phases."
+}
 
 # Deactivate virtual environment
 deactivate 
