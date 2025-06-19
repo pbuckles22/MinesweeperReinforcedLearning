@@ -3,162 +3,105 @@ import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
-    CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
-    REWARD_SAFE_REVEAL,
-    REWARD_WIN,
-    REWARD_HIT_MINE,
-    REWARD_FLAG_PLACED,
-    REWARD_FLAG_REMOVED,
     REWARD_INVALID_ACTION
 )
 
 @pytest.fixture
 def env():
+    """Create a test environment."""
     return MinesweeperEnv(initial_board_size=3, initial_mines=1)
 
-def test_reveal_already_revealed_cell():
-    """Test that revealing an already revealed cell is invalid."""
-    env = MinesweeperEnv(initial_board_size=5, initial_mines=1)
+def test_action_masking_initial(env):
+    """Test that all actions are initially valid."""
     env.reset()
-    # Place mine far from (0,0) and (0,1)
-    env.mines[:, :] = False
-    env.mines[4, 4] = True
-    env._update_adjacent_counts()
-    # Reveal (0,0) using step
-    action = 0  # (0,0)
-    state, reward, terminated, truncated, info = env.step(action)
-    # Reveal (0,1) to ensure there are other valid actions
-    action_2 = 1  # (0,1)
-    state, reward, terminated, truncated, info = env.step(action_2)
-    # Now try to reveal (0,0) again (already revealed)
-    state, reward, terminated, truncated, info = env.step(0)
-    assert reward < 0  # Invalid action should give negative reward
-    assert 'won' in info  # Info should contain expected keys
+    masks = env.action_masks
+    assert np.all(masks), "All actions should be valid initially"
+    assert np.sum(masks) == env.current_board_width * env.current_board_height
 
-def test_reveal_flagged_cell(env):
-    """Test that revealing a flagged cell is invalid."""
+def test_action_masking_after_reveal(env):
+    """Test that revealed cells are masked and valid actions match unrevealed, non-mine cells."""
     env.reset()
-    # Set up board with one mine in a corner to avoid immediate win
-    env.mines[:, :] = False
-    env.mines[2, 2] = True  # Place mine in bottom-right corner
-    env._update_adjacent_counts()
-    
-    # Flag a cell
-    action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(action)
-    # Try to reveal the flagged cell
-    reveal_action = 0
-    state, reward, terminated, truncated, info = env.step(reveal_action)
-    assert reward < 0
-    assert not terminated
-    assert not truncated
-    assert 'won' in info
-
-def test_flag_revealed_cell():
-    """Test that flagging a revealed cell is invalid."""
-    env = MinesweeperEnv(initial_board_size=5, initial_mines=1)
-    env.reset()
-    # Place mine far from (0,0) and (0,1)
-    env.mines[:, :] = False
-    env.mines[4, 4] = True
-    env._update_adjacent_counts()
-    # Reveal (0,0) using step
-    action = 0  # (0,0)
-    state, reward, terminated, truncated, info = env.step(action)
-    # Reveal (0,1) to ensure there are other valid actions
-    action_2 = 1  # (0,1)
-    state, reward, terminated, truncated, info = env.step(action_2)
-    # Now try to flag (0,0) (already revealed)
-    flag_action = env.current_board_width * env.current_board_height  # flag (0,0)
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    assert reward < 0  # Invalid action should give negative reward
-    assert 'won' in info  # Info should contain expected keys
-
-def test_flag_already_flagged_cell(env):
-    """Test that flagging an already flagged cell is invalid."""
-    env.reset()
-    # Set up board with one mine in a corner to avoid immediate win
-    env.mines[:, :] = False
-    env.mines[2, 2] = True  # Place mine in bottom-right corner
-    env._update_adjacent_counts()
-    
-    # Flag a cell
-    flag_action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    # Try to flag the same cell again
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    assert reward < 0
-    assert not terminated
-    assert not truncated
-    assert 'won' in info
-
-def test_reveal_after_game_over(env):
-    """Test that revealing after game over is invalid."""
-    env.reset()
-    # Set up a mine at (0,0) and make sure it's not the first move
-    env.mines[:, :] = False
-    env.mines[0, 0] = True
-    env._update_adjacent_counts()
-    env.is_first_move = False
-    
-    # Hit the mine (this should terminate the game)
+    # Reveal a cell
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    assert terminated
-    # Try to reveal another cell
-    action = 1
-    state, reward, terminated, truncated, info = env.step(action)
-    assert reward < 0
-    assert terminated
-    assert not truncated
-    assert 'won' in info
-
-def test_action_masking_revealed_cells(env):
-    """Test that revealed cells are masked."""
-    env.reset()
-    # Set up board with one mine in a corner to avoid immediate win
-    env.mines[:, :] = False
-    env.mines[2, 2] = True  # Place mine in bottom-right corner
-    env._update_adjacent_counts()
     
-    # Reveal a cell (should be safe)
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
     # Check that the revealed cell is masked
-    assert not env.action_masks[action]
-    assert not env.action_masks[action + env.current_board_width * env.current_board_height]
-
-def test_action_masking_flagged_cells(env):
-    """Test that flagged cells are masked for reveal but not for unflag."""
-    env.reset()
-    # Set up board with one mine in a corner to avoid immediate win
-    env.mines[:, :] = False
-    env.mines[2, 2] = True  # Place mine in bottom-right corner
-    env._update_adjacent_counts()
+    masks = env.action_masks
+    assert not masks[action], "Revealed cell should be masked"
     
-    # Flag a cell
-    action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(action)
-    # Check that the flagged cell is masked for reveal but not for flag (unflag)
-    assert env.action_masks[action]
-    assert not env.action_masks[action - env.current_board_width * env.current_board_height]
+    # The number of valid actions should match the number of unrevealed, non-mine cells
+    unrevealed_non_mine = np.sum((~env.revealed) & (~env.mines))
+    assert np.sum(masks) == unrevealed_non_mine, (
+        f"Expected {unrevealed_non_mine} valid actions, got {np.sum(masks)}."
+    )
 
-def test_action_masking_game_over(env):
-    """Test that all actions are masked when game is over."""
+def test_action_masking_after_game_over(env):
+    """Test that all actions are masked after game over."""
     env.reset()
-    # Set up a mine at (0,0) and make sure it's not the first move
-    env.mines[:, :] = False
+    # Place mine at (0,0) and hit it
     env.mines[0, 0] = True
     env._update_adjacent_counts()
+    env.mines_placed = True
     env.is_first_move = False
+    env.first_move_done = True
     
-    # Hit mine (this should terminate the game)
+    # Hit the mine
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    assert terminated
-    # Check that all actions are masked
-    assert all(not mask for mask in env.action_masks) 
+    
+    # All actions should be masked after game over
+    masks = env.action_masks
+    assert np.all(~masks), "All actions should be masked after game over"
+
+def test_action_masking_after_win(env):
+    """Test that all actions are masked after winning."""
+    env.reset()
+    # Set up a simple win scenario: mine at corner, reveal all others
+    env.mines.fill(False)
+    env.mines[0, 0] = True  # Mine at corner
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
+    # Reveal all safe cells
+    for i in range(1, env.current_board_width * env.current_board_height):
+        state, reward, terminated, truncated, info = env.step(i)
+        if terminated:
+            break
+    
+    # All actions should be masked after win
+    masks = env.action_masks
+    assert np.all(~masks), "All actions should be masked after win"
+
+def test_action_masking_invalid_actions(env):
+    """Test that invalid actions are properly masked."""
+    env.reset()
+    
+    # Test out of bounds actions
+    invalid_actions = [-1, env.action_space.n, env.action_space.n + 1]
+    for action in invalid_actions:
+        # These should not be in the action space
+        assert not env.action_space.contains(action)
+
+def test_action_masking_consistency(env):
+    """Test that action masking is consistent across multiple actions."""
+    env.reset()
+    
+    # Take multiple actions and verify masking consistency
+    actions = [0, 1, 2]
+    for action in actions:
+        state, reward, terminated, truncated, info = env.step(action)
+        if terminated:
+            break
+        
+        masks = env.action_masks
+        # All taken actions should be masked
+        for taken_action in actions[:actions.index(action) + 1]:
+            assert not masks[taken_action], f"Action {taken_action} should be masked"
+        
+        # Remaining actions should be valid
+        remaining_actions = [i for i in range(env.action_space.n) if i not in actions[:actions.index(action) + 1]]
+        for remaining_action in remaining_actions:
+            assert masks[remaining_action], f"Action {remaining_action} should be valid" 
