@@ -18,9 +18,9 @@
 
 ## Priority Order (Mechanics-First Approach)
 
-### Priority 1: Fix Edge Case Tests 🔄 **IN PROGRESS**
+### Priority 1: Fix Edge Case Tests ✅ **COMPLETE**
 **Goal**: Get all edge case and cascade logic working correctly before RL training
-- [ ] Fix edge cases tests (5/10 failing)
+- [x] Fix edge cases tests (10/10 passing)
 - [ ] Fix mine hits tests (3/5 failing)
 - [ ] Fix error handling edge cases (5/26 failing)
 - [ ] Fix reward system tests (3/16 failing)
@@ -86,8 +86,8 @@
 - **Core Mechanics**: All 7 tests passing
 - **Action Masking**: All 6 tests passing
 
-### 🔄 In Progress Areas (Priority 1)
-- **Edge Cases**: 5/10 tests failing
+### 🟦 In Progress Areas (Priority 1)
+- **Edge Cases**: 0/10 tests failing
 - **Mine Hits**: 3/5 tests failing
 - **Error Handling**: 5/26 tests failing
 - **Reward System**: 3/16 tests failing

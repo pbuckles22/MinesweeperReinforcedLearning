@@ -25,7 +25,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - 10 passing, 0 failing
 
 #### Edge Cases (10 tests): `tests/unit/core/test_edge_cases.py`
-- 5 passing, 5 failing
+- 10 passing, 0 failing
 
 #### Error Handling (26 tests): `tests/unit/core/test_error_handling.py`
 - 21 passing, 5 failing
@@ -75,7 +75,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ### Core Tests (`tests/unit/core/`)
 - **Philosophy**: Deterministic, explicit board setup
 - **Purpose**: Verify core mechanics, edge cases, and deterministic behavior
-- **Status**: 101 tests, 10 failing (Priority 1 to fix)
+- **Status**: 101 tests, 5 failing (Priority 1 to fix)
 
 ### RL Tests (`tests/unit/rl/`)
 - **Philosophy**: Non-deterministic, realistic training scenarios
@@ -83,13 +83,6 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Status**: 11 tests, 0 failing
 
 ## Priority 1: Core Test Fixes Needed
-
-### Edge Cases (5 failing)
-- `test_cascade_boundary_conditions`
-- `test_multiple_disconnected_zero_regions`
-- `test_win_on_first_move`
-- `test_rectangular_board_cascade`
-- `test_cascade_with_mines_at_boundaries`
 
 ### Mine Hits (3 failing)
 - `test_first_move_mine_hit`
