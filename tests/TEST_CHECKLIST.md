@@ -19,7 +19,7 @@
 - [x] Test flag already flagged cell
 - [x] Test reveal after game over
 - [x] Test action masking revealed cells
-- [ ] Test action masking flagged cells (FAILING: `assert not np.True_`)
+- [x] Test action masking flagged cells
 - [x] Test action masking game over
 
 ### Invalid Action Tests
@@ -353,6 +353,28 @@
 - [ ] Fix script parameter validation
 - [ ] Fix script environment checks
 - [ ] Fix script output and error handling 
+
+## Better Approach Strategy
+
+### Phase 1: Complete Current Checklist (Current Priority)
+1. **Fix all failing tests** on default board sizes first
+2. **Get all tests passing** with current implementation
+3. **Establish solid foundation** before any major refactoring
+
+### Phase 2: Board Size Audit (Future Enhancement)
+1. **Audit all tests** for board size assumptions
+2. **Parameterize tests** that truly need multiple board sizes
+3. **Refactor tests** that break on different board sizes
+4. **Add board size parameterization** where appropriate
+
+### Phase 3: Performance & Optimization
+1. **Run full test suite** on various board sizes
+2. **Optimize performance** for large boards
+3. **Add comprehensive board size coverage**
+
+**Note**: Phase 1 takes priority. Phase 2 and 3 are enhancements that can be done after all current tests are passing.
+
+---
 
 ## Board Size Parameterization Guidance
 

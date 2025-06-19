@@ -138,14 +138,14 @@ def test_action_masking_revealed_cells(env):
     assert not env.action_masks[action + env.current_board_width * env.current_board_height]  # Flag action
 
 def test_action_masking_flagged_cells(env):
-    """Test that flagged cells are masked."""
+    """Test that flagged cells are masked for reveal but not for unflag."""
     # Flag a cell
     action = env.current_board_width * env.current_board_height  # Flag top-left cell
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Check that the flagged cell is masked
-    assert not env.action_masks[action]
-    assert not env.action_masks[action - env.current_board_width * env.current_board_height]  # Reveal action
+    # Check that the flagged cell is masked for reveal but not for flag (unflag)
+    assert env.action_masks[action]  # Flag action should remain valid (for unflagging)
+    assert not env.action_masks[action - env.current_board_width * env.current_board_height]  # Reveal action should be masked
 
 def test_action_masking_game_over(env):
     """Test that all actions are masked when game is over."""
