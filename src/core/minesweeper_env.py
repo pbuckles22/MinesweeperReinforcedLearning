@@ -315,6 +315,30 @@ class MinesweeperEnv(gym.Env):
                         continue
                     self._reveal_cell(row + dr, col + dc)
 
+    def _relocate_mine_from_position(self, row: int, col: int) -> None:
+        """Relocate a mine from the given position to a safe location."""
+        # Remove mine from current position
+        self.mines[row, col] = False
+        
+        # Find a safe location for the mine (not the first move position)
+        safe_positions = []
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if not self.mines[i, j] and (i != row or j != col):
+                    safe_positions.append((i, j))
+        
+        if safe_positions:
+            # Choose a random safe position
+            import random
+            new_row, new_col = random.choice(safe_positions)
+            self.mines[new_row, new_col] = True
+        else:
+            # Fallback: if no safe positions, just remove the mine
+            pass
+        
+        # Update adjacent counts after mine relocation
+        self._update_adjacent_counts()
+
     def _get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
         """Get all valid neighbors of a cell.
         Args:
@@ -348,7 +372,6 @@ class MinesweeperEnv(gym.Env):
         return True
 
     def step(self, action):
-        """Take a step in the environment."""
         # Initialize info dict with 'won' key
         info = {'won': self._check_win()}
 
@@ -375,20 +398,33 @@ class MinesweeperEnv(gym.Env):
 
         # Handle cell reveal
         if self.mines[row, col]:  # Hit a mine
-            self.state[0, row, col] = CELL_MINE_HIT
-            self.revealed[row, col] = True
             if self.is_first_move:
-                # On first move, reset the game instead of terminating
-                self.reset()
-                # After reset, all cells should be unrevealed
-                return self.state, REWARD_FIRST_MOVE_HIT_MINE, False, False, info
+                # First move safety: relocate the mine and reveal the intended cell
+                self._relocate_mine_from_position(row, col)
+                # Now reveal the cell (which should be safe)
+                self._reveal_cell(row, col)
+                # Update enhanced state after revealing cells
+                self._update_enhanced_state()
+                # Check for win after all reveals (including cascades)
+                if self._check_win():
+                    self.is_first_move = False
+                    self.terminated = True
+                    info['won'] = True
+                    return self.state, REWARD_WIN, True, False, info
+                # Return first move safe reward since we relocated the mine
+                reward = REWARD_FIRST_MOVE_SAFE
+                self.is_first_move = False
+                info['won'] = False
+                return self.state, reward, False, False, info
             else:
-                # Game over - hit a mine
+                # Game over - hit a mine (not first move)
+                self.state[0, row, col] = CELL_MINE_HIT
+                self.revealed[row, col] = True
                 self.terminated = True
                 info['won'] = False
                 return self.state, REWARD_HIT_MINE, True, False, info
 
-        # Reveal the cell
+        # Reveal the cell (safe cell)
         self._reveal_cell(row, col)
 
         # Update enhanced state after revealing cells
@@ -498,7 +534,6 @@ class MinesweeperEnv(gym.Env):
                         self.state[0, i, j] = self.board[i, j]
                 else:
                     self.state[0, i, j] = CELL_UNREVEALED
-        
         # Channel 1: Safety hints (number of adjacent mines for unrevealed cells, -1 for unknown)
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
@@ -523,18 +558,11 @@ def main():
     env = MinesweeperEnv(max_board_size=8, max_mines=12)
     state, _ = env.reset()
     
-    print("Initial state:")
-    env.render()
-    
     # Take a random action
     action = env.action_space.sample()
     state, reward, terminated, truncated, info = env.step(action)
     
-    print("\nAfter action:", action)
-    print("Reward:", reward)
-    print("Terminated:", terminated)
-    print("Truncated:", truncated)
-    env.render()
+    return state, reward, terminated, truncated, info
 
 if __name__ == "__main__":
     main() 

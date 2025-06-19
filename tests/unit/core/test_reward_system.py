@@ -40,10 +40,17 @@ def test_first_move_mine_hit_reward(env):
     env.mines_placed = True
     env.is_first_move = True
     env.first_move_done = False
-    
+
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_FIRST_MOVE_HIT_MINE
+    # First move mine hit should relocate the mine and reveal the cell
+    # If this reveals all safe cells, it should be a win
+    if terminated:
+        assert reward == REWARD_WIN, "First move should give win reward if all safe cells are revealed"
+        assert info.get('won', False), "Game should be marked as won"
+    else:
+        assert reward == REWARD_FIRST_MOVE_SAFE, "First move mine hit should relocate mine and give safe reward"
+        assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
 
 def test_safe_reveal_reward(env):
     """Test reward for safe reveal after first move."""

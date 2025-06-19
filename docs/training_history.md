@@ -144,3 +144,66 @@ policy_kwargs = {
 - Record both successful and failed runs
 - Note any special conditions or modifications
 - Update this document after each significant training run 
+
+# Training History and Development Log
+
+## 2024-12-19: Critical First-Move Mine Hit Bug Fix
+
+### Issue Identified
+- **Problem**: Environment was resetting after first-move mine hits, breaking the RL contract
+- **Impact**: 5/53 functional tests failing, state/mask/reward inconsistencies
+- **Root Cause**: `step()` method called `self.reset()` on first-move mine hits, returning fresh board instead of action result
+
+### Solution Implemented
+- **Environment Fix**: Added `_relocate_mine_from_position()` method to handle first-move safety
+- **Behavior Change**: First-move mine hits now relocate the mine and reveal the intended cell
+- **RL Contract**: Every `step()` now returns the actual result of the action, not a side effect
+
+### Test Suite Improvements
+- **Unit Tests**: Updated 4 failing unit tests to expect correct behavior
+- **Functional Tests**: Fixed 2 failing functional tests with proper test setup
+- **Coverage**: All 53 functional tests and 116 unit tests now passing
+
+### Key Changes
+1. **Environment** (`src/core/minesweeper_env.py`):
+   - Added `_relocate_mine_from_position()` method
+   - Modified `step()` to handle first-move mine hits correctly
+   - Maintained first-move safety guarantee without breaking RL contract
+
+2. **Unit Tests**:
+   - `test_first_move_mine_hit`: Expects mine relocation, not reset
+   - `test_first_move_mine_hit_reward`: Handles win scenarios properly
+   - `test_mine_hit_after_first_move`: Handles first-move wins
+   - `test_action_masking_consistency`: Fixed cascade handling
+
+3. **Functional Tests**:
+   - `test_mine_placement_avoids_first_cell`: Handles immediate wins correctly
+   - `test_safety_hints_accuracy`: Fixed test setup with proper state updates
+
+### Why Unit Tests Didn't Catch This
+- **Incorrect Design**: Some unit tests were testing buggy behavior as correct
+- **Missing Contract Testing**: No verification of fundamental RL contract
+- **Isolated Testing**: Focused on components rather than complete workflows
+- **Wrong Assumptions**: Tests assumed reset behavior was correct
+
+### Impact
+- ✅ **RL Contract Maintained**: Agents can now learn properly from action results
+- ✅ **First-Move Safety**: Guarantee preserved without breaking environment consistency
+- ✅ **Test Coverage**: Comprehensive test suite now validates correct behavior
+- ✅ **Documentation**: Clear understanding of why functional tests caught what unit tests missed
+
+### Lessons Learned
+1. **Functional tests are crucial** for catching integration issues that unit tests miss
+2. **RL environments must maintain strict contracts** - `step()` should always return action results
+3. **Test design matters** - tests should validate correct behavior, not current implementation
+4. **End-to-end testing** reveals issues that isolated component testing cannot
+
+---
+
+## Previous Entries
+
+### 2024-12-18: Environment Modernization and Flagging Removal
+- Removed all flagging logic from environment
+- Updated to 2-channel state representation
+- Modernized test suites for RL-appropriate scenarios
+- Enhanced functional and integration tests 

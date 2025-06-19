@@ -141,10 +141,11 @@ class TestDeterministicScenarios:
         action = 0  # (0,0)
         state, reward, terminated, truncated, info = self.env.step(action)
         
-        # Verify deterministic outcome
-        assert not terminated, "First move mine hit should reset, not terminate"
-        assert reward == REWARD_FIRST_MOVE_HIT_MINE, f"Should get first move mine hit reward, got {reward}"
-        assert np.all(state[0] == CELL_UNREVEALED), "Board should be reset to unrevealed"
+        # Verify deterministic outcome: mine should be relocated and cell revealed
+        assert reward == REWARD_FIRST_MOVE_SAFE, f"Should get first move safe reward, got {reward}"
+        assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed after mine relocation"
+        assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
+        assert not self.env.mines[0, 0], "Mine should be removed from original position"
         
         print("✅ Deterministic first move mine hit passed")
     

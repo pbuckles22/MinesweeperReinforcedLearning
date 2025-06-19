@@ -1,3 +1,10 @@
+"""
+Integration Tests for Minesweeper RL Environment
+
+These tests verify that all components work together correctly,
+including environment initialization, state management, and RL training integration.
+"""
+
 import pytest
 import os
 import sys
@@ -386,6 +393,371 @@ def test_win_condition(env):
     assert not truncated
     assert reward == REWARD_WIN
     assert info.get('won', False)
+
+class TestEnvironmentIntegration:
+    """Test complete environment integration."""
+    
+    def test_full_environment_lifecycle(self):
+        """Test complete environment lifecycle from creation to game end."""
+        # Create environment
+        env = MinesweeperEnv(
+            initial_board_size=(5, 5),
+            initial_mines=5,
+            max_board_size=(10, 10),
+            max_mines=20
+        )
+        
+        # Reset environment
+        state, info = env.reset(seed=42)
+        
+        # Verify initial state
+        assert state.shape == (2, 5, 5), "Initial state should have correct shape"
+        assert np.all(state[0] == CELL_UNREVEALED), "Initial game state should be all unrevealed"
+        assert np.all(state[1] >= -1), "Safety hints should be >= -1"
+        assert np.all(state[1] <= 8), "Safety hints should be <= 8"
+        
+        # Play a complete game
+        total_reward = 0
+        moves_made = 0
+        game_ended = False
+        
+        while not game_ended and moves_made < 25:  # Prevent infinite loop
+            # Find an unrevealed cell
+            unrevealed = np.where(state[0] == CELL_UNREVEALED)
+            if len(unrevealed[0]) == 0:
+                break
+                
+            action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            total_reward += reward
+            moves_made += 1
+            
+            # Verify state consistency
+            assert state.shape == (2, 5, 5), "State shape should remain consistent"
+            assert isinstance(reward, (int, float)), "Reward should be numeric"
+            assert isinstance(terminated, bool), "Terminated should be boolean"
+            assert isinstance(info, dict), "Info should be dictionary"
+            
+            if terminated:
+                game_ended = True
+        
+        # Verify game ended properly
+        assert game_ended, "Game should have ended"
+        assert moves_made > 0, "Should have made some moves"
+        assert isinstance(total_reward, (int, float)), "Total reward should be numeric"
+    
+    def test_environment_with_curriculum_learning(self):
+        """Test environment integration with curriculum learning."""
+        env = MinesweeperEnv(
+            initial_board_size=(3, 3),
+            initial_mines=1,
+            max_board_size=(8, 8),
+            max_mines=15
+        )
+        
+        # Test progression through different difficulty levels
+        for level in range(3):
+            # Set difficulty for this level
+            width = 3 + level * 2
+            height = 3 + level * 2
+            mines = 1 + level * 2
+            
+            env.current_board_width = width
+            env.current_board_height = height
+            env.current_mines = mines
+            state, info = env.reset(seed=42 + level)
+            
+            # Verify environment setup
+            assert env.state.shape == (2, height, width), f"State should match level {level} dimensions"
+            assert env.action_space.n == width * height, f"Action space should match level {level} dimensions"
+            assert env.current_mines == mines, f"Mine count should match level {level}"
+            
+            # Play a few moves
+            for action in range(min(5, width * height)):
+                state, reward, terminated, truncated, info = env.step(action)
+                
+                # Verify state consistency
+                assert state.shape == (2, height, width), f"State shape should remain consistent at level {level}"
+                assert isinstance(reward, (int, float)), f"Reward should be numeric at level {level}"
+                
+                if terminated:
+                    break
+    
+    def test_environment_with_early_learning(self):
+        """Test environment integration with early learning mode."""
+        env = MinesweeperEnv(
+            initial_board_size=(4, 4),
+            initial_mines=3,
+            early_learning_mode=True,
+            early_learning_corner_safe=True,
+            early_learning_edge_safe=True
+        )
+        
+        # Test multiple games with early learning
+        for game in range(5):
+            state, info = env.reset(seed=42 + game)
+            
+            # Verify early learning setup
+            assert state.shape == (2, 4, 4), "State should have correct shape"
+            assert env.early_learning_mode, "Early learning mode should be enabled"
+            
+            # Test corner safety
+            corner_action = 0  # (0,0)
+            state, reward, terminated, truncated, info = env.step(corner_action)
+            
+            # Corner should be safe in early learning mode
+            assert not terminated or reward != REWARD_HIT_MINE, f"Corner should be safe in game {game}"
+            
+            # Play a few more moves
+            for action in range(1, 5):
+                if not terminated:
+                    state, reward, terminated, truncated, info = env.step(action)
+    
+    def test_environment_state_consistency(self):
+        """Test that environment maintains state consistency throughout integration."""
+        env = MinesweeperEnv(initial_board_size=(6, 6), initial_mines=8)
+        
+        # Track state evolution
+        state_history = []
+        
+        state, info = env.reset(seed=42)
+        state_history.append(state.copy())
+        
+        # Make several moves and track state changes
+        for action in range(10):
+            state, reward, terminated, truncated, info = env.step(action)
+            state_history.append(state.copy())
+            
+            # Verify state consistency
+            assert state.shape == (2, 6, 6), "State shape should remain consistent"
+            assert np.all(state[1] >= -1), "Safety hints should be >= -1"
+            assert np.all(state[1] <= 8), "Safety hints should be <= 8"
+            
+            # Verify that previously revealed cells remain revealed
+            if len(state_history) > 1:
+                prev_state = state_history[-2]
+                revealed_in_prev = prev_state[0] != CELL_UNREVEALED
+                assert np.all(state[0][revealed_in_prev] != CELL_UNREVEALED), "Previously revealed cells should remain revealed"
+            
+            if terminated:
+                break
+        
+        # Verify state history consistency
+        assert len(state_history) > 1, "Should have multiple states in history"
+        for i, state in enumerate(state_history):
+            assert state.shape == (2, 6, 6), f"All states should have consistent shape, state {i}"
+    
+    def test_environment_action_masking_integration(self):
+        """Test action masking integration throughout gameplay."""
+        env = MinesweeperEnv(initial_board_size=(5, 5), initial_mines=5)
+        state, info = env.reset(seed=42)
+        
+        # Track action masks
+        mask_history = []
+        
+        # Initial masks should all be True
+        initial_masks = env.action_masks
+        assert np.all(initial_masks), "All actions should be valid initially"
+        assert np.sum(initial_masks) == env.action_space.n, "All actions should be valid initially"
+        mask_history.append(initial_masks.copy())
+        
+        # Make moves and track mask changes
+        for action in range(10):
+            # Verify current masks
+            current_masks = env.action_masks
+            mask_history.append(current_masks.copy())
+            
+            # Take action
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            # Verify mask consistency
+            assert len(env.action_masks) == env.action_space.n, "Mask length should match action space"
+            assert np.sum(env.action_masks) <= env.action_space.n, "Valid actions should not exceed total actions"
+            
+            if terminated:
+                break
+        
+        # Verify mask evolution
+        assert len(mask_history) > 1, "Should have multiple mask states"
+        for i, masks in enumerate(mask_history):
+            assert len(masks) == env.action_space.n, f"All masks should have correct length, mask {i}"
+    
+    def test_environment_reward_integration(self):
+        """Test reward system integration throughout gameplay."""
+        env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=3)
+        state, info = env.reset(seed=42)
+        
+        # Track rewards
+        reward_history = []
+        
+        # Play until game ends
+        moves_made = 0
+        while moves_made < 16:  # Prevent infinite loop
+            # Find an unrevealed cell
+            unrevealed = np.where(state[0] == CELL_UNREVEALED)
+            if len(unrevealed[0]) == 0:
+                break
+                
+            action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            reward_history.append(reward)
+            moves_made += 1
+            
+            # Verify reward consistency
+            assert isinstance(reward, (int, float)), f"Reward should be numeric, move {moves_made}"
+            valid_rewards = [REWARD_WIN, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, 
+                           REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_INVALID_ACTION]
+            assert reward in valid_rewards, f"Reward should be valid, got {reward} on move {moves_made}"
+            
+            if terminated:
+                break
+        
+        # Verify reward history
+        assert len(reward_history) > 0, "Should have some rewards"
+        assert all(isinstance(r, (int, float)) for r in reward_history), "All rewards should be numeric"
+    
+    def test_environment_info_integration(self):
+        """Test info dictionary integration throughout gameplay."""
+        env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=3)
+        state, info = env.reset(seed=42)
+        
+        # Track info
+        info_history = []
+        
+        # Play until game ends
+        moves_made = 0
+        while moves_made < 16:  # Prevent infinite loop
+            # Find an unrevealed cell
+            unrevealed = np.where(state[0] == CELL_UNREVEALED)
+            if len(unrevealed[0]) == 0:
+                break
+                
+            action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            info_history.append(info.copy())
+            moves_made += 1
+            
+            # Verify info consistency
+            assert isinstance(info, dict), f"Info should be dictionary, move {moves_made}"
+            assert 'won' in info, f"Info should contain 'won' key, move {moves_made}"
+            assert isinstance(info['won'], bool), f"'won' should be boolean, move {moves_made}"
+            
+            if terminated:
+                break
+        
+        # Verify info history
+        assert len(info_history) > 0, "Should have some info states"
+        assert all(isinstance(i, dict) for i in info_history), "All info should be dictionaries"
+        assert all('won' in i for i in info_history), "All info should contain 'won' key"
+    
+    def test_environment_rectangular_integration(self):
+        """Test environment integration with rectangular boards."""
+        env = MinesweeperEnv(initial_board_size=(6, 4), initial_mines=5)
+        state, info = env.reset(seed=42)
+        
+        # Verify rectangular setup
+        assert env.current_board_width == 6, "Should have correct width"
+        assert env.current_board_height == 4, "Should have correct height"
+        assert state.shape == (2, 4, 6), "State should match rectangular dimensions"
+        assert env.action_space.n == 24, "Action space should match rectangular dimensions"
+        
+        # Play a complete game
+        total_reward = 0
+        moves_made = 0
+        
+        while moves_made < 24:  # Prevent infinite loop
+            # Find an unrevealed cell
+            unrevealed = np.where(state[0] == CELL_UNREVEALED)
+            if len(unrevealed[0]) == 0:
+                break
+                
+            action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            total_reward += reward
+            moves_made += 1
+            
+            # Verify state consistency
+            assert state.shape == (2, 4, 6), "State shape should remain consistent"
+            assert isinstance(reward, (int, float)), "Reward should be numeric"
+            
+            if terminated:
+                break
+        
+        # Verify game played properly
+        assert moves_made > 0, "Should have made some moves"
+        assert isinstance(total_reward, (int, float)), "Total reward should be numeric"
+    
+    def test_environment_large_board_integration(self):
+        """Test environment integration with large boards."""
+        env = MinesweeperEnv(initial_board_size=(12, 12), initial_mines=20)
+        state, info = env.reset(seed=42)
+        
+        # Verify large board setup
+        assert env.current_board_width == 12, "Should have correct width"
+        assert env.current_board_height == 12, "Should have correct height"
+        assert state.shape == (2, 12, 12), "State should match large dimensions"
+        assert env.action_space.n == 144, "Action space should match large dimensions"
+        
+        # Play several moves
+        total_reward = 0
+        moves_made = 0
+        
+        for action in range(20):  # Make up to 20 moves
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            total_reward += reward
+            moves_made += 1
+            
+            # Verify state consistency
+            assert state.shape == (2, 12, 12), "State shape should remain consistent"
+            assert isinstance(reward, (int, float)), "Reward should be numeric"
+            
+            if terminated:
+                break
+        
+        # Verify game played properly
+        assert moves_made > 0, "Should have made some moves"
+        assert isinstance(total_reward, (int, float)), "Total reward should be numeric"
+    
+    def test_environment_high_density_integration(self):
+        """Test environment integration with high mine density."""
+        env = MinesweeperEnv(initial_board_size=(8, 8), initial_mines=50)
+        state, info = env.reset(seed=42)
+        
+        # Verify high density setup
+        density = env.current_mines / (env.current_board_width * env.current_board_height)
+        assert density == 50/64, "Should have correct mine density"
+        
+        # Play until game ends
+        total_reward = 0
+        moves_made = 0
+        
+        while moves_made < 64:  # Prevent infinite loop
+            # Find an unrevealed cell
+            unrevealed = np.where(state[0] == CELL_UNREVEALED)
+            if len(unrevealed[0]) == 0:
+                break
+                
+            action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
+            state, reward, terminated, truncated, info = env.step(action)
+            
+            total_reward += reward
+            moves_made += 1
+            
+            # Verify state consistency
+            assert state.shape == (2, 8, 8), "State shape should remain consistent"
+            assert isinstance(reward, (int, float)), "Reward should be numeric"
+            
+            if terminated:
+                break
+        
+        # Verify game played properly
+        assert moves_made > 0, "Should have made some moves"
+        assert isinstance(total_reward, (int, float)), "Total reward should be numeric"
 
 if __name__ == "__main__":
     sys.exit(main()) 

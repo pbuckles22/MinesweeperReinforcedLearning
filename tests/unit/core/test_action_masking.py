@@ -99,9 +99,22 @@ def test_action_masking_consistency(env):
     """Test that action masking is consistent across multiple actions."""
     env.reset()
     
+    # Set up controlled board to avoid large cascades
+    env.mines.fill(False)
+    env.mines[1, 1] = True  # Mine in center
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
     # Take multiple actions and verify masking consistency
     actions = [0, 1, 2]
     for action in actions:
+        # Check if action is still valid before taking it
+        if not env.action_masks[action]:
+            print(f"Action {action} is already masked, skipping")
+            continue
+            
         state, reward, terminated, truncated, info = env.step(action)
         if terminated:
             break
@@ -109,9 +122,15 @@ def test_action_masking_consistency(env):
         masks = env.action_masks
         # All taken actions should be masked
         for taken_action in actions[:actions.index(action) + 1]:
-            assert not masks[taken_action], f"Action {taken_action} should be masked"
+            if taken_action < len(masks):
+                assert not masks[taken_action], f"Action {taken_action} should be masked"
         
-        # Remaining actions should be valid
+        # Remaining actions should be valid if they're still unrevealed
         remaining_actions = [i for i in range(env.action_space.n) if i not in actions[:actions.index(action) + 1]]
         for remaining_action in remaining_actions:
-            assert masks[remaining_action], f"Action {remaining_action} should be valid" 
+            if remaining_action < len(masks):
+                # Only check if the cell is still unrevealed
+                row = remaining_action // env.current_board_width
+                col = remaining_action % env.current_board_width
+                if not env.revealed[row, col]:
+                    assert masks[remaining_action], f"Action {remaining_action} should be valid if unrevealed" 
