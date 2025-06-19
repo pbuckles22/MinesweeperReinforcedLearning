@@ -5,8 +5,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ## Test Statistics
 - **Total Tests**: 181
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 148 tests
-- **Failing**: 33 tests
+- **Passing**: 149 tests
+- **Failing**: 32 tests
 
 ## Test Categories
 
@@ -31,11 +31,11 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
   - `test_action_space_mapping` ✅
   - `test_action_space_consistency` ✅
 
-#### Core Mechanics (8 tests): `tests/unit/core/test_core_mechanics.py`
+#### Core Mechanics (8 tests): `tests/unit/core/test_core_mechanics.py` ✅
 - `test_initialization` ✅
 - `test_reset` ✅
 - `test_step` ✅
-- `test_safe_cell_reveal` ❌ (NEEDS NEW PHILOSOPHY)
+- `test_safe_cell_reveal` ✅ (refactored to new philosophy)
 - `test_safe_cell_cascade` ✅
 - `test_safe_cell_adjacent_mines` ✅
 - `test_win_condition` ✅
@@ -231,15 +231,15 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 
 ### ✅ Completed Areas (Summary Style)
 - **Action Handling**: All 12 tests passing
-- **Error Handling**: All 26 tests passing (refactored to match environment)
 - **Core State Management**: All 20 tests passing (refactored to new philosophy)
 - **Game Logic & Win/Loss**: All 4 tests passing (refactored to new philosophy)
+- **Error Handling**: All 26 tests passing (refactored to match environment)
 - **Reward System**: All 16 tests passing (refactored to new philosophy)
 - **Flag Placement**: All 6 tests passing (refactored to new philosophy)
 - **Early Learning**: All 11 tests passing (refactored to new philosophy)
+- **Core Mechanics**: All 7 tests passing (refactored to new philosophy)
 
 ### 🔄 In Progress Areas
-- **Core Mechanics**: 1 test needs new philosophy
 - **Mine Hits**: 1 test needs new philosophy
 - **Environment API**: 15 tests need API fixes
 - **Integration**: 3 tests need new philosophy
@@ -252,8 +252,8 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Performance Tests**: 1 test needs new philosophy
 
 ## Next Steps
-1. Apply new testing philosophy to remaining 5 tests (Priorities 8-9)
-2. Fix environment API inconsistencies (15 tests)
-3. Fix PowerShell script tests (5 tests)
-4. Add tests for `train_agent.py` module (0% coverage)
-5. Target 60% coverage by end of audit 
+1. **Apply new philosophy** to remaining 4 tests (Priorities 9-11)
+2. **Fix environment API inconsistencies** (15 tests)
+3. **Fix PowerShell script tests** (5 tests)
+4. **Add tests for `train_agent.py`** module (0% coverage)
+5. **Target 60% coverage** by end of audit 

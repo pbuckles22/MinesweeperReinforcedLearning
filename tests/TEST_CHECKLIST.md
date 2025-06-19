@@ -51,8 +51,8 @@
 - [x] Test early learning mine spacing (refactored to new philosophy)
 - [x] Test early learning win rate tracking (refactored to new philosophy)
 
-### Priority 8: Core Mechanics 🔄 **IN PROGRESS**
-- [ ] Test safe cell reveal (NEEDS NEW PHILOSOPHY)
+### Priority 8: Core Mechanics ✅ **COMPLETED**
+- [x] Test safe cell reveal (refactored to new philosophy)
 
 ### Priority 9: Mine Hits 🔄 **IN PROGRESS**
 - [ ] Test first move behavior (NEEDS NEW PHILOSOPHY)
