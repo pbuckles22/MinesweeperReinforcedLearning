@@ -14,6 +14,9 @@ from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
+    MINE_INDICATOR,
+    SAFE_INDICATOR,
+    UNKNOWN_SAFETY,
     REWARD_FIRST_MOVE_SAFE,
     REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
@@ -25,7 +28,7 @@ from src.core.constants import (
 
 class MinesweeperEnv(gym.Env):
     """
-    A Minesweeper environment for reinforcement learning with realistic win condition and fixed observation/action space for curriculum learning.
+    A Minesweeper environment for reinforcement learning with enhanced state representation and fixed observation/action space for curriculum learning.
     Supports multiple difficulty levels from easy to chaotic.
     """
     def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
@@ -132,11 +135,17 @@ class MinesweeperEnv(gym.Env):
         
         # Define action and observation spaces
         self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
+        
+        # Enhanced observation space with 4 channels
+        # Channel 0: Game state (revealed cells with numbers, unrevealed as -1, mine hits as -4)
+        # Channel 1: Mine locations (1 for mines, 0 for safe cells)
+        # Channel 2: Progress indicator (percentage of safe cells revealed, 0-1)
+        # Channel 3: Safety hints (number of adjacent mines for unrevealed cells, -1 for unknown)
         self.observation_space = spaces.Box(
-            low=-4,  # CELL_MINE_HIT
-            high=8,  # Maximum number of adjacent mines
-            shape=(self.current_board_height, self.current_board_width),
-            dtype=np.int8
+            low=np.array([[-4, 0, 0, -1]] * self.current_board_width * self.current_board_height).reshape(4, self.current_board_height, self.current_board_width),
+            high=np.array([[8, 1, 1, 8]] * self.current_board_width * self.current_board_height).reshape(4, self.current_board_height, self.current_board_width),
+            shape=(4, self.current_board_height, self.current_board_width),
+            dtype=np.float32
         )
         
         # Initialize info dictionary
@@ -161,19 +170,33 @@ class MinesweeperEnv(gym.Env):
         # Initialize or update action space based on current board size
         self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
         
-        # Initialize state space
+        # Initialize enhanced state space with 4 channels
         self.observation_space = spaces.Box(
-            low=-4,  # CELL_MINE_HIT
-            high=8,  # Maximum number of adjacent mines
-            shape=(self.current_board_height, self.current_board_width),
-            dtype=np.int8
+            low=np.array([[-4, 0, 0, -1]] * self.current_board_width * self.current_board_height).reshape(4, self.current_board_height, self.current_board_width),
+            high=np.array([[8, 1, 1, 8]] * self.current_board_width * self.current_board_height).reshape(4, self.current_board_height, self.current_board_width),
+            shape=(4, self.current_board_height, self.current_board_width),
+            dtype=np.float32
         )
         
         # Initialize board state
-        self.state = np.full((self.current_board_height, self.current_board_width), CELL_UNREVEALED, dtype=np.int8)
         self.board = np.zeros((self.current_board_height, self.current_board_width), dtype=np.int8)
         self.mines = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         self.revealed = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
+        
+        # Initialize enhanced state with 4 channels
+        self.state = np.zeros((4, self.current_board_height, self.current_board_width), dtype=np.float32)
+        
+        # Channel 0: Game state (all unrevealed initially)
+        self.state[0] = CELL_UNREVEALED
+        
+        # Channel 1: Mine locations (will be set after mine placement)
+        self.state[1] = SAFE_INDICATOR
+        
+        # Channel 2: Progress indicator (0 initially)
+        self.state[2] = 0.0
+        
+        # Channel 3: Safety hints (unknown initially)
+        self.state[3] = UNKNOWN_SAFETY
         
         # Reset game state
         self.terminated = False
@@ -184,6 +207,9 @@ class MinesweeperEnv(gym.Env):
         
         # Place mines unconditionally
         self._place_mines()
+        
+        # Update enhanced state after mine placement
+        self._update_enhanced_state()
         
         # Initialize info dict
         self.info = {
@@ -276,7 +302,7 @@ class MinesweeperEnv(gym.Env):
             return
 
         self.revealed[row, col] = True
-        self.state[row, col] = self._get_cell_value(row, col)
+        self.state[0, row, col] = self._get_cell_value(row, col)
 
         if self._get_cell_value(row, col) == 0:
             for dr in [-1, 0, 1]:
@@ -345,7 +371,7 @@ class MinesweeperEnv(gym.Env):
 
         # Handle cell reveal
         if self.mines[row, col]:  # Hit a mine
-            self.state[row, col] = CELL_MINE_HIT
+            self.state[0, row, col] = CELL_MINE_HIT
             self.revealed[row, col] = True
             if self.is_first_move:
                 # On first move, reset the game instead of terminating
@@ -360,6 +386,9 @@ class MinesweeperEnv(gym.Env):
 
         # Reveal the cell
         self._reveal_cell(row, col)
+
+        # Update enhanced state after revealing cells
+        self._update_enhanced_state()
 
         # Always check for win after all reveals (including cascades)
         if self._check_win():
@@ -402,18 +431,20 @@ class MinesweeperEnv(gym.Env):
                 rect = pygame.Rect(x * self.cell_size, y * self.cell_size, 
                                  self.cell_size, self.cell_size)
                 
-                if not self.revealed[y, x]:
+                # Use channel 0 (game state) for rendering
+                cell_value = self.state[0, y, x]
+                
+                if cell_value == CELL_UNREVEALED:
                     pygame.draw.rect(self.screen, (128, 128, 128), rect)  # Gray for unrevealed
+                elif cell_value == CELL_MINE_HIT:
+                    pygame.draw.rect(self.screen, (0, 0, 0), rect)  # Black for mine hits
                 else:
-                    if self.mines[y, x]:
-                        pygame.draw.rect(self.screen, (0, 0, 0), rect)  # Black for mines
-                    else:
-                        pygame.draw.rect(self.screen, (255, 255, 255), rect)  # White for revealed
-                        if self.board[y, x] > 0:
-                            font = pygame.font.Font(None, 36)
-                            text = font.render(str(self.board[y, x]), True, (0, 0, 0))
-                            text_rect = text.get_rect(center=rect.center)
-                            self.screen.blit(text, text_rect)
+                    pygame.draw.rect(self.screen, (255, 255, 255), rect)  # White for revealed
+                    if cell_value > 0:
+                        font = pygame.font.Font(None, 36)
+                        text = font.render(str(int(cell_value)), True, (0, 0, 0))
+                        text_rect = text.get_rect(center=rect.center)
+                        self.screen.blit(text, text_rect)
 
         pygame.display.flip()
         self.clock.tick(30)
@@ -446,6 +477,47 @@ class MinesweeperEnv(gym.Env):
             int: The value of the cell (number of adjacent mines).
         """
         return self.board[row, col]
+
+    def _update_enhanced_state(self):
+        """Update the enhanced state representation."""
+        # Channel 0: Game state (revealed cells with numbers, unrevealed as -1, mine hits as -4)
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if self.revealed[i, j]:
+                    if self.mines[i, j]:
+                        self.state[0, i, j] = CELL_MINE_HIT
+                    else:
+                        self.state[0, i, j] = self.board[i, j]
+                else:
+                    self.state[0, i, j] = CELL_UNREVEALED
+        
+        # Channel 1: Mine locations (1 for mines, 0 for safe cells)
+        self.state[1] = self.mines.astype(np.float32)
+        
+        # Channel 2: Progress indicator (percentage of safe cells revealed, 0-1)
+        total_safe_cells = self.current_board_width * self.current_board_height - self.current_mines
+        revealed_safe_cells = np.sum(self.revealed & ~self.mines)
+        progress = revealed_safe_cells / total_safe_cells if total_safe_cells > 0 else 0.0
+        self.state[2] = progress
+        
+        # Channel 3: Safety hints (number of adjacent mines for unrevealed cells, -1 for unknown)
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if self.revealed[i, j]:
+                    self.state[3, i, j] = UNKNOWN_SAFETY  # Revealed cells don't need safety hints
+                else:
+                    # Count adjacent mines for unrevealed cells
+                    adjacent_mines = 0
+                    for di in [-1, 0, 1]:
+                        for dj in [-1, 0, 1]:
+                            if di == 0 and dj == 0:
+                                continue
+                            ni, nj = i + di, j + dj
+                            if (0 <= ni < self.current_board_height and 
+                                0 <= nj < self.current_board_width and 
+                                self.mines[ni, nj]):
+                                adjacent_mines += 1
+                    self.state[3, i, j] = adjacent_mines
 
 def main():
     # Create and test the environment
