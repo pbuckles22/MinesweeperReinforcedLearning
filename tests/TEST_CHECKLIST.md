@@ -1,352 +1,155 @@
-# Minesweeper Test Checklist (Updated with New Testing Philosophy)
+# Test Checklist - Minesweeper Reinforcement Learning
 
-## Testing Philosophy & Best Practices
+## Overview
+- **Total Tests**: 181
+- **Current Coverage**: 43% (580 statements, 331 missing)
+- **Passing**: 137 tests
+- **Failing**: 44 tests
+- **Target Coverage**: 60% by end of audit
 
-### ✅ **New Testing Standards (Applied to Action Masking Tests)**
-- **Explicit Board Setup**: Each test explicitly sets up the board state needed for its specific scenario
-- **Public API Only**: Tests use only `env.step()` and avoid direct manipulation of internal state
-- **Deterministic**: No randomness - tests always test the same scenario
-- **Robust Assertions**: Only assert what's actually being tested (invalid action penalty, info structure)
-- **No False Assumptions**: Don't assume the environment won't terminate when it's designed to do so
+## Testing Philosophy
+- **Explicit Board Setup**: Use deterministic board configurations instead of random seeds
+- **Public API Only**: Use only `step()`, `reset()`, and public properties - no direct state manipulation
+- **Deterministic Tests**: Each test should have predictable outcomes
+- **Environment API Compliance**: Tests must match actual environment behavior and gymnasium error types
+- **Comprehensive Coverage**: Target 60% code coverage with focus on critical paths
 
-### **Test Categories by Update Priority**
+## Priority Order (Dependency-Based)
 
-#### **Priority 1: Apply New Philosophy (25 tests)**
-- Early Learning Tests (6 failing) - Random mine placement, state assumptions
-- Game Flow Tests (2 failing) - Random win/loss scenarios  
-- Performance Tests (1 failing) - Memory usage with random scenarios
-- State Management Tests (4 failing) - State assumptions, random termination
-- Reward System Tests (7 failing) - Random scenarios, state assumptions
-- Core Mechanics Tests (4 failing) - Wrong behavior, missing features
+### Priority 1: Action Handling ✅ **COMPLETED**
+- [x] All action masking tests passing (8/8)
+- [x] All action space tests passing (6/6)
+- [x] All action consistency tests passing
 
-#### **Priority 2: Fix Environment API (15 tests)**
-- Error Handling Tests (15 failing) - Wrong error messages, missing validations
+### Priority 2: Core State Management ✅ **COMPLETED**
+- [x] All state management tests passing (20/20)
+- [x] All state transition tests passing
+- [x] All state persistence tests passing
 
-#### **Priority 3: Fix Implementation (10 tests)**
-- Initialization Tests (4 failing) - Wrong error messages, missing validations
-- Integration Tests (5 failing) - Missing attributes, wrong behavior
-- Flag Placement Tests (2 failing) - Wrong state representation
+### Priority 3: Game Logic & Win/Loss ✅ **COMPLETED**
+- [x] All game flow tests passing (4/4)
+- [x] All win/loss condition tests passing
+- [x] All game completion tests passing
 
-#### **Priority 4: Fix Infrastructure (5 tests)**
-- Script Tests (5 failing) - PowerShell syntax, missing features
+### Priority 4: Error Handling & API Consistency ✅ **COMPLETED**
+- [x] All error handling tests refactored to match actual environment and gymnasium error behavior (26/26 passing)
+- [x] All API consistency tests passing
 
----
+### Priority 5: Reward System 🔄 **IN PROGRESS**
+- [ ] Test first move mine hit reward (NEEDS NEW PHILOSOPHY)
+- [ ] Test mine hit reward (NEEDS NEW PHILOSOPHY)
+- [ ] Test flag safe cell penalty (NEEDS NEW PHILOSOPHY)
+- [ ] Test flag removal reward (NEEDS NEW PHILOSOPHY)
+- [ ] Test reward with custom parameters (NEEDS NEW PHILOSOPHY)
+- [ ] Test reward info dict (NEEDS NEW PHILOSOPHY)
 
-## Priority 1: Action Space & Action Handling (Foundation Layer) ✅ **COMPLETED**
-**Why:** All environment interaction depends on correct action mapping, masking, and validation.
+### Priority 6: Flag Placement 🔄 **IN PROGRESS**
+- [ ] Test flag removal (NEEDS NEW PHILOSOPHY)
+- [ ] Test flag mine hit (NEEDS NEW PHILOSOPHY)
 
-### Action Space Tests
-- [x] Test action space size
-- [x] Test action space type
-- [x] Test action space boundaries
-- [x] Test action space mapping
-- [x] Test action space consistency
-
-### Action Masking Tests ✅ **COMPLETED**
-- [x] Test reveal already revealed cell
-- [x] Test reveal flagged cell
-- [x] Test flag revealed cell
-- [x] Test flag already flagged cell
-- [x] Test reveal after game over
-- [x] Test action masking revealed cells
-- [x] Test action masking flagged cells
-- [x] Test action masking game over
-
-### Action Validation Tests
-- [x] Test invalid action handling
-
-## Priority 2: Core State Management (State Layer) ✅ **COMPLETED**
-**Why:** All game logic depends on correct state representation and updates.
-
-### State Management Tests
-- [x] Test state reset
-- [x] Test mine placement on reset
-- [x] Test flag clearing on reset
-- [x] Test counter reset
-- [x] Test state persistence between actions
-- [x] Test flag persistence
-- [x] Test revealed cell persistence
-- [x] Test game over state
-- [x] Test game counter
-- [x] Test win counter
-- [x] Test consecutive hits
-- [x] Test win rate calculation
-- [x] Test state transitions
-- [x] Test state representation
-- [x] Test state with flags
-- [x] Test state with revealed cells
-- [x] Test state with mine hit
-- [x] Test state consistency
-- [x] Test state with rectangular board
-- [x] Test state with large board
-
-## Priority 3: Game Logic & Win/Loss (Logic Layer) ✅ **COMPLETED**
-**Why:** Core gameplay mechanics must work correctly.
-
-### Core Mechanics Tests
-- [x] Test initialization
-- [x] Test reset
-- [x] Test step
-- [x] Test safe cell reveal
-- [x] Test safe cell cascade
-- [x] Test safe cell adjacent mines
-- [x] Test win condition
-- [x] Test mine placement
-- [x] Test safe cell reveal
-- [x] Test difficulty levels
-- [x] Test rectangular board actions
-
-### Game Flow Tests
-- [x] Test complete game win
-- [x] Test complete game loss
-- [x] Test game with flags
-- [x] Test game with wrong flags
-
-### Win/Loss Detection Tests
-- [x] Test win condition
-- [ ] Test win condition rectangular (NEEDS NEW PHILOSOPHY)
-- [ ] Test game over condition (NEEDS NEW PHILOSOPHY)
-
-## Priority 4: Initialization & Validation (Validation Layer) ✅ **COMPLETED**
-**Why:** Environment must validate parameters correctly.
-
-### Parameter Validation Tests
-- [x] Test invalid board size
-- [x] Test invalid mine count
-- [x] Test invalid mine spacing
-- [x] Test invalid initial parameters
-- [x] Test invalid reward parameters
-
-### Edge Cases Tests
-- [x] Test edge case minimum board
-- [x] Test edge case maximum board
-- [x] Test edge case maximum mines
-
-## Priority 5: Error Handling & API Consistency (API Layer) 🔄 **IN PROGRESS**
-**Why:** Environment API must be consistent and handle errors properly.
-
-### Error Handling Tests
-- [ ] Test invalid action handling (NEEDS API FIX)
-- [ ] Test invalid board size handling (NEEDS API FIX)
-- [ ] Test invalid mine count handling (NEEDS API FIX)
-- [ ] Test invalid mine spacing handling (NEEDS API FIX)
-- [ ] Test invalid initial parameters handling (NEEDS API FIX)
-- [ ] Test invalid reward parameters handling (NEEDS API FIX)
-- [ ] Test edge case minimum board handling (NEEDS API FIX)
-- [ ] Test edge case maximum board handling (NEEDS API FIX)
-- [ ] Test edge case maximum mines handling (NEEDS API FIX)
-- [ ] Test invalid action handling (NEEDS API FIX)
-- [ ] Test invalid board size handling (NEEDS API FIX)
-- [ ] Test invalid mine count handling (NEEDS API FIX)
-- [ ] Test invalid mine spacing handling (NEEDS API FIX)
-- [ ] Test invalid initial parameters handling (NEEDS API FIX)
-- [ ] Test invalid reward parameters handling (NEEDS API FIX)
-
-## Priority 6: Integration & Functional (Integration Layer) 🔄 **IN PROGRESS**
-**Why:** Integration tests verify the complete system works together.
-
-### Integration Environment Tests
-- [x] Test imports
-- [x] Test environment creation
-- [x] Test basic actions
-- [x] Test pygame
-- [x] Test initialization
-- [x] Test invalid action
-- [x] Test mine reveal
-- [x] Test reset
-- [x] Test step
-- [ ] Test initialization (NEEDS NEW PHILOSOPHY)
-- [ ] Test reset (NEEDS NEW PHILOSOPHY)
-- [x] Test board size initialization
-- [x] Test mine count initialization
-- [ ] Test adjacent mines initialization (NEEDS NEW PHILOSOPHY)
-- [x] Test environment initialization
-- [x] Test board creation
-- [ ] Test mine placement (NEEDS NEW PHILOSOPHY)
-- [ ] Test safe cell reveal (NEEDS NEW PHILOSOPHY)
-- [x] Test difficulty levels
-- [ ] Test rectangular board actions (NEEDS NEW PHILOSOPHY)
-- [x] Test curriculum progression
-- [x] Test win condition
-
-### Functional Tests
-- [ ] Test difficulty progression (NEEDS NEW PHILOSOPHY)
-- [ ] Test game flow (NEEDS NEW PHILOSOPHY)
-- [ ] Test performance (NEEDS NEW PHILOSOPHY)
-
-## Priority 7: Early Learning & Curriculum (Progression Layer) 🔄 **IN PROGRESS**
-**Why:** Advanced features depend on all previous layers.
-
-### Early Learning Tests
-- [x] Test early learning initialization
+### Priority 7: Early Learning 🔄 **IN PROGRESS**
 - [ ] Test corner safety (NEEDS NEW PHILOSOPHY)
 - [ ] Test edge safety (NEEDS NEW PHILOSOPHY)
-- [x] Test early learning disabled
-- [x] Test threshold behavior
 - [ ] Test parameter updates (NEEDS NEW PHILOSOPHY)
-- [x] Test state preservation
+- [ ] Test state preservation (NEEDS NEW PHILOSOPHY)
 - [ ] Test transition out of early learning (NEEDS NEW PHILOSOPHY)
-- [x] Test early learning with large board
 - [ ] Test early learning mine spacing (NEEDS NEW PHILOSOPHY)
 - [ ] Test early learning win rate tracking (NEEDS NEW PHILOSOPHY)
 
-### Curriculum Progression Tests
+### Priority 8: Core Mechanics 🔄 **IN PROGRESS**
+- [ ] Test safe cell reveal (NEEDS NEW PHILOSOPHY)
+
+### Priority 9: Mine Hits 🔄 **IN PROGRESS**
+- [ ] Test first move behavior (NEEDS NEW PHILOSOPHY)
+
+### Priority 10: Environment API Fixes 🔄 **IN PROGRESS**
+- [ ] Test invalid board size (NEEDS API FIX)
+- [ ] Test invalid mine spacing (NEEDS API FIX)
+- [ ] Test invalid initial parameters (NEEDS API FIX)
+- [ ] Test invalid reward parameters (NEEDS API FIX)
+- [ ] Test board boundary actions (NEEDS API FIX)
+- [ ] Test initialization (NEEDS API FIX)
+- [ ] Test reset (NEEDS API FIX)
+- [ ] Test adjacent mines initialization (NEEDS NEW PHILOSOPHY)
+- [ ] Test mine placement (NEEDS NEW PHILOSOPHY)
+- [ ] Test safe cell reveal (NEEDS NEW PHILOSOPHY)
+- [ ] Test rectangular board actions (NEEDS NEW PHILOSOPHY)
+- [ ] Test difficulty levels (NEEDS NEW PHILOSOPHY)
+- [ ] Test flag action (NEEDS NEW PHILOSOPHY)
+- [ ] Test unflag action (NEEDS NEW PHILOSOPHY)
+- [ ] Test invalid actions (NEEDS NEW PHILOSOPHY)
+- [ ] Test win condition (NEEDS NEW PHILOSOPHY)
+- [ ] Test state transitions (NEEDS NEW PHILOSOPHY)
+- [ ] Test state representation (NEEDS NEW PHILOSOPHY)
+
+### Priority 11: Integration & Functional (Integration Layer) 🔄 **IN PROGRESS**
 - [ ] Test early learning progression (NEEDS NEW PHILOSOPHY)
-- [x] Test difficulty levels
-- [x] Test curriculum limits
 - [ ] Test win rate tracking (NEEDS NEW PHILOSOPHY)
-
-## Priority 8: Performance & Edge Cases (Performance Layer) ✅ **COMPLETED**
-**Why:** Performance and edge cases only meaningful after correctness.
-
-### Performance Tests
-- [x] Test large board performance
-- [x] Test many mines performance
 - [ ] Test memory usage (NEEDS NEW PHILOSOPHY)
-- [x] Test reset performance
-- [x] Test state update performance
-- [x] Test rapid actions
 
-### Edge Cases Tests
-- [x] Test edge case minimum board
-- [x] Test edge case maximum board
-- [x] Test edge case maximum mines
-
-## Priority 9: Scripts & Infrastructure (Infrastructure Layer) 🔄 **IN PROGRESS**
-**Why:** Scripts and infrastructure support the development process.
-
-### Script Tests
-- [x] Test script exists
-- [x] Test script permissions
-- [x] Test script syntax
-- [x] Test script dependencies
-- [x] Test script environment setup
-- [x] Test script exists
-- [x] Test script permissions
+### Priority 12: Script Tests 🔄 **IN PROGRESS**
 - [ ] Test script syntax (NEEDS SCRIPT FIX)
 - [ ] Test script parameters (NEEDS SCRIPT FIX)
 - [ ] Test script environment check (NEEDS SCRIPT FIX)
 - [ ] Test script output handling (NEEDS SCRIPT FIX)
 - [ ] Test script error handling (NEEDS SCRIPT FIX)
 
-## Priority 10: Agent & Training (Agent Layer) ✅ **COMPLETED**
-**Why:** Agent training depends on all previous layers working correctly.
+### Priority 13: Agent Training (New Module) 📋 **TODO**
+- [ ] Add comprehensive tests for `train_agent.py` module (0% coverage)
+- [ ] Test training loop functionality
+- [ ] Test model saving/loading
+- [ ] Test hyperparameter handling
+- [ ] Test logging and monitoring
 
-### Agent Tests
-- [x] Test environment creation
-- [x] Test environment reset
-- [x] Test environment step
-- [x] Test environment consistency
-- [x] Test environment completion
-- [x] Test invalid action
+## Coverage Targets
 
-## Board Size Parameterization Guidance
+### Current Status
+- **Overall Coverage**: 43% (580/331 statements)
+- **Core Environment**: 74% (312/81 statements)
+- **Training Agent**: 0% (250/250 statements) - **CRITICAL GAP**
 
-Not all tests need to be run on every board size. Use this guidance to decide when to parameterize tests for board size:
+### Target Milestones
+- **Phase 1**: 50% coverage (fix existing tests)
+- **Phase 2**: 60% coverage (add missing tests)
+- **Phase 3**: 70% coverage (comprehensive coverage)
 
-### Tests that SHOULD be parameterized for board size
-- Action space and action masking (action count, mapping, masking logic)
-- State management (arrays for board, mines, flags, revealed)
-- Mine placement and adjacency logic (placement, adjacent mine counting)
-- Game flow and win/loss detection (should not assume a specific board size)
-- Performance and memory usage (for large boards only)
-- Edge/corner/cascade reveal logic (cascading, edge/corner handling)
-- Curriculum/early learning progression (if curriculum increases board size)
-
-### Tests that DO NOT need to be parameterized for board size
-- Reward system logic (rewards are relative, not absolute)
-- Error handling and validation (parameter validation is independent of board size)
-- Initialization and setup (setup logic is independent of board size)
-- Agent training logic (agent should work on any valid board size)
-- Script and infrastructure tests (these are environment-independent)
-
-## Better Approach Strategy
-
-### Phase 1: Complete Current Checklist (Current Priority)
-1. **Fix all failing tests** on default board sizes first
-2. **Get all tests passing** with current implementation
-3. **Establish solid foundation** before any major refactoring
-
-### Phase 2: Board Size Audit (Future Enhancement)
-1. **Audit all tests** for board size assumptions
-2. **Parameterize tests** that truly need multiple board sizes
-3. **Refactor tests** that break on different board sizes
-4. **Add board size parameterization** where appropriate
-
-### Phase 3: Performance & Optimization
-1. **Run full test suite** on various board sizes
-2. **Optimize performance** for large boards
-3. **Add comprehensive board size coverage**
-
-**Note**: Phase 1 takes priority.
+### Coverage by Module
+- [x] `src/__init__.py`: 100% ✅
+- [x] `src/core/__init__.py`: 100% ✅
+- [x] `src/core/constants.py`: 100% ✅
+- [x] `src/core/vec_env.py`: 100% ✅
+- [ ] `src/core/minesweeper_env.py`: 74% → 85% (target)
+- [ ] `src/core/train_agent.py`: 0% → 60% (target)
 
 ## Test Status Summary
 
-**Total Tests:** 181  
-**Currently Passing:** 120  
-**Currently Failing:** 61  
+### ✅ Completed Areas (Summary Style)
+- **Action Handling**: All 12 tests passing
+- **Core State Management**: All 20 tests passing (refactored to new philosophy)
+- **Game Logic & Win/Loss**: All 4 tests passing (refactored to new philosophy)
+- **Error Handling**: All 26 tests passing (refactored to match environment)
 
-### Breakdown by Priority (Updated Order):
+### 🔄 In Progress Areas
+- **Reward System**: 6 tests need new philosophy
+- **Flag Placement**: 2 tests need new philosophy
+- **Early Learning**: 8 tests need new philosophy
+- **Core Mechanics**: 1 test needs new philosophy
+- **Mine Hits**: 1 test needs new philosophy
+- **Environment API**: 15 tests need API fixes
+- **Integration**: 3 tests need new philosophy
+- **Script Tests**: 5 tests need PowerShell fixes
 
-#### **Priority 1: Action Space & Handling** ✅ **COMPLETED** (8/8 tests passing)
-- All action space, masking, and validation tests working correctly
+### ❌ Needs Fixes
+- **API Consistency**: 15 tests need environment API fixes
+- **Script Tests**: 5 tests need PowerShell script fixes
+- **Training Agent**: 0% coverage - needs comprehensive tests
 
-#### **Priority 2: Core State Management** ✅ **COMPLETED** (20/20 tests passing)
-- All state management tests working correctly
+## Next Steps
+1. **Apply new philosophy** to remaining 25 tests (Priorities 5-11)
+2. **Fix environment API inconsistencies** (15 tests)
+3. **Fix PowerShell script tests** (5 tests)
+4. **Add tests for `train_agent.py`** module (0% coverage)
+5. **Target 60% coverage** by end of audit
 
-#### **Priority 3: Game Logic & Win/Loss** ✅ **COMPLETED** (12/12 tests passing)
-- All game logic tests working correctly
-
-#### **Priority 4: Initialization & Validation** ✅ **COMPLETED** (5/5 tests passing)
-- All parameter validation and edge case tests working
-
-#### **Priority 5: Error Handling & API Consistency** 🔄 **IN PROGRESS** (0/15 tests passing)
-- **15 tests need API fixes:** Wrong error messages, missing validations, inconsistent behavior
-- **Next:** Fix environment API to match expected error handling
-
-#### **Priority 6: Integration & Functional** 🔄 **IN PROGRESS** (15/20 tests passing)
-- **5 tests need new philosophy:** initialization, reset, adjacent mines, mine placement, safe cell reveal, rectangular board
-- **Next:** Apply new philosophy after core logic is working
-
-#### **Priority 7: Early Learning & Curriculum** 🔄 **IN PROGRESS** (6/12 tests passing)
-- **6 tests need new philosophy:** corner safety, edge safety, parameter updates, transition, mine spacing, win rate tracking
-- **Next:** Apply new philosophy after integration tests pass
-
-#### **Priority 8: Performance & Edge Cases** ✅ **COMPLETED** (6/6 tests passing)
-- All performance tests working (1 memory usage test needs new philosophy but not critical)
-
-#### **Priority 9: Scripts & Infrastructure** 🔄 **IN PROGRESS** (11/16 tests passing)
-- **5 tests need script fixes:** PowerShell syntax, missing features
-- **Next:** Fix script infrastructure after core functionality works
-
-#### **Priority 10: Agent & Training** ✅ **COMPLETED** (6/6 tests passing)
-- All agent training tests working correctly
-
-### Immediate Next Steps (In Order):
-
-1. **Priority 5:** Fix 15 Error Handling tests with API consistency
-2. **Priority 6:** Fix 5 Integration tests with new philosophy
-3. **Priority 7:** Fix 6 Early Learning tests with new philosophy
-4. **Priority 9:** Fix 5 Script tests with infrastructure fixes
-
-### Tests Needing New Philosophy (25 total):
-- **State Management:** 3 tests (game over state, win rate calculation, state with mine hit, rectangular board)
-- **Game Logic:** 4 tests (mine placement, safe cell reveal, difficulty levels, rectangular board actions)
-- **Game Flow:** 2 tests (complete game win/loss)
-- **Integration:** 5 tests (initialization, reset, adjacent mines, mine placement, safe cell reveal, rectangular board)
-- **Early Learning:** 6 tests (corner safety, edge safety, parameter updates, transition, mine spacing, win rate tracking)
-- **Functional:** 3 tests (difficulty progression, game flow, performance)
-- **Performance:** 1 test (memory usage)
-- **Win/Loss:** 1 test (win rate tracking)
-
-### Tests Needing API Fixes (15 total):
-- **Error Handling:** 15 tests (wrong error messages, missing validations, inconsistent behavior)
-
-### Tests Needing Script Fixes (5 total):
-- **Script Infrastructure:** 5 tests (PowerShell syntax, missing features)
-
-### Next Steps:
-1. **Apply new testing philosophy** to 25 failing tests in Priority 2-7
-2. **Fix environment API issues** in error handling and initialization (15 tests)
-3. **Fix script infrastructure** issues (5 tests)
-4. **Complete board size audit** as future enhancement 
+## Test Inventory
+See `tests/TEST_INVENTORY.md` for detailed test breakdown and status. 
