@@ -141,6 +141,40 @@ from src.core.train_agent import main
 main()
 ```
 
+## 🎮 Training Scripts
+
+For convenience, we provide pre-configured training scripts:
+
+### Quick Start Scripts
+```bash
+# Quick test (~1-2 minutes)
+.\scripts\quick_test.ps1
+
+# Medium test (~5-10 minutes)
+.\scripts\medium_test.ps1
+
+# Full training (~1-2 hours)
+.\scripts\full_training.ps1
+```
+
+### Manual Training Commands
+```bash
+# Activate virtual environment first
+.\venv\Scripts\Activate.ps1
+
+# Quick test
+python src/core/train_agent.py --total_timesteps 10000 --eval_freq 2000 --n_eval_episodes 20 --verbose 1
+
+# Medium test
+python src/core/train_agent.py --total_timesteps 50000 --eval_freq 5000 --n_eval_episodes 50 --verbose 1
+
+# Full training
+python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --verbose 1
+```
+
+### Command Line Options
+For detailed information about all available command line options, see [Training Commands Guide](docs/training_commands.md).
+
 ## 📁 Project Structure
 
 ```
