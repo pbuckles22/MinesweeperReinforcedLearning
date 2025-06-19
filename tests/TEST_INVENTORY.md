@@ -28,7 +28,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - 10 passing, 0 failing
 
 #### Error Handling (26 tests): `tests/unit/core/test_error_handling.py`
-- 21 passing, 5 failing
+- 26 passing, 0 failing
 
 #### Initialization (5 tests): `tests/unit/core/test_initialization.py`
 - 5 passing, 0 failing
@@ -75,7 +75,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ### Core Tests (`tests/unit/core/`)
 - **Philosophy**: Deterministic, explicit board setup
 - **Purpose**: Verify core mechanics, edge cases, and deterministic behavior
-- **Status**: 101 tests, 2 failing (Priority 1 to fix)
+- **Status**: 101 tests, 0 failing (Priority 1 to fix)
 
 ### RL Tests (`tests/unit/rl/`)
 - **Philosophy**: Non-deterministic, realistic training scenarios
@@ -86,9 +86,15 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 
 ### Mine Hits (0 failing)
 
-### Error Handling (5 failing)
-- `test_edge_case_minimum_board`
-- `test_edge_case_maximum_board`
-- `test_edge_case_maximum_mines`
-- `test_boundary_conditions`
-- `
+### Error Handling (0 failing)
+
+### Reward System (3 failing)
+- `test_safe_reveal_reward`
+- `test_mine_hit_reward`
+- `test_reward_with_custom_parameters`
+
+## Next Steps
+1. **Fix all 0 failing core tests** (Priority 1)
+2. **Ensure deterministic behavior and edge/cascade logic is working correctly**
+3. **Move to RL training tests** only after mechanics are clean
+4. **Target 60% coverage** by end of audit

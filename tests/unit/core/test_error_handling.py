@@ -141,7 +141,7 @@ def test_edge_case_minimum_board():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert state.shape == (2, 2)
+    assert state.shape == (2, 2, 2)  # 2 channels, 2x2 board
     assert reward is not None
 
 def test_edge_case_maximum_board():
@@ -157,7 +157,7 @@ def test_edge_case_maximum_board():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert state.shape == (35, 20)  # height x width
+    assert state.shape == (2, 35, 20)  # 2 channels, height x width
     assert reward is not None
 
 def test_edge_case_maximum_mines():
@@ -172,7 +172,7 @@ def test_edge_case_maximum_mines():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert state.shape == (4, 4)
+    assert state.shape == (2, 4, 4)  # 2 channels, 4x4 board
     assert reward is not None
 
 def test_error_message_clarity():
@@ -214,7 +214,7 @@ def test_boundary_conditions():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert state.shape == (1, 1)
+    assert state.shape == (2, 1, 1)  # 2 channels, 1x1 board
     assert reward is not None
 
 def test_invalid_early_learning_parameters():
@@ -258,7 +258,7 @@ def test_edge_case_rectangular_board():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert state.shape == (5, 3)  # height x width
+    assert state.shape == (2, 5, 3)  # 2 channels, height x width
     assert reward is not None
 
 def test_error_handling_consistency():
