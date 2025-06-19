@@ -1,6 +1,8 @@
 """
-Test suite for early learning mode functionality.
-Tests corner safety, edge safety, threshold behavior, and transitions.
+RL Early Learning Mode Tests
+
+These tests verify early learning mode and curriculum features for RL agents.
+Non-determinism is expected: tests only check for valid behaviors, not specific outcomes.
 """
 
 import pytest
@@ -9,8 +11,9 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
+    REWARD_FIRST_MOVE_SAFE,
+    REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE

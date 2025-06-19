@@ -8,8 +8,6 @@ CELL_MINE = -2
 CELL_MINE_HIT = -4
 
 # Enhanced state representation constants
-MINE_INDICATOR = 1      # Value for mine locations in mine channel
-SAFE_INDICATOR = 0      # Value for safe cells in mine channel
 UNKNOWN_SAFETY = -1     # Value for unknown safety in safety channel
 
 # Reward values

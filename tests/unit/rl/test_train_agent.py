@@ -1,3 +1,9 @@
+"""
+RL Agent/Environment Integration Tests
+
+These tests verify that the Minesweeper environment works with RL agents and vectorized environments.
+Non-determinism is expected: tests only check for valid behaviors, not specific outcomes.
+"""
 import pytest
 import os
 import shutil

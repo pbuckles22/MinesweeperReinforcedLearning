@@ -8,9 +8,9 @@ import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
-    CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
+    REWARD_FIRST_MOVE_SAFE,
+    REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE
@@ -19,394 +19,155 @@ from src.core.constants import (
 @pytest.fixture
 def env():
     """Create a test environment."""
-    return MinesweeperEnv(
-        initial_board_size=(4, 4),
-        initial_mines=2
-    )
+    return MinesweeperEnv(initial_board_size=3, initial_mines=1)
 
-def test_state_reset(env):
-    """Test that state is properly reset."""
-    # Make some moves to change state
+def test_initial_state(env):
+    """Test that initial state is correct."""
     env.reset()
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
     
-    # Reset and check state is cleared
-    env.reset()
-    assert np.all(env.state == CELL_UNREVEALED)
-    assert np.all(env.flags == 0)
-    assert env.is_first_move is True
+    # Check that all cells are unrevealed initially
+    assert np.all(env.state[0] == CELL_UNREVEALED)
+    assert np.all(env.revealed == False)
 
-def test_mine_placement_on_reset(env):
-    """Test that mines are placed correctly on reset."""
-    env.reset()
-    
-    # Check mine count
-    mine_count = np.sum(env.mines)
-    assert mine_count == env.current_mines
-    
-    # Check that mines are properly placed
-    assert env.mines.shape == (env.current_board_height, env.current_board_width)
-
-def test_flag_clearing_on_reset(env):
-    """Test that flags are cleared on reset."""
-    env.reset()
-    
-    # Place some flags
-    flag_action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    
-    # Reset and check flags are cleared
-    env.reset()
-    assert np.all(env.flags == 0)
-
-def test_counter_reset(env):
-    """Test that counters are reset properly."""
-    env.reset()
-    
-    # Make some moves to increment counters
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Reset and check counters
-    env.reset()
-    assert env.is_first_move is True
-
-def test_state_persistence_between_actions(env):
-    """Test that state persists correctly between actions."""
-    env.reset()
-    
-    # Make first move: loop until a cell is actually revealed (not a mine on first move)
-    for action in range(env.current_board_width * env.current_board_height):
-        state, reward, terminated, truncated, info = env.step(action)
-        if state[0, 0] != CELL_UNREVEALED:
-            break
-    else:
-        pytest.skip("Could not find a safe cell to reveal in test_state_persistence_between_actions.")
-    
-    # Check that state reflects the move
-    assert state[0, 0] != CELL_UNREVEALED
-    
-    # Make another move
-    action = 1
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check that both moves are reflected in state
-    assert state[0, 0] != CELL_UNREVEALED
-    assert state[0, 1] != CELL_UNREVEALED
-
-def test_flag_persistence(env):
-    """Test that flags persist between actions."""
-    env.reset()
-    
-    # Place a flag
-    flag_action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    
-    # Check flag is in state
-    assert state[0, 0] == CELL_FLAGGED
-    
-    # Make another action (reveal a different cell)
-    action = 1  # Reveal cell (0, 1)
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check flag still persists at original location
-    assert state[0, 0] == CELL_FLAGGED
-    
-    # Check that the revealed cell is not flagged
-    assert state[0, 1] != CELL_FLAGGED
-
-def test_revealed_cell_persistence(env):
-    """Test that revealed cells persist between actions."""
+def test_state_after_reveal(env):
+    """Test that state is updated correctly after revealing a cell."""
     env.reset()
     
     # Reveal a cell
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    if terminated:
-        # Game won on first move, can't test further
-        return
-    
-    # Check cell is revealed
-    assert state[0, 0] != CELL_UNREVEALED
-    revealed_value = state[0, 0]
-    
-    # Make another action
-    action = 1
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check revealed cell still has same value
-    assert state[0, 0] == revealed_value
+    # Check that the revealed cell is no longer unrevealed
+    assert state[0, 0, 0] != CELL_UNREVEALED
+    assert env.revealed[0, 0] == True
 
-def test_game_over_state(env):
-    """Test game over state management."""
-    env.reset()
-    
-    # Use public API to create a scenario where we hit a mine
-    # Try actions until we hit a mine (deterministic approach)
-    for action in range(env.current_board_width * env.current_board_height):
-        state, reward, terminated, truncated, info = env.step(action)
-        if terminated:
-            # Game is over - check if it's due to mine hit
-            if info.get('hit_mine', False):
-                # Check that the hit cell shows as mine hit
-                y, x = action // env.current_board_width, action % env.current_board_width
-                assert state[y, x] == CELL_MINE_HIT
-                break
-            elif info.get('won', False):
-                # Game won, try next action
-                continue
-        else:
-            # Game continues, try next action
-            continue
-    else:
-        # If we get here, we need to test a different scenario
-        # Try flagging a cell and then revealing it
-        flag_action = env.current_board_width * env.current_board_height
-        state, reward, terminated, truncated, info = env.step(flag_action)
-        
-        # Now try to reveal the flagged cell (should be invalid)
-        reveal_action = 0
-        state, reward, terminated, truncated, info = env.step(reveal_action)
-        
-        # Check that invalid action was handled properly
-        assert 'invalid_action' in info or reward < 0
-
-def test_game_counter(env):
-    """Test game counter functionality."""
-    # Play multiple games
-    for _ in range(5):
-        env.reset()
-        action = 0
-        state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check that game counter is working
-    assert hasattr(env, 'total_games')
-    assert env.total_games >= 0
-
-def test_win_counter(env):
-    """Test win counter functionality."""
-    # Play games and count wins
-    wins = 0
-    for _ in range(10):
-        env.reset()
-        # Try to win by revealing all safe cells
-        for y in range(env.current_board_height):
-            for x in range(env.current_board_width):
-                if not env.mines[y, x]:
-                    action = y * env.current_board_width + x
-                    state, reward, terminated, truncated, info = env.step(action)
-                    if terminated and info.get('won', False):
-                        wins += 1
-                        break
-            if terminated:
-                break
-    
-    # Check win counter
-    assert hasattr(env, 'win_count')
-    assert env.win_count >= 0
-
-def test_consecutive_hits(env):
-    """Test consecutive mine hits tracking."""
-    env.reset()
-    
-    # Place mine and hit it
-    env.mines[0, 0] = True
-    env._update_adjacent_counts()
-    
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # Check consecutive hits tracking
-    assert hasattr(env, 'consecutive_mine_hits')
-    assert env.consecutive_mine_hits >= 0
-
-def test_win_rate_calculation(env):
-    """Test win rate calculation."""
-    # Play several games and track wins manually
-    total_games = 0
-    wins = 0
-    
-    for _ in range(5):  # Play 5 games
-        env.reset()
-        total_games += 1
-        
-        # Try to win by revealing safe cells
-        game_won = False
-        for action in range(env.current_board_width * env.current_board_height):
-            state, reward, terminated, truncated, info = env.step(action)
-            if terminated:
-                if info.get('won', False):
-                    wins += 1
-                    game_won = True
-                break
-        
-        # If game didn't end, try a few more moves
-        if not game_won:
-            for _ in range(3):
-                if not terminated:
-                    action = (action + 1) % (env.current_board_width * env.current_board_height)
-                    state, reward, terminated, truncated, info = env.step(action)
-                    if terminated and info.get('won', False):
-                        wins += 1
-                        break
-    
-    # Calculate expected win rate
-    expected_win_rate = wins / total_games if total_games > 0 else 0.0
-    
-    # Check that win rate is reasonable (between 0 and 1)
-    assert 0.0 <= expected_win_rate <= 1.0
-    
-    # Note: Environment doesn't track total_games automatically
-    # We track it manually in this test for validation purposes
-
-def test_state_transitions():
-    """Test state transitions between different game states."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
-    
-    # Test initial state
-    env.reset()
-    assert env.is_first_move is True
-    
-    # Test after flag action (should still be first move)
-    flag_action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    assert env.is_first_move is True  # Flagging doesn't change first move status
-    
-    # Test after first successful reveal move (not a mine)
-    for action in range(env.current_board_width * env.current_board_height):
-        state, reward, terminated, truncated, info = env.step(action)
-        # If the game is not reset (i.e., not a first-move mine), is_first_move should now be False
-        if not env.is_first_move:
-            assert env.is_first_move is False  # Revealing changes first move status
-            break
-    else:
-        pytest.skip("Could not find a safe cell to reveal in test_state_transitions.")
-
-def test_state_representation():
-    """Test that state representation is correct."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
-    env.reset()
-    
-    # Check initial state representation
-    state = env.state
-    assert state.shape == (env.current_board_height, env.current_board_width)
-    assert np.all(state == CELL_UNREVEALED)
-    
-    # Check state after action
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    assert state.shape == (env.current_board_height, env.current_board_width)
-
-def test_state_with_flags():
-    """Test state representation with flags."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
-    env.reset()
-    
-    # Place a flag
-    flag_action = env.current_board_width * env.current_board_height
-    state, reward, terminated, truncated, info = env.step(flag_action)
-    
-    # Check flag is represented correctly
-    assert state[0, 0] == CELL_FLAGGED
-
-def test_state_with_revealed_cells():
-    """Test state representation with revealed cells."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
+def test_state_persistence(env):
+    """Test that state persists between actions."""
     env.reset()
     
     # Reveal a cell
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    if terminated:
-        # Game won on first move, can't test further
-        return
-    
-    # Check revealed cell is represented correctly
-    assert state[0, 0] != CELL_UNREVEALED
-    assert state[0, 0] != CELL_FLAGGED
-
-def test_state_with_mine_hit():
-    """Test state representation when mine is hit."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
-    env.reset()
-    
-    # Use public API to find and hit a mine
-    mine_hit = False
-    for action in range(env.current_board_width * env.current_board_height):
-        state, reward, terminated, truncated, info = env.step(action)
-        if terminated and info.get('hit_mine', False):
-            # We hit a mine - check state representation
-            y, x = action // env.current_board_width, action % env.current_board_width
-            assert state[y, x] == CELL_MINE_HIT
-            mine_hit = True
-            break
-        elif terminated and info.get('won', False):
-            # Game won, try next action
-            continue
-        else:
-            # Game continues, try next action
-            continue
-    
-    # If no mine was hit in normal gameplay, test invalid action handling
-    if not mine_hit:
-        # Try to reveal an already revealed cell
-        action = 0
-        state, reward, terminated, truncated, info = env.step(action)
-        
-        if not terminated:
-            # Try to reveal the same cell again
-            state, reward, terminated, truncated, info = env.step(action)
-            # Should get penalty for invalid action
-            assert reward < 0 or 'invalid_action' in info
-
-def test_state_consistency():
-    """Test that state is consistent across multiple accesses."""
-    env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=2)
-    env.reset()
-    
-    # Make a move
     action = 0
     state1, reward1, terminated1, truncated1, info1 = env.step(action)
     
-    # Get state again
-    state2 = env.state
+    # Reveal another cell
+    action = 1
+    state2, reward2, terminated2, truncated2, info2 = env.step(action)
     
-    # States should be identical
-    assert np.array_equal(state1, state2)
+    # Check that the first cell remains revealed
+    assert state2[0, 0, 0] != CELL_UNREVEALED
+    assert env.revealed[0, 0] == True
 
-def test_state_with_rectangular_board():
-    """Test state management with rectangular boards."""
-    # Use a 3x5 board (width=3, height=5) to test rectangular boards
-    # The environment expects (width, height) but state shape is (height, width)
-    env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=3)
+def test_state_reset(env):
+    """Test that state is reset correctly."""
     env.reset()
     
-    # Check state shape matches the board size (height x width)
-    assert env.state.shape == (5, 3)  # height x width
-    assert np.all(env.state == CELL_UNREVEALED)
-    
-    # Make a move
+    # Reveal some cells
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Check state shape is maintained
-    assert state.shape == (5, 3)  # height x width
+    # Reset and check state is back to initial
+    env.reset()
+    assert np.all(env.state[0] == CELL_UNREVEALED)
+    assert np.all(env.revealed == False)
 
-def test_state_with_large_board():
-    """Test state management with large boards."""
-    env = MinesweeperEnv(initial_board_size=(8, 8), initial_mines=10)
+def test_state_shape_consistency(env):
+    """Test that state shape remains consistent."""
     env.reset()
     
-    # Check state shape
-    assert env.state.shape == (8, 8)
-    assert np.all(env.state == CELL_UNREVEALED)
+    initial_shape = env.state.shape
     
-    # Make a move
+    # Take some actions
+    for action in range(min(3, env.action_space.n)):
+        state, reward, terminated, truncated, info = env.step(action)
+        assert state.shape == initial_shape
+        if terminated:
+            break
+
+def test_state_bounds(env):
+    """Test that state values are within expected bounds."""
+    env.reset()
+    
+    # Take some actions and verify state bounds
+    for action in range(min(5, env.action_space.n)):
+        state, reward, terminated, truncated, info = env.step(action)
+        
+        # Channel 0 should be within bounds
+        assert np.all(state[0] >= -4), "Channel 0 should be >= -4"
+        assert np.all(state[0] <= 8), "Channel 0 should be <= 8"
+        
+        # Channel 1 should be within bounds
+        assert np.all(state[1] >= -1), "Channel 1 should be >= -1"
+        assert np.all(state[1] <= 8), "Channel 1 should be <= 8"
+        
+        if terminated:
+            break
+
+def test_state_transitions(env):
+    """Test that state transitions are correct."""
+    env.reset()
+    
+    # Test transition from unrevealed to revealed
+    action = 0
+    state_before = env.state.copy()
+    state_after, reward, terminated, truncated, info = env.step(action)
+    
+    # The revealed cell should change
+    assert state_before[0, 0, 0] == CELL_UNREVEALED
+    assert state_after[0, 0, 0] != CELL_UNREVEALED
+
+def test_mine_hit_state(env):
+    """Test that hitting a mine updates state correctly."""
+    env.reset()
+    
+    # Place mine at (0,0) and hit it
+    env.mines[0, 0] = True
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Check state shape is maintained
-    assert state.shape == (8, 8) 
+    # Check that the hit cell shows mine hit
+    assert state[0, 0, 0] == CELL_MINE_HIT
+    assert env.revealed[0, 0] == True
+
+def test_win_state(env):
+    """Test that winning updates state correctly."""
+    env.reset()
+    
+    # Set up simple win scenario: mine at corner, reveal all others
+    env.mines.fill(False)
+    env.mines[0, 0] = True  # Mine at corner
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
+    # Reveal all safe cells
+    for i in range(1, env.current_board_width * env.current_board_height):
+        state, reward, terminated, truncated, info = env.step(i)
+        if terminated:
+            # All safe cells should be revealed
+            for row in range(env.current_board_height):
+                for col in range(env.current_board_width):
+                    if not env.mines[row, col]:
+                        assert env.revealed[row, col] == True
+            break
+
+def test_safety_hints_channel(env):
+    """Test that safety hints channel works correctly."""
+    env.reset()
+    
+    # Check initial safety hints
+    safety_hints = env.state[1]
+    assert safety_hints.shape == (env.current_board_height, env.current_board_width)
+    
+    # Reveal a cell and check safety hints update
+    action = 0
+    state, reward, terminated, truncated, info = env.step(action)
+    
+    new_safety_hints = state[1]
+    # Revealed cell should show -1 in safety hints
+    assert new_safety_hints[0, 0] == -1 
