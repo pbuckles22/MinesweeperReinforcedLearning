@@ -6,8 +6,9 @@ from datetime import datetime
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, BaseCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.utils import safe_mean
 from src.core.minesweeper_env import MinesweeperEnv
-from src.core.vec_env import DummyVecEnv
 import argparse
 import torch
 from scipy import stats
@@ -54,6 +55,15 @@ class ExperimentTracker:
     
     def add_validation_metric(self, metric_name, value, confidence_interval=None):
         """Add a validation metric with optional confidence interval"""
+        # Convert numpy types to Python native types for JSON serialization
+        if hasattr(value, 'item'):
+            value = value.item()
+        if confidence_interval is not None:
+            if hasattr(confidence_interval, 'item'):
+                confidence_interval = confidence_interval.item()
+            elif isinstance(confidence_interval, (list, tuple)):
+                confidence_interval = [ci.item() if hasattr(ci, 'item') else ci for ci in confidence_interval]
+        
         self.metrics["validation"].append({
             "metric": metric_name,
             "value": value,
@@ -245,9 +255,6 @@ def make_env(max_board_size, max_mines):
             initial_mines=2,       # Start with 2 mines
             invalid_action_penalty=-0.1,
             mine_penalty=-10.0,
-            flag_mine_reward=5.0,
-            flag_safe_penalty=-1.0,
-            unflag_penalty=-0.1,
             safe_reveal_base=5.0,
             win_reward=100.0
         )
@@ -469,11 +476,13 @@ def main():
         )
         
         # Evaluate current stage
-        mean_reward, std_reward = evaluate_model(model, env, n_episodes=args.n_eval_episodes)
-        win_rate = mean_reward / current_stage_info['win_rate_threshold']
+        evaluation_results = evaluate_model(model, env, n_episodes=args.n_eval_episodes)
+        win_rate = evaluation_results["win_rate"] / 100  # Convert percentage to decimal
+        mean_reward = evaluation_results["avg_reward"]
+        reward_std = evaluation_results["reward_ci"]
         
         print(f"\nStage {stage + 1} Results:")
-        print(f"Mean reward: {mean_reward:.2f} +/- {std_reward:.2f}")
+        print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
         print(f"Win rate: {win_rate:.2%}")
         print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
         
@@ -481,7 +490,7 @@ def main():
         experiment_tracker.add_validation_metric(
             f"stage_{stage + 1}_mean_reward",
             mean_reward,
-            confidence_interval=std_reward
+            confidence_interval=reward_std
         )
         experiment_tracker.add_validation_metric(
             f"stage_{stage + 1}_win_rate",
@@ -492,14 +501,14 @@ def main():
         model.save(f"models/stage_{stage + 1}")
         
         # Add stage completion to metrics
-        experiment_tracker.metrics["stage_completion"] = {
-            f"stage_{stage + 1}": {
-                "name": current_stage_info['name'],
-                "win_rate": win_rate,
-                "mean_reward": mean_reward,
-                "std_reward": std_reward,
-                "completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+        if "stage_completion" not in experiment_tracker.metrics:
+            experiment_tracker.metrics["stage_completion"] = {}
+        experiment_tracker.metrics["stage_completion"][f"stage_{stage + 1}"] = {
+            "name": current_stage_info['name'],
+            "win_rate": win_rate,
+            "mean_reward": mean_reward,
+            "std_reward": reward_std,
+            "completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         experiment_tracker._save_metrics()
     
@@ -520,15 +529,30 @@ def evaluate_model(model, env, n_episodes=100):
     lengths = []
     wins = 0
     
+    # Check if this is a vectorized environment
+    is_vectorized = hasattr(env, 'num_envs')
+    
     for _ in range(n_episodes):
-        obs, _ = env.reset()
+        if is_vectorized:
+            obs = env.reset()
+        else:
+            obs, info = env.reset()
+        
         done = False
         episode_reward = 0
         episode_length = 0
         
         while not done:
             action, _ = model.predict(obs)
-            obs, reward, terminated, truncated, info = env.step(action)
+            step_result = env.step(action)
+            
+            # Handle both old gym API (4 values) and new gymnasium API (5 values)
+            if len(step_result) == 4:
+                obs, reward, terminated, truncated = step_result
+                info = {}
+            else:
+                obs, reward, terminated, truncated, info = step_result
+            
             done = terminated or truncated
             episode_reward += reward
             episode_length += 1
@@ -541,23 +565,20 @@ def evaluate_model(model, env, n_episodes=100):
     
     # Calculate statistics
     win_rate = (wins / n_episodes) * 100
-    avg_reward = np.mean(rewards)
-    avg_length = np.mean(lengths)
+    avg_reward = float(np.mean(rewards))
+    avg_length = float(np.mean(lengths))
     
-    # Calculate confidence intervals (95%)
-    reward_ci = stats.t.interval(0.95, len(rewards)-1, 
-                               loc=np.mean(rewards), 
-                               scale=stats.sem(rewards))
-    length_ci = stats.t.interval(0.95, len(lengths)-1, 
-                               loc=np.mean(lengths), 
-                               scale=stats.sem(lengths))
+    # Calculate standard error for confidence intervals
+    reward_std = float(np.std(rewards) / np.sqrt(len(rewards)) if len(rewards) > 1 else 0.0)
+    length_std = float(np.std(lengths) / np.sqrt(len(lengths)) if len(lengths) > 1 else 0.0)
     
+    # Return dictionary with all metrics
     return {
         "win_rate": win_rate,
         "avg_reward": avg_reward,
         "avg_length": avg_length,
-        "reward_ci": reward_ci,
-        "length_ci": length_ci,
+        "reward_ci": reward_std,
+        "length_ci": length_std,
         "n_episodes": n_episodes
     }
 

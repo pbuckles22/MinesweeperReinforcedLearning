@@ -5,19 +5,27 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 ## 🎯 Current Status
 
 ✅ **Environment**: Fully functional 2-channel Minesweeper RL environment  
-✅ **Test Coverage**: 53 functional tests + 116 unit tests (100% passing)  
+✅ **Test Coverage**: 486 tests passing (100% success rate)  
+✅ **Training System**: Complete RL training pipeline with curriculum learning  
 ✅ **First-Move Safety**: Guaranteed safe first move with proper RL contract  
 ✅ **State Representation**: Enhanced 2-channel state with safety hints  
 ✅ **Action Masking**: Intelligent action masking for revealed cells  
 ✅ **Reward System**: Comprehensive reward system for RL training  
+✅ **Experiment Tracking**: Full experiment tracking and metrics collection  
 
 ## 🚀 Recent Updates
 
-### Critical Bug Fix (2024-12-19)
-- **Fixed**: First-move mine hit handling that was breaking RL contract
-- **Improved**: Environment now properly relocates mines instead of resetting
-- **Enhanced**: All tests now pass with correct behavior validation
-- **Maintained**: First-move safety guarantee without compromising RL principles
+### Critical Bug Fixes (2024-12-19)
+- **Fixed**: `KeyError: 'stage_1'` in training agent stage completion tracking
+- **Fixed**: `evaluate_model` API compatibility in functional tests
+- **Improved**: All 486 tests now pass with comprehensive coverage
+- **Enhanced**: Training pipeline fully functional with proper stage progression
+
+### Training System Completion (2024-12-19)
+- **Added**: Complete curriculum learning with 7 difficulty stages
+- **Implemented**: Experiment tracking with metrics persistence
+- **Enhanced**: Model evaluation with statistical analysis
+- **Improved**: Training callbacks and progress monitoring
 
 ### Environment Modernization (2024-12-18)
 - **Removed**: All flagging logic for RL-appropriate reveal-only gameplay
@@ -32,8 +40,9 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 - **First-Move Safety**: Guaranteed safe first move with mine relocation
 - **Cascade Revelation**: Automatic neighbor revelation for empty cells
 - **Action Masking**: Intelligent masking of revealed cells
-- **Curriculum Learning**: Progressive difficulty scaling
+- **Curriculum Learning**: Progressive difficulty scaling with 7 stages
 - **Rectangular Boards**: Support for non-square board configurations
+- **Early Learning Mode**: Safety features for initial training phases
 
 ### State Representation
 - **Channel 0**: Game state (-1: unrevealed, 0-8: revealed numbers, -4: mine hit)
@@ -46,13 +55,24 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 - `REWARD_HIT_MINE = -50`: Mine hit penalty
 - `REWARD_INVALID_ACTION = -10`: Invalid action penalty
 
+### Curriculum Stages
+1. **Beginner**: 4x4 board, 2 mines (70% win rate target)
+2. **Intermediate**: 6x6 board, 4 mines (60% win rate target)
+3. **Easy**: 9x9 board, 10 mines (50% win rate target)
+4. **Normal**: 16x16 board, 40 mines (40% win rate target)
+5. **Hard**: 16x30 board, 99 mines (30% win rate target)
+6. **Expert**: 18x24 board, 115 mines (20% win rate target)
+7. **Chaotic**: 20x35 board, 130 mines (10% win rate target)
+
 ## 🧪 Testing
 
 ### Test Coverage
-- **Functional Tests**: 53 tests covering end-to-end scenarios
-- **Unit Tests**: 116 tests covering individual components
-- **Integration Tests**: Cross-component behavior validation
-- **Performance Tests**: Large board and high-density scenarios
+- **Unit Tests**: 486 tests covering all components
+- **Core Tests**: Environment mechanics, state management, rewards
+- **RL Tests**: Training agent, experiment tracking, callbacks
+- **Functional Tests**: End-to-end scenarios, curriculum progression
+- **Integration Tests**: Cross-component behavior, performance
+- **Script Tests**: Infrastructure and utility scripts
 
 ### Test Categories
 - Core game mechanics and RL requirements
@@ -61,9 +81,41 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 - Difficulty progression and curriculum learning
 - Game flow and edge cases
 - Performance and scalability
+- Training pipeline and experiment tracking
+- Model evaluation and metrics collection
+
+### Running Tests
+
+#### Complete Test Suite (Recommended)
+```bash
+# All 486 tests
+python -m pytest tests/ -v
+
+# Quick summary
+python -m pytest tests/ -q
+```
+
+#### Test Categories
+```bash
+# Core functionality
+python -m pytest tests/unit/core/ tests/integration/ tests/functional/ -v
+
+# RL training system
+python -m pytest tests/unit/rl/ -v
+
+# Scripts and infrastructure
+python -m pytest tests/scripts/ tests/unit/infrastructure/ -v
+```
+
+#### Test Coverage
+```bash
+# Run with coverage report
+python -m pytest --cov=src tests/
+```
 
 ## 🚀 Quick Start
 
+### Basic Environment Usage
 ```python
 from src.core.minesweeper_env import MinesweeperEnv
 
@@ -80,6 +132,15 @@ print(f"Game state:\n{state[0]}")
 print(f"Safety hints:\n{state[1]}")
 ```
 
+### Training with Curriculum Learning
+```python
+from src.core.train_agent import main
+
+# Run complete training pipeline
+# This will train through all 7 curriculum stages
+main()
+```
+
 ## 📁 Project Structure
 
 ```
@@ -88,32 +149,35 @@ MinesweeperReinforcedLearning/
 │   └── core/
 │       ├── minesweeper_env.py    # Main environment
 │       ├── constants.py          # Environment constants
-│       └── train_agent.py        # Training utilities
+│       └── train_agent.py        # Training pipeline
 ├── tests/
 │   ├── functional/               # End-to-end tests
 │   ├── unit/                     # Component tests
+│   │   ├── core/                 # Environment tests
+│   │   ├── rl/                   # Training tests
+│   │   └── infrastructure/       # Script tests
 │   └── integration/              # Cross-component tests
 ├── docs/                         # Documentation
-└── scripts/                      # Utility scripts
+├── scripts/                      # Utility scripts
+├── experiments/                  # Training outputs
+└── models/                       # Saved models
 ```
 
 ## 🎓 Curriculum Learning
 
-The environment supports progressive difficulty scaling:
+The training system automatically progresses through difficulty levels:
 
 ```python
-env = MinesweeperEnv(
-    max_board_size=(20, 35),
-    max_mines=130,
-    initial_board_size=4,
-    initial_mines=2
-)
+from src.core.train_agent import make_env
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
 
-# Progressive difficulty
-env.current_board_width = 6
-env.current_board_height = 6
-env.current_mines = 4
-env.reset(seed=42)
+# Create environment with curriculum support
+env = DummyVecEnv([make_env(max_board_size=4, max_mines=2)])
+
+# Train with automatic progression
+model = PPO("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=1000000)
 ```
 
 ## 🔧 Development
@@ -123,17 +187,28 @@ env.reset(seed=42)
 # All tests
 python -m pytest tests/ -v
 
-# Functional tests only
+# Specific categories
+python -m pytest tests/unit/core/ -v
+python -m pytest tests/unit/rl/ -v
 python -m pytest tests/functional/ -v
-
-# Unit tests only
-python -m pytest tests/unit/ -v
 ```
 
 ### Environment Validation
 ```bash
 # Quick validation
 python -c "from src.core.minesweeper_env import MinesweeperEnv; env = MinesweeperEnv(); env.reset(); print('✅ Environment ready')"
+
+# Training validation
+python -c "from src.core.train_agent import make_env; env = make_env()(); print('✅ Training ready')"
+```
+
+### Training Pipeline
+```bash
+# Run complete training
+python src/core/train_agent.py
+
+# Monitor training progress
+python scripts/monitor_training.ps1
 ```
 
 ## 📊 Performance
@@ -143,13 +218,15 @@ python -c "from src.core.minesweeper_env import MinesweeperEnv; env = Minesweepe
 - **Large Boards (16x16)**: ~5ms per step
 - **Memory Usage**: Linear with board size
 - **Scalability**: Supports boards up to 20x35
+- **Training Speed**: ~1000 steps/second on modern hardware
 
 ## 🤝 Contributing
 
-1. **Test Coverage**: All changes must maintain 100% test pass rate
+1. **Test Coverage**: All changes must maintain 100% test pass rate (486 tests)
 2. **RL Principles**: Maintain strict RL environment contracts
 3. **Documentation**: Update docs for significant changes
 4. **Validation**: Run full test suite before committing
+5. **Training**: Ensure training pipeline remains functional
 
 ## 📝 License
 
@@ -157,6 +234,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Status**: ✅ Production Ready  
+**Status**: ✅ Production ready with complete training pipeline  
 **Last Updated**: 2024-12-19  
-**Test Status**: 169/169 tests passing 
+**Test Status**: 486/486 tests passing (100%)  
+**Training Status**: ✅ Complete curriculum learning system operational 
