@@ -14,7 +14,6 @@ from src.core.vec_env import DummyVecEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
-    CELL_FLAGGED,
     CELL_MINE_HIT,
     REWARD_FIRST_MOVE_SAFE,
     REWARD_FIRST_MOVE_HIT_MINE,
@@ -51,19 +50,19 @@ class TestTrainAgent:
     def test_environment_creation(self, env):
         """Test that the environment is created correctly"""
         assert env.action_space.shape == (1,)  # Single discrete action
-        assert env.observation_space.shape == (1, 4, 4)  # (num_envs, height, width)
+        assert env.observation_space.shape == (1, 2, 4, 4)  # (num_envs, channels, height, width)
 
     def test_environment_reset(self, env):
         """Test that the environment resets correctly"""
         obs, info = env.reset()
-        assert obs.shape == (1, 4, 4)  # (num_envs, height, width)
-        assert np.all(obs == CELL_UNREVEALED)  # All cells should be hidden
+        assert obs.shape == (1, 2, 4, 4)  # (num_envs, channels, height, width)
+        assert np.all(obs[0, 0] == CELL_UNREVEALED)  # All cells should be hidden in channel 0
 
     def test_environment_step(self, env):
         """Test that the environment responds correctly to actions"""
         env.reset()
         obs, reward, terminated, truncated, info = env.step([0])  # Reveal first cell
-        assert obs.shape == (1, 4, 4)
+        assert obs.shape == (1, 2, 4, 4)
         assert isinstance(reward, np.ndarray)
         assert isinstance(terminated, np.ndarray)
         assert isinstance(truncated, np.ndarray)

@@ -34,11 +34,12 @@
 
 **Total: 116/116 tests passing (100%)** ✅
 
-### Priority 2: RL Training Tests
-- [ ] **Early Learning** (8/8) - All tests passing
-- [ ] **Train Agent** (6/6) - All tests passing
+### Priority 2: RL Training Tests ✅ COMPLETE
+- [x] **Early Learning** (18/18) - All tests passing
+- [x] **Train Agent** (6/6) - All tests passing
+- [x] **Comprehensive RL** (13/13) - All tests passing
 
-**Total: 14/14 tests passing (100%)** ✅
+**Total: 37/37 tests passing (100%)** ✅
 
 ### Priority 3: Functional Tests
 - [ ] **Core Functional Requirements** (5/5) - All tests passing
@@ -114,4 +115,7 @@ See `tests/TEST_INVENTORY.md` for detailed test breakdown and status.
 - All flagging-related tests have been removed as per environment simplification
 - RL tests moved to separate test suite under `tests/unit/rl/`
 - Environment is non-deterministic after first action (by design)
+- All core and RL functionality verified and working correctly
+- RL tests now include comprehensive coverage for mines not visible to agent, state/observation consistency, curriculum, and agent-environment interaction
+- All tests up to date with 2-channel state representation
 - All core functionality verified and working correctly 

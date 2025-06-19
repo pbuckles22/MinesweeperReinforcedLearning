@@ -3,9 +3,9 @@
 This document provides a comprehensive inventory of all tests in the Minesweeper Reinforcement Learning project.
 
 ## Test Statistics
-- **Total Tests**: 155
+- **Total Tests**: 178
 - **Current Coverage**: 43% (580 statements, 331 missing)
-- **Passing**: 116 tests (core) + 14 tests (RL) + 25 tests (integration/functional/script) = 155 tests
+- **Passing**: 116 tests (core) + 37 tests (RL) + 25 tests (integration/functional/script) = 178 tests
 - **Failing**: 0 tests
 
 ## Test Categories
@@ -48,11 +48,13 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 #### Integration Tests (10 tests): `tests/unit/core/test_integration.py`
 - 10 passing, 0 failing
 
-### 2. Unit Tests (RL) - 14 tests ✅ COMPLETE
-- **Early Learning** (8 tests): `tests/unit/rl/test_early_learning.py`
-  - 8 passing, 0 failing
+### 2. Unit Tests (RL) - 37 tests ✅ COMPLETE
+- **Early Learning** (18 tests): `tests/unit/rl/test_early_learning.py`
+  - 18 passing, 0 failing
 - **Agent Training** (6 tests): `tests/unit/rl/test_train_agent.py`
   - 6 passing, 0 failing
+- **Comprehensive RL** (13 tests): `tests/unit/rl/test_comprehensive_rl.py`
+  - 13 passing, 0 failing
 
 ### 3. Integration Tests - 5 tests ✅ COMPLETE
 - **Environment Integration** (5 tests): `tests/integration/test_environment.py`
@@ -94,7 +96,9 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 ### RL Tests (`tests/unit/rl/`)
 - **Philosophy**: Non-deterministic, realistic training scenarios
 - **Purpose**: Verify RL agent integration, early learning, and training behavior
-- **Status**: 14 tests, 0 failing ✅
+- **Status**: 37 tests, 0 failing ✅
+- **Coverage**: Early learning, agent training, comprehensive RL (mines not visible to agent, state/observation consistency, curriculum, agent-environment interaction)
+- **All tests up to date with 2-channel state representation**
 
 ## Priority Status
 
@@ -103,7 +107,7 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Status**: All core functionality verified and working correctly
 
 ### Priority 2: RL Training Tests ✅ **COMPLETE**
-- **Total**: 14/14 tests passing (100%)
+- **Total**: 37/37 tests passing (100%)
 - **Status**: All RL functionality verified and working correctly
 
 ### Priority 3: Functional Tests ✅ **COMPLETE**
@@ -119,11 +123,13 @@ This document provides a comprehensive inventory of all tests in the Minesweeper
 - **Status**: All script functionality verified
 
 ## Overall Status
-- **Total Tests: 155/155 (100%)** ✅
+- **Total Tests: 178/178 (100%)** ✅
 - **All Priorities Complete** ✅
 
 ## Notes
 - All flagging-related tests have been removed as per environment simplification
 - RL tests moved to separate test suite under `tests/unit/rl/`
 - Environment is non-deterministic after first action (by design)
-- All core functionality verified and working correctly
+- All core and RL functionality verified and working correctly
+- RL tests now include comprehensive coverage for mines not visible to agent, state/observation consistency, curriculum, and agent-environment interaction
+- All tests up to date with 2-channel state representation
