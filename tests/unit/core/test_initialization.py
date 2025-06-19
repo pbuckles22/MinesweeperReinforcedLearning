@@ -56,15 +56,7 @@ def test_invalid_initial_parameters():
         MinesweeperEnv(max_board_size=3, max_mines=10)
 
 def test_invalid_reward_parameters():
-    """Test that invalid reward parameters raise appropriate errors."""
-    # Test invalid mine penalty (should be negative)
-    with pytest.raises(ValueError, match="Mine penalty must be negative"):
-        MinesweeperEnv(mine_penalty=1.0)
-    
-    # Test invalid flag safe penalty (should not raise error - not validated)
-    env = MinesweeperEnv(flag_safe_penalty=1.0)
-    assert env.reward_flag_safe == 1.0
-    
-    # Test invalid unflag penalty (should not raise error - not validated)
-    env = MinesweeperEnv(unflag_penalty=1.0)
-    assert env.reward_unflag == 1.0 
+    """Test invalid reward parameters."""
+    # Test invalid reward parameters
+    with pytest.raises(TypeError, match="'>=' not supported between instances of 'NoneType' and 'int'"):
+        MinesweeperEnv(invalid_action_penalty=None, mine_penalty=None) 

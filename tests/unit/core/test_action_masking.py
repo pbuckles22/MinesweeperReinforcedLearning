@@ -20,9 +20,18 @@ def test_action_masking_initial(env):
     assert np.sum(masks) == env.current_board_width * env.current_board_height
 
 def test_action_masking_after_reveal(env):
-    """Test that revealed cells are masked and valid actions match unrevealed, non-mine cells."""
+    """Test that revealed cells are masked and valid actions match unrevealed cells."""
     env.reset()
-    # Reveal a cell
+    
+    # Set up controlled board to avoid cascades
+    env.mines.fill(False)
+    env.mines[1, 1] = True  # Mine in center
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_move = False
+    env.first_move_done = True
+    
+    # Reveal a cell (should not cause cascade)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
@@ -30,10 +39,11 @@ def test_action_masking_after_reveal(env):
     masks = env.action_masks
     assert not masks[action], "Revealed cell should be masked"
     
-    # The number of valid actions should match the number of unrevealed, non-mine cells
-    unrevealed_non_mine = np.sum((~env.revealed) & (~env.mines))
-    assert np.sum(masks) == unrevealed_non_mine, (
-        f"Expected {unrevealed_non_mine} valid actions, got {np.sum(masks)}."
+    # The number of valid actions should match the number of unrevealed cells
+    # (mines are valid actions since they can be revealed, resulting in mine hit)
+    unrevealed_cells = np.sum(~env.revealed)
+    assert np.sum(masks) == unrevealed_cells, (
+        f"Expected {unrevealed_cells} valid actions, got {np.sum(masks)}."
     )
 
 def test_action_masking_after_game_over(env):
