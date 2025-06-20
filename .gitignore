@@ -51,6 +51,13 @@ debug_best_model/
 *.h5
 *.pb
 
+# Debug and Session Files
+DEBUG_SESSION_SUMMARY.md
+debug_*.md
+session_*.md
+*.debug
+*.session
+
 # OS
 .DS_Store
 Thumbs.db
