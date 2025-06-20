@@ -15,8 +15,7 @@ from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
@@ -113,7 +112,7 @@ class TestTrainAgent:
             
         assert not np.array_equal(obs, initial_state)  # State should change
         
-        # If we hit a mine on the first move, reset and try again
+        # If we hit a mine on the First cascade, reset and try again
         if terminated[0]:
             reset_result = env.reset()
             if isinstance(reset_result, tuple):
@@ -129,7 +128,7 @@ class TestTrainAgent:
                 terminated = done
             assert not np.array_equal(obs, initial_state)  # State should change
         
-        assert not terminated[0]  # Game should not end on first move
+        assert not terminated[0]  # Game should not end on First cascade
 
     def test_environment_completion(self, env):
         """Test that the environment properly handles multiple steps without errors"""

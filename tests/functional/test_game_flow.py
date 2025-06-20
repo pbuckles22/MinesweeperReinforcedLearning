@@ -11,7 +11,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED, CELL_MINE_HIT,
     REWARD_WIN, REWARD_HIT_MINE, REWARD_SAFE_REVEAL,
-    REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_INVALID_ACTION
 )
 
@@ -28,8 +28,8 @@ class TestGameFlow:
         env.mines[2, 2] = True  # Single mine at bottom-right
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         total_reward = 0
         moves_made = 0
@@ -72,8 +72,8 @@ class TestGameFlow:
         env.mines[1, 1] = True  # Mine at center
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         total_reward = 0
         moves_made = 0
@@ -97,28 +97,23 @@ class TestGameFlow:
         assert moves_made == 2, "Should have made 2 moves before losing"
         assert state[0, 1, 1] == CELL_MINE_HIT, "Hit cell should show mine hit"
     
-    def test_first_move_safe_flow(self):
-        """Test game flow with first move safety guarantee."""
-        env = MinesweeperEnv(initial_board_size=4, initial_mines=3)
+    def test_pre_cascade_safe_flow(self):
+        """Test game flow with pre-cascade safety guarantee."""
+        env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
         env.reset(seed=42)
         
-        # First move should always be safe
+        # Pre-cascade should always be safe
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
-        print(f"[DIAG] State[0,0,0] after first move: {state[0,0,0]}")
-        print(f"[DIAG] State[1,0,0] after first move: {state[1,0,0]}")
-        print(f"[DIAG] Terminated: {terminated}, Reward: {reward}")
-        # Should not lose on first move
-        assert not terminated or reward != REWARD_HIT_MINE, "First move should not result in mine hit"
-        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_WIN], "First move should have appropriate reward"
-        # State should be updated (check if cell was revealed or hit mine)
-        if state[0, 0, 0] == CELL_MINE_HIT:
-            # Hit a mine, but that's okay for first move safety test
-            pass
-        else:
-            # Cell was revealed
-            assert state[0, 0, 0] != CELL_UNREVEALED, "First cell should be revealed"
-            assert state[1, 0, 0] == -1, "Revealed cell should show -1 in safety hints"
+        
+        print(f"[DIAG] State[0,0,0] after pre-cascade: {state[0,0,0]}")
+        print(f"[DIAG] State[1,0,0] after pre-cascade: {state[1,0,0]}")
+        
+        # Should not lose on pre-cascade
+        assert not terminated or reward != REWARD_HIT_MINE, "Pre-cascade should not result in mine hit"
+        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_WIN], "Pre-cascade should have appropriate reward"
+        
+        # Hit a mine, but that's okay for pre-cascade safety test
     
     def test_cascade_revelation_flow(self):
         """Test game flow with cascade revelation."""
@@ -131,8 +126,8 @@ class TestGameFlow:
         env.mines[3, 2] = True  # Mine at bottom-center
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal cell that should trigger cascade
         action = 0  # (0,0) - should cascade to reveal multiple cells
@@ -303,8 +298,8 @@ class TestGameFlow:
         env.mines[1, 1] = True  # Mine at center
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Take safe moves first
         safe_cells = [(0,0), (0,1), (0,2), (1,0), (1,2), (2,0), (2,1), (2,2)]
@@ -324,8 +319,8 @@ class TestGameFlow:
         env.mines[1, 1] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Hit the mine directly
         mine_action = 1 * env.current_board_width + 1

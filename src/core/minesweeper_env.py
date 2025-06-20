@@ -15,8 +15,8 @@ from src.core.constants import (
     CELL_MINE,
     CELL_MINE_HIT,
     UNKNOWN_SAFETY,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE,
+    REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
@@ -35,125 +35,101 @@ class MinesweeperEnv(gym.Env):
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
                  safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
-        """Initialize the Minesweeper environment."""
+        """Initialize the Minesweeper environment.
+        
+        Args:
+            max_board_size: Maximum board dimensions (height, width)
+            max_mines: Maximum number of mines
+            render_mode: Rendering mode ('human' or None)
+            early_learning_mode: Enable early learning mode
+            early_learning_threshold: Threshold for early learning mode
+            early_learning_corner_safe: Make corners safe in early learning
+            early_learning_edge_safe: Make edges safe in early learning
+            mine_spacing: Minimum distance between mines
+            initial_board_size: Initial board size (height, width) or single dimension
+            initial_mines: Initial number of mines
+            invalid_action_penalty: Penalty for invalid actions
+            mine_penalty: Penalty for hitting mines
+            safe_reveal_base: Base reward for safe reveals
+            win_reward: Reward for winning
+        """
         super().__init__()
         
-        # Initialize progress tracking variables
-        self.last_progress_update = time.time()
-        self.progress_interval = 1.0  # Update every second
-        self.win_count = 0
-        self.total_games = 0
-        self.recent_rewards = deque(maxlen=100)
-        self.recent_episode_lengths = deque(maxlen=100)
-        self.last_win_rate = 0
-        self.last_avg_reward = 0
-        self.last_avg_length = 0
-        self.games_at_current_size = 0
-        
-        # Initialize training health variables
-        self.min_win_rate = 0.1  # Minimum expected win rate
-        self.consecutive_mine_hits = 0
-        self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
-        
-        # Add counter for consecutive invalid actions to prevent infinite loops
-        self.consecutive_invalid_actions = 0
-        self.max_consecutive_invalid_actions = 10  # Terminate after 10 consecutive invalid actions
-        
-        # Handle tuple board sizes
-        if isinstance(max_board_size, tuple):
-            self.max_board_width, self.max_board_height = max_board_size
-            self.max_board_size = max(max_board_size)
-        else:
-            self.max_board_width = self.max_board_height = max_board_size
-            self.max_board_size = max_board_size
-            
-        # Validate board size
-        if self.max_board_width <= 0 or self.max_board_height <= 0:
-            raise ValueError("Board size must be positive")
-        if self.max_board_width > 100 or self.max_board_height > 100:
-            raise ValueError("Board dimensions too large")
-            
-        # Validate mine count
-        if max_mines <= 0:
-            raise ValueError("Mine count must be positive")
-        if max_mines > self.max_board_width * self.max_board_height:
-            raise ValueError("Mine count cannot exceed board size squared")
-            
-        # Validate initial board size
-        if isinstance(initial_board_size, tuple):
-            initial_width, initial_height = initial_board_size
-        else:
-            initial_width = initial_height = initial_board_size
-            
-        if initial_width > self.max_board_width or initial_height > self.max_board_height:
-            raise ValueError("Initial board size cannot exceed max board size")
-            
-        # Validate reward parameters
-        if mine_penalty >= 0:
-            raise ValueError("Mine penalty must be negative")
-            
-        # Store parameters
-        self.max_board_width = self.max_board_width
-        self.max_board_height = self.max_board_height
+        # Board and mine parameters
+        self.max_board_size = max_board_size if isinstance(max_board_size, tuple) else (max_board_size, max_board_size)
         self.max_mines = max_mines
-        self.render_mode = render_mode
+        self.mine_spacing = mine_spacing
+        
+        # Initial parameters
+        if isinstance(initial_board_size, int):
+            self.initial_board_size = (initial_board_size, initial_board_size)
+        else:
+            self.initial_board_size = initial_board_size
+        self.initial_mines = initial_mines
+        
+        # Current parameters (can change during curriculum learning)
+        self.current_board_height, self.current_board_width = self.initial_board_size
+        self.current_mines = self.initial_mines
+        
+        # Early learning parameters
         self.early_learning_mode = early_learning_mode
         self.early_learning_threshold = early_learning_threshold
         self.early_learning_corner_safe = early_learning_corner_safe
         self.early_learning_edge_safe = early_learning_edge_safe
-        self.mine_spacing = mine_spacing
-        self.initial_board_width = initial_width
-        self.initial_board_height = initial_height
-        self.initial_mines = initial_mines
-        self.reward_invalid_action = invalid_action_penalty
-        self.reward_hit_mine = mine_penalty
-        self.reward_safe_reveal = safe_reveal_base
-        self.reward_win = win_reward
         
-        # Initialize game state
-        self.current_board_width = initial_width
-        self.current_board_height = initial_height
-        self.current_mines = initial_mines
-        self.state = None
+        # Reward parameters
+        self.invalid_action_penalty = invalid_action_penalty
+        self.mine_penalty = mine_penalty
+        self.safe_reveal_base = safe_reveal_base
+        self.win_reward = win_reward
+        
+        # Game state
         self.board = None
         self.mines = None
         self.revealed = None
-        self.revealed_count = 0
-        self.won = False
         self.terminated = False
         self.truncated = False
-        self.is_first_move = True
         self.mines_placed = False
-        self.first_move_done = False
         
-        # Initialize logger
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+        # Pre-cascade tracking
+        self.is_first_cascade = True
+        self.in_cascade = False
         
-        # Define action and observation spaces
-        self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
+        # Statistics tracking - Dual system
+        # Real-life statistics (what would happen in actual Minesweeper)
+        self.real_life_games_played = 0
+        self.real_life_games_won = 0
+        self.real_life_games_lost = 0
         
-        # Initialize enhanced state space with 2 channels
-        low_bounds = np.full((2, self.current_board_height, self.current_board_width), -1, dtype=np.float32)
-        low_bounds[0] = -4  # Channel 0: game state can go as low as -4 (mine hit)
-        low_bounds[1] = -1  # Channel 1: safety hints can go as low as -1 (unknown)
+        # RL training statistics (excluding pre-cascade games)
+        self.rl_games_played = 0
+        self.rl_games_won = 0
+        self.rl_games_lost = 0
         
-        high_bounds = np.full((2, self.current_board_height, self.current_board_width), 8, dtype=np.float32)
+        # Current game tracking
+        self.current_game_was_pre_cascade = False
+        self.current_game_ended_pre_cascade = False
         
-        self.observation_space = spaces.Box(
-            low=low_bounds,
-            high=high_bounds,
-            shape=(2, self.current_board_height, self.current_board_width),
+        # Action space and observation space
+        self.action_space = gym.spaces.Discrete(self.current_board_height * self.current_board_width)
+        self.observation_space = gym.spaces.Box(
+            low=-1, high=9, 
+            shape=(2, self.current_board_height, self.current_board_width), 
             dtype=np.float32
         )
         
-        # Initialize info dictionary
-        self.info = {}
+        # State representation
+        self.state = np.zeros((2, self.current_board_height, self.current_board_width), dtype=np.float32)
+        
+        # Rendering
+        self.render_mode = render_mode
+        self.screen = None
+        self.clock = None
+        self.cell_size = 30
+        
+        # Invalid action handling
+        self.consecutive_invalid_actions = 0
+        self.max_consecutive_invalid_actions = 10
         
         # Initialize the environment
         self.reset()
@@ -211,9 +187,10 @@ class MinesweeperEnv(gym.Env):
         self.won = False
         self.terminated = False
         self.truncated = False
-        self.is_first_move = True
+        self.is_first_cascade = True
         self.mines_placed = False
-        self.first_move_done = False
+        self.first_cascade_done = False
+        self.in_cascade = False  # Track if we're currently in a cascade
         
         # Reset consecutive invalid actions counter
         self.consecutive_invalid_actions = 0
@@ -298,9 +275,9 @@ class MinesweeperEnv(gym.Env):
                                 0 <= nj < self.current_board_width):
                                 self.board[ni, nj] += 1
 
-    def handle_mine_hit(self, col, row, is_first_move):
+    def handle_mine_hit(self, col, row, is_first_cascade):
         """Handle a mine hit."""
-        if is_first_move:
+        if is_first_cascade:
             self._place_mines(col, row)
             return 0, False
         else:
@@ -315,38 +292,21 @@ class MinesweeperEnv(gym.Env):
             return
 
         self.revealed[row, col] = True
-        self.state[0, row, col] = self._get_cell_value(row, col)
+        cell_value = self._get_cell_value(row, col)
+        self.state[0, row, col] = cell_value
 
-        if self._get_cell_value(row, col) == 0:
+        # Check if this is a cascade (cell with value 0)
+        if cell_value == 0:
+            # This is a cascade - mark that we're in a cascade
+            self.in_cascade = True
+            # Note: We don't set is_first_cascade = False here anymore
+            # It will be set after the win check in the step function
+            # Reveal all neighbors
             for dr in [-1, 0, 1]:
                 for dc in [-1, 0, 1]:
                     if dr == 0 and dc == 0:
                         continue
                     self._reveal_cell(row + dr, col + dc)
-
-    def _relocate_mine_from_position(self, row: int, col: int) -> None:
-        """Relocate a mine from the given position to a safe location."""
-        # Remove mine from current position
-        self.mines[row, col] = False
-        
-        # Find a safe location for the mine (not the first move position)
-        safe_positions = []
-        for i in range(self.current_board_height):
-            for j in range(self.current_board_width):
-                if not self.mines[i, j] and (i != row or j != col):
-                    safe_positions.append((i, j))
-        
-        if safe_positions:
-            # Choose a random safe position
-            import random
-            new_row, new_col = random.choice(safe_positions)
-            self.mines[new_row, new_col] = True
-        else:
-            # Fallback: if no safe positions, just remove the mine
-            pass
-        
-        # Update adjacent counts after mine relocation
-        self._update_adjacent_counts()
 
     def _get_neighbors(self, row: int, col: int) -> List[Tuple[int, int]]:
         """Get all valid neighbors of a cell.
@@ -394,6 +354,9 @@ class MinesweeperEnv(gym.Env):
             if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
                 self.terminated = True
                 info['won'] = False
+                # Invalid action termination counts as a loss in real-life, but not in RL training
+                # since it's a technical issue, not a gameplay issue
+                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
                 return self.state, REWARD_INVALID_ACTION, True, False, info
             return self.state, REWARD_INVALID_ACTION, False, False, info
 
@@ -404,11 +367,15 @@ class MinesweeperEnv(gym.Env):
             if not np.any(self.action_masks):
                 self.terminated = True
                 info['won'] = False
+                # Invalid action termination counts as a loss in real-life, but not in RL training
+                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
                 return self.state, REWARD_INVALID_ACTION, True, False, info
             # Check if we've had too many consecutive invalid actions
             if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
                 self.terminated = True
                 info['won'] = False
+                # Invalid action termination counts as a loss in real-life, but not in RL training
+                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
                 return self.state, REWARD_INVALID_ACTION, True, False, info
             return self.state, REWARD_INVALID_ACTION, False, False, info
 
@@ -421,30 +388,24 @@ class MinesweeperEnv(gym.Env):
 
         # Handle cell reveal
         if self.mines[row, col]:  # Hit a mine
-            if self.is_first_move:
-                # First move safety: relocate the mine and reveal the intended cell
-                self._relocate_mine_from_position(row, col)
-                # Now reveal the cell (which should be safe)
-                self._reveal_cell(row, col)
-                # Update enhanced state after revealing cells
-                self._update_enhanced_state()
-                # Check for win after all reveals (including cascades)
-                if self._check_win():
-                    self.is_first_move = False
-                    self.terminated = True
-                    info['won'] = True
-                    return self.state, REWARD_WIN, True, False, info
-                # Return first move safe reward since we relocated the mine
-                reward = REWARD_FIRST_MOVE_SAFE
-                self.is_first_move = False
-                info['won'] = False
-                return self.state, reward, False, False, info
+            # Game always terminates on mine hit
+            self.state[0, row, col] = CELL_MINE_HIT
+            self.revealed[row, col] = True
+            self.terminated = True
+            info['won'] = False
+            
+            # Track if this game ended pre-cascade
+            game_ended_pre_cascade = self.is_first_cascade
+            
+            # Update statistics
+            self._update_statistics(game_won=False, game_ended_pre_cascade=game_ended_pre_cascade)
+            
+            # Determine reward based on whether this is pre-cascade or post-cascade
+            if self.is_first_cascade:
+                # Pre-cascade mine hit - neutral reward (like the game never happened)
+                return self.state, REWARD_FIRST_CASCADE_SAFE, True, False, info
             else:
-                # Game over - hit a mine (not first move)
-                self.state[0, row, col] = CELL_MINE_HIT
-                self.revealed[row, col] = True
-                self.terminated = True
-                info['won'] = False
+                # Post-cascade mine hit - full penalty
                 return self.state, REWARD_HIT_MINE, True, False, info
 
         # Reveal the cell (safe cell)
@@ -455,14 +416,38 @@ class MinesweeperEnv(gym.Env):
 
         # Always check for win after all reveals (including cascades)
         if self._check_win():
-            self.is_first_move = False
+            # Check if this win happened during the first cascade period
+            win_during_first_cascade_period = self.is_first_cascade
+            
+            self.is_first_cascade = False
             self.terminated = True
             info['won'] = True
-            return self.state, REWARD_WIN, True, False, info
+            
+            # Track if this game ended pre-cascade
+            game_ended_pre_cascade = win_during_first_cascade_period
+            
+            # Update statistics
+            self._update_statistics(game_won=True, game_ended_pre_cascade=game_ended_pre_cascade)
+            
+            # If the win happened during the first cascade period (before any cascade),
+            # it's an accidental win and should get neutral reward
+            if win_during_first_cascade_period:
+                # Accidental win during first cascade period - give neutral reward
+                return self.state, REWARD_FIRST_CASCADE_SAFE, True, False, info
+            else:
+                # Skillful win after first cascade period - give full reward
+                return self.state, REWARD_WIN, True, False, info
 
-        # Determine reward based on whether this is the first move
-        reward = REWARD_FIRST_MOVE_SAFE if self.is_first_move else REWARD_SAFE_REVEAL
-        self.is_first_move = False
+        # Determine reward based on whether this is the first cascade period
+        reward = REWARD_FIRST_CASCADE_SAFE if self.is_first_cascade else REWARD_SAFE_REVEAL
+        
+        # If we had a cascade in this step and no win occurred, exit pre-cascade period
+        if self.in_cascade and self.is_first_cascade:
+            self.is_first_cascade = False
+        
+        # Reset cascade flag for next step
+        self.in_cascade = False
+        
         info['won'] = False
         return self.state, reward, False, False, info
 
@@ -575,6 +560,83 @@ class MinesweeperEnv(gym.Env):
                                 self.mines[ni, nj]):
                                 adjacent_mines += 1
                     self.state[1, i, j] = adjacent_mines
+
+    def get_real_life_statistics(self):
+        """Get real-life statistics (what would happen in actual Minesweeper gameplay).
+        
+        Returns:
+            dict: Real-life statistics including games played, won, lost, and win rate
+        """
+        total_games = self.real_life_games_played
+        if total_games == 0:
+            return {
+                'games_played': 0,
+                'games_won': 0,
+                'games_lost': 0,
+                'win_rate': 0.0
+            }
+        
+        return {
+            'games_played': total_games,
+            'games_won': self.real_life_games_won,
+            'games_lost': self.real_life_games_lost,
+            'win_rate': self.real_life_games_won / total_games
+        }
+    
+    def get_rl_training_statistics(self):
+        """Get RL training statistics (excluding pre-cascade games).
+        
+        Returns:
+            dict: RL training statistics including games played, won, lost, and win rate
+        """
+        total_games = self.rl_games_played
+        if total_games == 0:
+            return {
+                'games_played': 0,
+                'games_won': 0,
+                'games_lost': 0,
+                'win_rate': 0.0
+            }
+        
+        return {
+            'games_played': total_games,
+            'games_won': self.rl_games_won,
+            'games_lost': self.rl_games_lost,
+            'win_rate': self.rl_games_won / total_games
+        }
+    
+    def get_combined_statistics(self):
+        """Get both real-life and RL training statistics.
+        
+        Returns:
+            dict: Combined statistics with both real-life and RL metrics
+        """
+        return {
+            'real_life': self.get_real_life_statistics(),
+            'rl_training': self.get_rl_training_statistics()
+        }
+    
+    def _update_statistics(self, game_won, game_ended_pre_cascade):
+        """Update both real-life and RL training statistics.
+        
+        Args:
+            game_won (bool): Whether the game was won
+            game_ended_pre_cascade (bool): Whether the game ended during pre-cascade period
+        """
+        # Always update real-life statistics
+        self.real_life_games_played += 1
+        if game_won:
+            self.real_life_games_won += 1
+        else:
+            self.real_life_games_lost += 1
+        
+        # Only update RL training statistics if game didn't end pre-cascade
+        if not game_ended_pre_cascade:
+            self.rl_games_played += 1
+            if game_won:
+                self.rl_games_won += 1
+            else:
+                self.rl_games_lost += 1
 
 def main():
     # Create and test the environment

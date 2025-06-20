@@ -11,8 +11,8 @@ CELL_MINE_HIT = -4
 UNKNOWN_SAFETY = -1     # Value for unknown safety in safety channel
 
 # Reward values
-REWARD_FIRST_MOVE_SAFE = 0    # First move safe reveal (just luck)
-REWARD_FIRST_MOVE_HIT_MINE = 0  # First move hit mine (just luck)
+REWARD_FIRST_CASCADE_SAFE = 0    # First cascade safe reveal (just luck)
+REWARD_FIRST_CASCADE_HIT_MINE = 0  # First cascade hit mine (just luck)
 REWARD_SAFE_REVEAL = 5        # Regular safe reveal (progress)
 REWARD_WIN = 100             # Win the game (achievement)
 REWARD_HIT_MINE = -50        # Hit a mine (failure) - significant penalty to encourage caution

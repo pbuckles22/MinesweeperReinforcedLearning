@@ -12,7 +12,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED, CELL_MINE_HIT,
     REWARD_WIN, REWARD_HIT_MINE, REWARD_SAFE_REVEAL,
-    REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_INVALID_ACTION
 )
 
@@ -35,9 +35,10 @@ class TestCoreGameMechanics:
         # If we reveal it, the game should win immediately
         if terminated:
             assert info.get('won', False), "Game should be won if all safe cells are revealed"
-            assert reward == REWARD_WIN, "Should receive win reward for revealing all safe cells"
+            # Win before cascade should get neutral reward
+            assert reward == REWARD_FIRST_CASCADE_SAFE, "Should receive neutral reward for win before cascade"
         else:
-            # If not terminated, the first move should be safe
+            # If not terminated, the First cascade should be safe
             assert state[0, 0, 0] != CELL_UNREVEALED, "First cell should be revealed"
     
     def test_cascade_revelation(self):
@@ -50,8 +51,8 @@ class TestCoreGameMechanics:
         env.mines[3, 3] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal cell that should trigger cascade
         action = 0  # (0,0)
@@ -71,8 +72,8 @@ class TestCoreGameMechanics:
         env.mines[2, 2] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal all safe cells
         safe_cells = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (2,0), (2,1)]
@@ -96,8 +97,8 @@ class TestCoreGameMechanics:
         env.mines[1, 1] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal the mine
         action = 1 * env.current_board_width + 1
@@ -260,8 +261,8 @@ class TestEnhancedStateRepresentation:
         env.mines[2, 2] = True  # Mine at another position
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Update enhanced state after setting up controlled board
         env._update_enhanced_state()
@@ -337,8 +338,8 @@ class TestActionMasking:
         env.mines[1, 1] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Take safe move first
         safe_action = 0
@@ -355,19 +356,19 @@ class TestActionMasking:
 class TestRewardSystem:
     """Test the reward system."""
     
-    def test_first_move_rewards(self):
-        """REQUIREMENT: First move should have appropriate rewards."""
+    def test_pre_cascade_rewards(self):
+        """REQUIREMENT: Pre-cascade should have appropriate rewards."""
         env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
         env.reset(seed=42)
         
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         
-        # First move should have appropriate reward
-        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN], "First move should have appropriate reward"
+        # Pre-cascade should have appropriate reward
+        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE, REWARD_WIN], "Pre-cascade should have appropriate reward"
     
     def test_subsequent_move_rewards(self):
-        """REQUIREMENT: Subsequent moves should have appropriate rewards."""
+        """REQUIREMENT: Subsequent moves before cascade should have neutral rewards."""
         env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
         env.reset(seed=42)
         
@@ -375,15 +376,15 @@ class TestRewardSystem:
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         
-        # Take second move if game continues
-        if not terminated:
+        # Take second move if game continues and no cascade occurred
+        if not terminated and env.is_first_cascade:
             unrevealed = np.where(state[0] == CELL_UNREVEALED)
             if len(unrevealed[0]) > 0:
                 action = unrevealed[0][0] * env.current_board_width + unrevealed[1][0]
                 state, reward, terminated, truncated, info = env.step(action)
-                print(f"[DIAG] Reward for second move: {reward}")
-                print(f"[DIAG] Valid rewards: {[REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]}")
-                assert reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION], f"Subsequent move should have valid reward, got {reward}"
+                print(f"[DIAG] Reward for second move before cascade: {reward}")
+                # Before cascade, all moves should get neutral rewards
+                assert reward == REWARD_FIRST_CASCADE_SAFE, f"Move before cascade should have neutral reward, got {reward}"
     
     def test_win_reward(self):
         """REQUIREMENT: Winning should give appropriate reward."""
@@ -395,8 +396,8 @@ class TestRewardSystem:
         env.mines[2, 2] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal all safe cells
         safe_cells = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (2,0), (2,1)]
@@ -418,8 +419,8 @@ class TestRewardSystem:
         env.mines[1, 1] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Take safe move first
         safe_action = 0

@@ -5,8 +5,7 @@ from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE
@@ -32,8 +31,8 @@ def test_safe_cell_reveal(env):
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
 
     # Pick a safe cell to reveal (e.g., (1,1))
     action = 1 * env.current_board_width + 1
@@ -51,8 +50,8 @@ def test_safe_cell_cascade(env):
     """Test that revealing a safe cell with no adjacent mines reveals surrounding cells."""
     # Clear all mines first
     env.mines.fill(False)
-    env.is_first_move = False  # Disable first move mine placement
-    env.first_move_done = True  # Prevent mine placement in step()
+    env.is_first_cascade = False  # Disable First cascade mine placement
+    env.first_cascade_done = True  # Prevent mine placement in step()
 
     # Place mine at (0,0)
     env.mines[0, 0] = True
@@ -120,8 +119,8 @@ def test_win_condition(env):
     env.mines[1, 1] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Debug print initial board state
     print("\nInitial board state:")

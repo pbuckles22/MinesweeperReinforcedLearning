@@ -8,7 +8,7 @@ import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED, CELL_MINE, CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL, REWARD_WIN, REWARD_HIT_MINE
 )
 
@@ -244,8 +244,8 @@ class TestMinesweeperEnv:
         self.env.mines[0, 0] = True
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         action = 0
         state, reward, terminated, truncated, info = self.env.step(action)

@@ -12,7 +12,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED, CELL_MINE_HIT,
     REWARD_WIN, REWARD_HIT_MINE, REWARD_SAFE_REVEAL,
-    REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE
 )
 
 class TestDeterministicScenarios:
@@ -38,8 +38,8 @@ class TestDeterministicScenarios:
         self.env.mines[2, 2] = True  # Mine at bottom-right
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = True
-        self.env.first_move_done = False
+        self.env.is_first_cascade = True
+        self.env.first_cascade_done = False
         
         # Take first action at safe corner (0,0)
         action = 0  # (0,0)
@@ -51,7 +51,7 @@ class TestDeterministicScenarios:
         
         # Verify deterministic outcome
         assert not terminated, "Safe corner start should not terminate"
-        assert reward == REWARD_FIRST_MOVE_SAFE, f"Should get first move safe reward, got {reward}"
+        assert reward == REWARD_FIRST_CASCADE_SAFE, f"Should get First cascade safe reward, got {reward}"
         assert state[0, 0, 0] == 1, "Corner cell should show 1 adjacent mine"
         assert state[0, 0, 1] == -1, "Cell (0,1) should remain unrevealed after revealing (0,0)"
         assert state[0, 1, 0] == -1, "Cell (1,0) should remain unrevealed after revealing (0,0)"
@@ -68,8 +68,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True  # Mine at center
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # First make a safe move
         safe_action = 0  # (0,0)
@@ -101,8 +101,8 @@ class TestDeterministicScenarios:
         self.env.mines[3, 3] = True  # Mine at bottom-right
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # Reveal all non-corner cells
         safe_cells = [(i, j) for i in range(4) for j in range(4)
@@ -124,9 +124,9 @@ class TestDeterministicScenarios:
         
         print("✅ Deterministic win scenario passed")
     
-    def test_deterministic_first_move_mine_hit(self):
-        """Test deterministic scenario: hitting mine on first move."""
-        print("🧪 Testing deterministic first move mine hit...")
+    def test_deterministic_pre_cascade_mine_hit(self):
+        """Test deterministic scenario: hitting mine on pre-cascade."""
+        print("🧪 Testing deterministic pre-cascade mine hit...")
         
         # Set up deterministic board: mine at (0,0)
         self.env.reset()
@@ -134,16 +134,16 @@ class TestDeterministicScenarios:
         self.env.mines[0, 0] = True  # Mine at first cell
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = True
-        self.env.first_move_done = False
+        self.env.is_first_cascade = True
+        self.env.first_cascade_done = False
         
-        # Hit mine on first move
+        # Hit mine on pre-cascade
         action = 0  # (0,0)
         state, reward, terminated, truncated, info = self.env.step(action)
         
         # Verify deterministic outcome: mine should be relocated and cell revealed
-        # Note: First move mine hit can result in win if cascade reveals all cells
-        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_WIN], f"Should get first move safe or win reward, got {reward}"
+        # Note: Pre-cascade mine hit can result in win if cascade reveals all cells
+        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_WIN], f"Should get pre-cascade safe or win reward, got {reward}"
         assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed after mine relocation"
         assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
         assert not self.env.mines[0, 0], "Mine should be removed from original position"
@@ -153,10 +153,10 @@ class TestDeterministicScenarios:
             assert terminated, "Game should be terminated on win"
             assert info.get('won', False), "Game should be marked as won"
         else:
-            assert not terminated, "Game should not terminate on safe first move"
+            assert not terminated, "Game should not terminate on safe pre-cascade"
             assert not info.get('won', False), "Game should not be marked as won"
         
-        print("✅ Deterministic first move mine hit passed")
+        print("✅ Deterministic pre-cascade mine hit passed")
     
     def test_deterministic_adjacent_mine_counts(self):
         """Test deterministic scenario: verify adjacent mine counts are correct."""
@@ -169,8 +169,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 2] = True  # Mine at center-right
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # Reveal cells and verify adjacent counts
         test_cells = [
@@ -203,8 +203,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True  # Mine at center
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         self.env._update_enhanced_state()  # Ensure state is updated
         
         # Check initial safety hints for unrevealed cells
@@ -237,8 +237,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True  # Mine at center
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # Check initial action masks
         initial_masks = self.env.action_masks
@@ -265,8 +265,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True  # Mine at center
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # Take multiple actions and verify state consistency
         actions = [0, 1, 2, 3]  # Reveal top row
@@ -302,8 +302,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True  # Mine at center
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         # Take same action multiple times and verify consistent rewards
         action = 0  # (0,0)
@@ -318,8 +318,8 @@ class TestDeterministicScenarios:
         self.env.mines[1, 1] = True
         self.env._update_adjacent_counts()
         self.env.mines_placed = True
-        self.env.is_first_move = False
-        self.env.first_move_done = True
+        self.env.is_first_cascade = False
+        self.env.first_cascade_done = True
         
         state2, reward2, terminated2, truncated2, info2 = self.env.step(action)
         assert reward2 == REWARD_SAFE_REVEAL, f"Second action should give same reward, got {reward2}"
@@ -351,8 +351,8 @@ class TestDeterministicScenarios:
         env3.mines[1, 1] = True
         env3._update_adjacent_counts()
         env3.mines_placed = True
-        env3.is_first_move = False
-        env3.first_move_done = True
+        env3.is_first_cascade = False
+        env3.first_cascade_done = True
         
         # Take same action multiple times
         action = 0
@@ -364,8 +364,8 @@ class TestDeterministicScenarios:
             env3.mines[1, 1] = True
             env3._update_adjacent_counts()
             env3.mines_placed = True
-            env3.is_first_move = False
-            env3.first_move_done = True
+            env3.is_first_cascade = False
+            env3.first_cascade_done = True
             
             state, reward, terminated, truncated, info = env3.step(action)
             results.append((reward, terminated))
@@ -386,7 +386,7 @@ if __name__ == "__main__":
         test_suite.test_deterministic_safe_corner_start,
         test_suite.test_deterministic_mine_hit_scenario,
         test_suite.test_deterministic_win_scenario,
-        test_suite.test_deterministic_first_move_mine_hit,
+        test_suite.test_deterministic_pre_cascade_mine_hit,
         test_suite.test_deterministic_adjacent_mine_counts,
         test_suite.test_deterministic_safety_hints,
         test_suite.test_deterministic_action_masking,

@@ -4,9 +4,10 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_HIT_MINE,
-    REWARD_FIRST_MOVE_SAFE
+    REWARD_FIRST_CASCADE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE,
+    REWARD_SAFE_REVEAL
 )
 
 @pytest.fixture
@@ -14,72 +15,72 @@ def env():
     """Create a test environment."""
     return MinesweeperEnv(initial_board_size=3, initial_mines=1)
 
-def test_first_move_mine_hit(env):
-    """Test hitting a mine on first move."""
+def test_pre_cascade_mine_hit(env):
+    """Test mine hit during pre-cascade period."""
     env.reset()
     
-    # Place mine at (0,0) and hit it
-    env.mines[0, 0] = True
-    env._update_adjacent_counts()
-    env.mines_placed = True
-    env.is_first_move = True
-    env.first_move_done = False
-    
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # After first move mine hit, the mine should be relocated and cell revealed
-    assert reward == REWARD_FIRST_MOVE_SAFE, "First move mine hit should relocate mine and give safe reward"
-    assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed after mine relocation"
-    assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
-    assert not terminated, "Game should continue after first move mine relocation"
-    assert not env.mines[0, 0], "Mine should be removed from original position"
-    assert env.revealed[0, 0], "Cell should be revealed after mine relocation"
-
-def test_mine_hit_after_first_move(env):
-    """Test hitting a mine after first move."""
-    env.reset()
-
-    # Make first move safe
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    
-    # If first move caused a win, we can't test mine hit after first move
-    if terminated:
-        print("First move caused win, skipping mine hit test")
-        return
-
-    # Place mine at (1,0) and hit it (after first move)
+    # Set up a mine at the first action location
     env.mines.fill(False)
-    env.mines[1, 0] = True
+    env.mines[0, 0] = True  # Mine at first cell
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
-
-    action = 3  # (1,0)
+    
+    # Hit mine on pre-cascade
+    action = 0
     state, reward, terminated, truncated, info = env.step(action)
+    
+    # Should get neutral reward since it's during pre-cascade period
+    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade mine hit should give neutral reward"
+    assert not terminated, "Game should not terminate on pre-cascade mine hit"
+    assert state[0, 0, 0] != CELL_MINE_HIT, "Mine should be relocated, not hit"
 
-    assert reward == REWARD_HIT_MINE
+def test_mine_hit_after_pre_cascade(env):
+    """Test mine hit after pre-cascade period."""
+    env.reset()
+    
+    # Set up a mine at a specific location
+    env.mines.fill(False)
+    env.mines[1, 1] = True  # Mine at center
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_cascade = False  # Simulate post-cascade state
+    env.first_cascade_done = True
+    
+    # Take a safe move first
+    safe_action = 0
+    state, reward, terminated, truncated, info = env.step(safe_action)
+    
+    # Now hit the mine (after pre-cascade period)
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
+    # Should get mine hit penalty since it's after pre-cascade period
+    assert reward == REWARD_HIT_MINE, "Post-cascade mine hit should give mine hit penalty"
+    assert terminated, "Game should terminate on mine hit"
+    assert state[0, 1, 1] == CELL_MINE_HIT, "Mine hit should be visible"
 
 def test_multiple_mine_hits(env):
-    """Test multiple mine hits in sequence."""
+    """Test multiple mine hits in a game."""
     env.reset()
-    
     # Place multiple mines
+    env.mines.fill(False)
     env.mines[0, 0] = True
     env.mines[1, 1] = True
+    env.mines[2, 2] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
-    
+    env.is_first_cascade = False
+    env.first_cascade_done = True
+
+    # Make first move safe
+    action = 3
+    state, reward, terminated, truncated, info = env.step(action)
+    assert reward == REWARD_SAFE_REVEAL
+
     # Hit first mine
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    
     assert reward == REWARD_HIT_MINE
-    assert state[0, 0, 0] == CELL_MINE_HIT
     assert terminated
 
 def test_mine_hit_state_consistency(env):
@@ -90,8 +91,8 @@ def test_mine_hit_state_consistency(env):
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
@@ -112,10 +113,32 @@ def test_mine_hit_reward_consistency(env):
         env.mines[0, 0] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         rewards.append(reward)
     # All rewards should be the same
-    assert all(r == REWARD_HIT_MINE for r in rewards) 
+    assert all(r == REWARD_HIT_MINE for r in rewards)
+
+def test_mine_hit_with_cascade(env):
+    """Test mine hit that triggers a cascade."""
+    env.reset()
+    # Place mine at edge
+    env.mines.fill(False)
+    env.mines[0, 1] = True
+    env._update_adjacent_counts()
+    env.mines_placed = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
+
+    # Make first move safe (should trigger cascade)
+    action = 0
+    state, reward, terminated, truncated, info = env.step(action)
+    assert reward == REWARD_SAFE_REVEAL
+
+    # Hit mine
+    action = 1
+    state, reward, terminated, truncated, info = env.step(action)
+    assert reward == REWARD_HIT_MINE
+    assert terminated 

@@ -14,13 +14,14 @@ import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
+    CELL_MINE,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
-    REWARD_INVALID_ACTION
+    REWARD_INVALID_ACTION,
+    REWARD_FIRST_CASCADE_SAFE,
+    REWARD_FIRST_CASCADE_HIT_MINE,
 )
 
 class TestComprehensiveRL:
@@ -78,8 +79,8 @@ class TestComprehensiveRL:
         deterministic_env.mines[2, 2] = True  # Mine at another position
         deterministic_env._update_adjacent_counts()
         deterministic_env.mines_placed = True
-        deterministic_env.is_first_move = False
-        deterministic_env.first_move_done = True
+        deterministic_env.is_first_cascade = False
+        deterministic_env.first_cascade_done = True
         
         # Check that mines are not visible in the observation
         state = deterministic_env.state
@@ -122,17 +123,17 @@ class TestComprehensiveRL:
         action = 0  # Corner cell
         state, reward, terminated, truncated, info = deterministic_env.step(action)
         
-        # Should not hit mine on first move (first move safety)
-        assert not terminated or reward != REWARD_HIT_MINE, "First move should be safe"
+        # Should not hit mine on First cascade (First cascade safety)
+        assert not terminated or reward != REWARD_HIT_MINE, "First cascade should be safe"
         
-        # Test 2: Known mine position (after first move)
+        # Test 2: Known mine position (after First cascade)
         deterministic_env.reset(seed=42)
         deterministic_env.mines.fill(False)
         deterministic_env.mines[1, 1] = True
         deterministic_env._update_adjacent_counts()
         deterministic_env.mines_placed = True
-        deterministic_env.is_first_move = False
-        deterministic_env.first_move_done = True
+        deterministic_env.is_first_cascade = False
+        deterministic_env.first_cascade_done = True
         
         # Take safe move first
         safe_action = 0
@@ -238,12 +239,12 @@ class TestComprehensiveRL:
                 state, reward, terminated, truncated, info = rl_env.step(action)
                 
                 # Verify early learning rewards are valid
-                if step == 0:  # First move
-                    assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE], "First move should have appropriate reward"
+                if step == 0:  # Pre-cascade move
+                    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
                 else:
-                    # Subsequent moves can include first move rewards if the environment resets
+                    # Subsequent moves can include various rewards depending on cascade state
                     valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, 
-                                   REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE]
+                                   REWARD_FIRST_CASCADE_SAFE]
                     assert reward in valid_rewards, f"Subsequent moves should have appropriate rewards, got {reward}"
                 
                 if terminated or truncated:
@@ -273,8 +274,8 @@ class TestComprehensiveRL:
         deterministic_env.mines[0, 0] = True  # Single mine in corner
         deterministic_env._update_adjacent_counts()
         deterministic_env.mines_placed = True
-        deterministic_env.is_first_move = False
-        deterministic_env.first_move_done = True
+        deterministic_env.is_first_cascade = False
+        deterministic_env.first_cascade_done = True
         
         # Reveal all safe cells
         safe_cells = []
@@ -301,8 +302,8 @@ class TestComprehensiveRL:
         deterministic_env.mines[1, 1] = True  # Mine in center
         deterministic_env._update_adjacent_counts()
         deterministic_env.mines_placed = True
-        deterministic_env.is_first_move = False
-        deterministic_env.first_move_done = True
+        deterministic_env.is_first_cascade = False
+        deterministic_env.first_cascade_done = True
         
         # Take safe move first
         safe_action = 0
@@ -344,20 +345,20 @@ class TestComprehensiveRL:
         """Test that rewards are consistent and appropriate for RL training."""
         rl_env.reset()
         
-        # Test first move rewards
+        # Test pre-cascade rewards
         action = 0
         state, reward, terminated, truncated, info = rl_env.step(action)
         
-        # First move should have appropriate reward
-        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE], "First move should have appropriate reward"
+        # Pre-cascade should have neutral reward
+        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
         
         # Test subsequent move rewards
         if not terminated:
             action = 1
             state, reward, terminated, truncated, info = rl_env.step(action)
             
-            # Subsequent moves should have appropriate rewards
-            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
+            # Subsequent moves should have appropriate rewards (could still be pre-cascade if no cascade occurred)
+            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_FIRST_CASCADE_SAFE]
             assert reward in valid_rewards, f"Subsequent move should have valid reward, got {reward}"
 
     def test_agent_info_consistency(self, rl_env):

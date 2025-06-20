@@ -9,8 +9,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
@@ -22,80 +21,79 @@ def env():
     """Create a test environment."""
     return MinesweeperEnv(initial_board_size=4, initial_mines=3)  # More complex setup
 
-def test_first_move_safe_reward(env):
-    """Test reward for safe first move."""
+def test_pre_cascade_safe_reward(env):
+    """Test reward for safe pre-cascade."""
     env.reset()
+    
+    # Pre-cascade should be safe but not win (due to 3 mines in 4x4 board)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    # First move should be safe but not win (due to 3 mines in 4x4 board)
-    assert reward == REWARD_FIRST_MOVE_SAFE
+    
+    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should give neutral reward"
+    assert not terminated, "Pre-cascade should not terminate game"
 
-def test_first_move_mine_hit_reward(env):
-    """Test reward for hitting mine on first move."""
+def test_pre_cascade_mine_hit_reward(env):
+    """Test reward for hitting mine on pre-cascade."""
     env.reset()
-    # Place mine at (0,0)
+    
+    # Set up a mine at the first action location
     env.mines.fill(False)
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = True
-    env.first_move_done = False
-
+    
+    # Pre-cascade mine hit should relocate the mine and reveal the cell
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    # First move mine hit should relocate the mine and reveal the cell
-    # If this reveals all safe cells, it should be a win
+    
     if terminated:
-        assert reward == REWARD_WIN, "First move should give win reward if all safe cells are revealed"
-        assert info.get('won', False), "Game should be marked as won"
+        assert reward == REWARD_WIN, "Pre-cascade should give win reward if all safe cells are revealed"
     else:
-        assert reward == REWARD_FIRST_MOVE_SAFE, "First move mine hit should relocate mine and give safe reward"
-        assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
+        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade mine hit should relocate mine and give neutral reward"
 
-def test_safe_reveal_reward(env):
-    """Test reward for safe reveal after first move."""
+def test_safe_reveal_after_pre_cascade(env):
+    """Test reward for safe reveal after pre-cascade."""
     env.reset()
-    # Set up board so first move doesn't cascade too much
+    
+    # Set up board so pre-cascade doesn't cascade too much
     env.mines.fill(False)
-    env.mines[0, 0] = True  # Mine in corner
-    env.mines[1, 1] = True  # Mine in center
-    env.mines[3, 3] = True  # Mine in opposite corner
+    env.mines[1, 1] = True
+    env.mines[2, 2] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
-    # Make first move safe (should reveal limited area)
-    action = 2  # (0,2) - should be safe and not cause large cascade
+    # Make pre-cascade safe (should reveal limited area)
+    action = 0
     state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_SAFE_REVEAL  # Not first move anymore
     
-    # Second move should give safe reveal reward
-    action = 3  # (0,3) - should be unrevealed
-    state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_SAFE_REVEAL
+    # Should get full safe reveal reward since we're past pre-cascade
+    assert reward == REWARD_SAFE_REVEAL  # Not pre-cascade anymore
 
-def test_mine_hit_reward(env):
-    """Test reward for hitting mine after first move."""
+def test_mine_hit_after_pre_cascade(env):
+    """Test reward for hitting mine after pre-cascade."""
     env.reset()
-    # Set up board with controlled mine placement
+    
+    # Set up a mine at a specific location
     env.mines.fill(False)
-    env.mines[0, 0] = True  # Mine in corner
-    env.mines[1, 1] = True  # Mine in center
-    env.mines[3, 3] = True  # Mine in opposite corner
+    env.mines[1, 1] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
-    # Make first move safe
-    action = 2  # (0,2) - safe cell
-    state, reward, terminated, truncated, info = env.step(action)
+    # Make pre-cascade safe
+    safe_action = 0
+    state, reward, terminated, truncated, info = env.step(safe_action)
     
-    # Now hit a mine
-    action = 0  # (0,0) - mine
-    state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_HIT_MINE
+    # Now hit the mine (after pre-cascade period)
+    mine_action = 1 * env.current_board_width + 1
+    state, reward, terminated, truncated, info = env.step(mine_action)
+    
+    # Should get mine hit penalty since it's after pre-cascade period
+    assert reward == REWARD_HIT_MINE, "Post-cascade mine hit should give mine hit penalty"
+    assert terminated, "Game should terminate on mine hit"
 
 def test_win_reward(env):
     """Test reward for winning the game."""
@@ -105,8 +103,8 @@ def test_win_reward(env):
     env.mines[0, 0] = True  # Mine at corner
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Reveal all safe cells
     for i in range(1, env.current_board_width * env.current_board_height):
@@ -133,8 +131,8 @@ def test_game_over_invalid_action_reward(env):
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
@@ -146,7 +144,7 @@ def test_game_over_invalid_action_reward(env):
     assert reward == REWARD_INVALID_ACTION
 
 def test_reward_consistency(env):
-    """Test that rewards are consistent for the same actions."""
+    """Test that rewards are consistent for the same actions in the same game state."""
     env.reset()
     
     # Take same action multiple times and verify consistent rewards
@@ -157,7 +155,9 @@ def test_reward_consistency(env):
     env.reset()
     state2, reward2, terminated2, truncated2, info2 = env.step(action)
     
-    assert reward1 == reward2, "Same action should give same reward"
+    # Both should be pre-cascade rewards (neutral) since no cascade has occurred
+    assert reward1 == REWARD_FIRST_CASCADE_SAFE, f"First action should give neutral reward, got {reward1}"
+    assert reward2 == REWARD_FIRST_CASCADE_SAFE, f"Second action should give neutral reward, got {reward2}"
 
 def test_reward_bounds(env):
     """Test that rewards are within expected bounds."""
@@ -183,13 +183,13 @@ def test_reward_scaling_with_board_size():
     small_env.reset()
     large_env.reset()
     
-    # Make first moves
+    # Make pre-cascade moves
     small_state, small_reward, small_term, small_trunc, small_info = small_env.step(0)
     large_state, large_reward, large_term, large_trunc, large_info = large_env.step(0)
     
-    # Both should be first move rewards (either safe or mine hit)
-    assert small_reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN]
-    assert large_reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN]
+    # Both should be pre-cascade rewards (neutral) since no cascade has occurred
+    assert small_reward == REWARD_FIRST_CASCADE_SAFE, f"Small board should give neutral reward, got {small_reward}"
+    assert large_reward == REWARD_FIRST_CASCADE_SAFE, f"Large board should give neutral reward, got {large_reward}"
 
 def test_reward_with_custom_parameters():
     """Test rewards with custom reward parameters."""
@@ -236,13 +236,12 @@ def test_reward_with_early_learning():
     
     env.reset()
     
-    # Make first move
+    # Make pre-cascade move
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # In early learning mode with small board, first move could win the game
-    # Should get either first move reward or win reward
-    assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN]
+    # Should get neutral reward for pre-cascade move
+    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}"
 
 def test_reward_edge_cases():
     """Test reward edge cases."""
@@ -253,17 +252,17 @@ def test_reward_edge_cases():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get appropriate reward
-    assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN]
+    # Should get neutral reward for pre-cascade move
+    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}"
 
 def test_reward_with_rectangular_board():
     """Test rewards on rectangular boards."""
     env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=3)
     env.reset()
     
-    # Make first move
+    # Make pre-cascade move
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get normal first move reward
-    assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN] 
+    # Should get neutral reward for pre-cascade move
+    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}" 

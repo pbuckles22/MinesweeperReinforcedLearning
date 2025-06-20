@@ -28,8 +28,8 @@ def test_action_masking_after_reveal(env):
     env.mines[1, 1] = True  # Mine in center
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Reveal a cell (should not cause cascade)
     action = 0
@@ -53,8 +53,8 @@ def test_action_masking_after_game_over(env):
     env.mines[0, 0] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Hit the mine
     action = 0
@@ -72,8 +72,8 @@ def test_action_masking_after_win(env):
     env.mines[0, 0] = True  # Mine at corner
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Reveal all safe cells
     for i in range(1, env.current_board_width * env.current_board_height):
@@ -104,8 +104,8 @@ def test_action_masking_consistency(env):
     env.mines[1, 1] = True  # Mine in center
     env._update_adjacent_counts()
     env.mines_placed = True
-    env.is_first_move = False
-    env.first_move_done = True
+    env.is_first_cascade = False
+    env.first_cascade_done = True
     
     # Take multiple actions and verify masking consistency
     actions = [0, 1, 2]

@@ -76,8 +76,8 @@ class TestPerformance:
         env.mines[6:, 6:] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Measure cascade performance
         start_time = time.time()

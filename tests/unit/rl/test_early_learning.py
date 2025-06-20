@@ -12,8 +12,7 @@ from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
@@ -388,16 +387,16 @@ def test_early_learning_state_consistency_across_games(early_learning_env):
 def test_early_learning_reward_evolution(early_learning_env):
     """Test that rewards evolve appropriately during early learning."""
     # Track rewards across multiple games
-    first_move_rewards = []
+    pre_cascade_rewards = []
     subsequent_rewards = []
     
     for game in range(10):
         early_learning_env.reset()
         
-        # First move
+        # Pre-cascade
         action = 0
         state, reward, terminated, truncated, info = early_learning_env.step(action)
-        first_move_rewards.append(reward)
+        pre_cascade_rewards.append(reward)
         
         # Subsequent moves (if game continues)
         if not terminated:
@@ -406,8 +405,8 @@ def test_early_learning_reward_evolution(early_learning_env):
             subsequent_rewards.append(reward)
     
     # Verify reward types are appropriate
-    for reward in first_move_rewards:
-        assert reward in [REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_WIN], "First move should have appropriate reward"
+    for reward in pre_cascade_rewards:
+        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
     
     for reward in subsequent_rewards:
         assert reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION], "Subsequent moves should have appropriate rewards"

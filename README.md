@@ -73,7 +73,7 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 - **Channel 1**: Safety hints (adjacent mine counts for unrevealed cells)
 
 ### Reward System
-- `REWARD_FIRST_MOVE_SAFE = 0`: First move safe reveal
+- `REWARD_FIRST_CASCADE_SAFE = 0`: First cascade safe reveal
 - `REWARD_SAFE_REVEAL = 5`: Regular safe reveal
 - `REWARD_WIN = 100`: Game win
 - `REWARD_HIT_MINE = -50`: Mine hit penalty

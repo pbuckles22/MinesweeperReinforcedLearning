@@ -4,8 +4,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE
@@ -18,6 +17,10 @@ def env():
 
 class TestEdgeCases:
     """Test edge cases and complex scenarios for Minesweeper RL environment."""
+
+    def setup_method(self):
+        """Set up test environment before each test."""
+        self.env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
 
     def test_complex_cascade_scenarios(self):
         """Test complex cascade patterns that reveal large areas."""
@@ -32,8 +35,8 @@ class TestEdgeCases:
         env.mines[2, 2] = True  # Center
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal cell that should trigger cascade (should be a zero)
         # Find a zero cell (should be at (1,1) or similar)
@@ -64,8 +67,8 @@ class TestEdgeCases:
         env.mines[1, 1] = True  # Center mine
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find a zero cell to trigger cascade
         zero_cell_found = False
@@ -104,8 +107,8 @@ class TestEdgeCases:
         env.mines[5, 5] = True  # Corner mine
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find and reveal first zero region
         first_zero_found = False
@@ -151,8 +154,8 @@ class TestEdgeCases:
         env.mines[0, 0] = True  # Single mine in corner
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Reveal all safe cells
         for i in range(1, env.current_board_width * env.current_board_height):
@@ -165,31 +168,28 @@ class TestEdgeCases:
         assert info.get('won', False), "Should win when all safe cells are revealed"
         assert reward == REWARD_WIN, f"Should get win reward, got {reward}"
 
-    def test_win_on_first_move(self):
-        """Test winning on the very first move (extremely rare but possible)."""
-        env = MinesweeperEnv(initial_board_size=2, initial_mines=1)
-        env.reset()
+    def test_win_on_pre_cascade(self):
+        """Test winning on the very pre-cascade (extremely rare but possible)."""
+        print("🧪 Testing win on pre-cascade...")
         
-        # Set up 2x2 board with mine in one corner
-        env.mines.fill(False)
-        env.mines[0, 0] = True  # Mine in corner
-        env._update_adjacent_counts()
-        env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        # Set up a board where revealing the first cell wins
+        # This requires a very specific mine configuration
+        self.env.reset()
+        self.env.mines.fill(True)  # Fill with mines
+        self.env.mines[0, 0] = False  # Except the first cell
+        self.env._update_adjacent_counts()
+        self.env.mines_placed = True
         
-        # Reveal the safe corner (should win immediately)
-        action = 3  # (1,1) - the safe corner
-        state, reward, terminated, truncated, info = env.step(action)
+        # Reveal the only safe cell
+        action = 0
+        state, reward, terminated, truncated, info = self.env.step(action)
         
-        # Check if we won (all non-mine cells revealed)
-        if terminated:
-            assert info.get('won', False), "Should win"
-            assert reward == REWARD_WIN, f"Should get win reward, got {reward}"
-        else:
-            # If not terminated, we should have revealed the safe cell
-            assert env.revealed[1, 1], "Safe corner should be revealed"
-            assert not env.mines[1, 1], "Revealed cell should not be a mine"
+        # Should win immediately with neutral reward (pre-cascade win)
+        assert terminated, "Game should terminate on win"
+        assert info.get('won', False), "Game should be marked as won"
+        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade win should get neutral reward"
+        
+        print("✅ Win on pre-cascade passed")
 
     def test_state_consistency_during_cascade(self):
         """Test that state remains consistent during complex cascades."""
@@ -202,8 +202,8 @@ class TestEdgeCases:
         env.mines[4, 4] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find a zero cell to trigger cascade
         zero_cell_found = False
@@ -247,8 +247,8 @@ class TestEdgeCases:
         env.mines[4, 4] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find a zero cell to trigger large cascade
         zero_cell_found = False
@@ -279,8 +279,8 @@ class TestEdgeCases:
         env.mines[2, 4] = True  # Use correct indices for 3x5 board
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find a zero cell to trigger cascade
         zero_cell_found = False
@@ -312,8 +312,8 @@ class TestEdgeCases:
         env.mines[3, 2] = True  # Mine adjacent to zero region
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find the zero cell (should be at (2,2))
         zero_cell_found = False
@@ -349,8 +349,8 @@ class TestEdgeCases:
         env.mines[0, 0] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         # Find and reveal zero cell
         zero_cell_found = False
@@ -387,8 +387,8 @@ class TestEdgeCases:
         env.mines[1, 1] = True  # Center mine
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         print("Mines:")
         print(env.mines)
@@ -427,8 +427,8 @@ class TestEdgeCases:
         env.mines[4, 4] = True
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         print("Mines:")
         print(env.mines)
@@ -456,9 +456,9 @@ class TestEdgeCases:
             print(env.revealed)
             print(f"Total revealed: {np.sum(env.revealed)}")
 
-    def test_diagnostic_win_on_first_move(self):
-        """Diagnostic test for win on first move - prints board state."""
-        print("\n🔍 DIAGNOSTIC: Win on First Move")
+    def test_diagnostic_win_on_pre_cascade(self):
+        """Diagnostic test for win on pre-cascade - prints board state."""
+        print("\n🔍 DIAGNOSTIC: Win on pre-cascade")
         env = MinesweeperEnv(initial_board_size=2, initial_mines=1)
         env.reset()
         
@@ -467,8 +467,8 @@ class TestEdgeCases:
         env.mines[0, 0] = True  # Mine in corner
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         print("Mines:")
         print(env.mines)
@@ -530,8 +530,8 @@ class TestEdgeCases:
         env.mines[3, 2] = True  # Mine adjacent to zero region
         env._update_adjacent_counts()
         env.mines_placed = True
-        env.is_first_move = False
-        env.first_move_done = True
+        env.is_first_cascade = False
+        env.first_cascade_done = True
         
         print("Mines:")
         print(env.mines)
@@ -598,8 +598,8 @@ class TestEdgeCases:
             
             env._update_adjacent_counts()
             env.mines_placed = True
-            env.is_first_move = False
-            env.first_move_done = True
+            env.is_first_cascade = False
+            env.first_cascade_done = True
             
             print(f"Board size: {board_size}")
             print("Adjacent counts:")

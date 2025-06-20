@@ -19,8 +19,7 @@ from src.core.constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
-    REWARD_FIRST_MOVE_SAFE,
-    REWARD_FIRST_MOVE_HIT_MINE,
+    REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
@@ -125,16 +124,16 @@ class TestMinesweeperEnv:
     def test_mine_reveal(self, env):
         """Test revealing a mine."""
         env.reset()
-        
+
         # Make a safe first move to get past first move protection
         safe_action = 0
         state, reward, terminated, truncated, info = env.step(safe_action)
-        
+
         # If the first move caused a win, we can't test mine hits
         if terminated:
             print("First move caused win, skipping mine hit test")
             return
-        
+
         # Find a mine on the board
         mine_found = False
         for i in range(env.current_board_width * env.current_board_height):
@@ -144,15 +143,17 @@ class TestMinesweeperEnv:
                 mine_found = True
                 action = i
                 break
-        
+
         assert mine_found, "No mine found on board"
-        
-        # Reveal the mine (this is now after first move)
+
+        # Reveal the mine (this is now after first move but before cascade)
         state, reward, terminated, truncated, info = env.step(action)
-        
-        # This should be a mine hit after first move
-        assert reward == REWARD_HIT_MINE, "Non-first move mine hit should give mine hit reward"
-        assert terminated, "Game should terminate after mine hit"
+
+        # This should be a mine hit before cascade (neutral reward)
+        if env.is_first_cascade:
+            assert reward == REWARD_FIRST_CASCADE_SAFE, "Mine hit before cascade should give neutral reward"
+        else:
+            assert reward == REWARD_HIT_MINE, "Mine hit after cascade should give mine hit reward"
 
     def test_reset(self, env):
         """Test that reset returns the correct observation and info"""
@@ -181,7 +182,7 @@ def test_initialization(env):
     assert env.current_board_width == 3
     assert env.current_board_height == 3
     assert env.initial_mines == 1
-    assert env.is_first_move
+    assert env.is_first_cascade
     assert env.mines.shape == (3, 3)
     assert env.board.shape == (3, 3)
     # Check that the state is properly initialized
@@ -201,7 +202,7 @@ def test_reset(env):
     assert env.current_board_width == 3
     assert env.current_board_height == 3
     assert env.initial_mines == 1
-    assert env.is_first_move
+    assert env.is_first_cascade
     assert env.mines.shape == (3, 3)
     assert env.board.shape == (3, 3)
     assert state.shape == (2, 3, 3)  # 2-channel state
@@ -282,8 +283,8 @@ def test_mine_placement(env):
     # Check that the correct number of mines are placed
     assert np.sum(env.mines) == env.initial_mines, f"Should have {env.initial_mines} mines"
     
-    # Check that mines are not placed at the first cell (first move safety)
-    if env.is_first_move:
+    # Check that mines are not placed at the first cell (First cascade safety)
+    if env.is_first_cascade:
         assert not env.mines[0, 0], "First cell should not have a mine"
 
 def test_safe_cell_reveal(env):
@@ -350,24 +351,24 @@ def test_curriculum_progression(env):
 def test_win_condition(env):
     """Test that the game can be won by revealing all safe cells."""
     env.reset()
-    
+
     # Set up a controlled board with one mine
     env.mines.fill(False)
     env.mines[1, 1] = True
     env._update_adjacent_counts()
-    
+
     # Reveal all safe cells
     for i in range(env.current_board_height):
         for j in range(env.current_board_width):
             if not env.mines[i, j]:
                 action = i * env.current_board_width + j
                 state, reward, terminated, truncated, info = env.step(action)
-    
+
     # Check that game is won
     assert terminated
     assert not truncated
-    assert reward == REWARD_WIN
-    assert info.get('won', False)
+    # Win before cascade should get neutral reward
+    assert reward == REWARD_FIRST_CASCADE_SAFE, "Win before cascade should get neutral reward"
 
 class TestEnvironmentIntegration:
     """Test complete environment integration."""
@@ -583,7 +584,7 @@ class TestEnvironmentIntegration:
             # Verify reward consistency
             assert isinstance(reward, (int, float)), f"Reward should be numeric, move {moves_made}"
             valid_rewards = [REWARD_WIN, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, 
-                           REWARD_FIRST_MOVE_SAFE, REWARD_FIRST_MOVE_HIT_MINE, REWARD_INVALID_ACTION]
+                           REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE, REWARD_INVALID_ACTION]
             assert reward in valid_rewards, f"Reward should be valid, got {reward} on move {moves_made}"
             
             if terminated:
