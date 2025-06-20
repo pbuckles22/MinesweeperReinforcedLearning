@@ -1,13 +1,20 @@
+# Core dependencies
 gymnasium>=0.29.1
 numpy>=1.24.0
-torch>=2.0.0
-stable-baselines3[extra]>=2.1.0
 scipy>=1.10.0
 pygame>=2.5.0
 matplotlib>=3.7.0
 pandas>=2.0.0
 tensorboard>=2.13.0
 cloudpickle>=2.2.1
+
+# PyTorch - Platform specific installation
+# For Windows/Linux: pip install torch>=2.0.0
+# For M1 MacBook: pip install torch>=2.0.0 (with MPS support)
+torch>=2.0.0
+
+# Stable-Baselines3 with extra dependencies
+stable-baselines3[extra]>=2.1.0
 
 # Testing dependencies
 pytest>=8.0.0
@@ -19,4 +26,9 @@ pytest-timeout
 opencv-python>=4.10.0
 psutil>=6.0.0
 rich>=13.0.0
-tqdm>=4.60.0 
+tqdm>=4.60.0
+
+# Platform-specific notes:
+# - M1 MacBook: PyTorch includes MPS (Metal Performance Shaders) support by default
+# - Windows/Linux: CUDA support available if NVIDIA GPU is present
+# - All platforms: CPU fallback available 

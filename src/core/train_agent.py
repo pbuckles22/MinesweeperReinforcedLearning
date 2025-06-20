@@ -14,6 +14,145 @@ import torch
 from scipy import stats
 from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
 
+def detect_optimal_device():
+    """
+    Detect the optimal device for training, prioritizing M1 GPU (MPS) over CUDA and CPU.
+    Returns the device string and a description of what was detected.
+    """
+    device_info = {
+        'device': 'cpu',
+        'description': 'CPU (fallback)',
+        'performance_notes': 'Slowest option, suitable for testing only'
+    }
+    
+    # Check for M1 GPU (MPS) - highest priority for M1 MacBooks
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device_info = {
+            'device': 'mps',
+            'description': 'Apple M1 GPU (MPS)',
+            'performance_notes': '2-4x faster than CPU, optimal for M1 MacBooks'
+        }
+        print(f"✅ Detected M1 GPU (MPS) - Using device: {device_info['device']}")
+        print(f"   Performance: {device_info['performance_notes']}")
+        
+    # Check for CUDA GPU - second priority
+    elif torch.cuda.is_available():
+        device_info = {
+            'device': 'cuda',
+            'description': f'NVIDIA GPU ({torch.cuda.get_device_name(0)})',
+            'performance_notes': 'Fastest option for NVIDIA GPUs'
+        }
+        print(f"✅ Detected NVIDIA GPU - Using device: {device_info['device']}")
+        print(f"   GPU: {device_info['description']}")
+        print(f"   Performance: {device_info['performance_notes']}")
+        
+    else:
+        print(f"⚠️  No GPU detected - Using device: {device_info['device']}")
+        print(f"   Performance: {device_info['performance_notes']}")
+    
+    return device_info
+
+def get_optimal_hyperparameters(device_info):
+    """
+    Get optimal hyperparameters based on the detected device.
+    M1 GPU can handle larger batches and more complex training.
+    """
+    base_params = {
+        'learning_rate': 3e-4,
+        'n_steps': 2048,
+        'batch_size': 64,
+        'n_epochs': 10,
+        'gamma': 0.99,
+        'gae_lambda': 0.95,
+        'clip_range': 0.2,
+        'ent_coef': 0.01,
+        'vf_coef': 0.5,
+        'max_grad_norm': 0.5
+    }
+    
+    if device_info['device'] == 'mps':
+        # M1 GPU optimizations
+        optimized_params = base_params.copy()
+        optimized_params.update({
+            'batch_size': 128,  # M1 can handle larger batches
+            'n_steps': 2048,    # Keep standard PPO steps
+            'n_epochs': 12,     # Slightly more epochs for better learning
+        })
+        print("🔧 Applied M1 GPU optimizations:")
+        print(f"   - Increased batch size to {optimized_params['batch_size']}")
+        print(f"   - Increased epochs to {optimized_params['n_epochs']}")
+        return optimized_params
+        
+    elif device_info['device'] == 'cuda':
+        # CUDA GPU optimizations
+        optimized_params = base_params.copy()
+        optimized_params.update({
+            'batch_size': 256,  # CUDA can handle very large batches
+            'n_steps': 2048,
+            'n_epochs': 10,
+        })
+        print("🔧 Applied CUDA GPU optimizations:")
+        print(f"   - Increased batch size to {optimized_params['batch_size']}")
+        return optimized_params
+        
+    else:
+        # CPU optimizations
+        optimized_params = base_params.copy()
+        optimized_params.update({
+            'batch_size': 32,   # Smaller batches for CPU
+            'n_steps': 1024,    # Fewer steps to reduce memory usage
+            'n_epochs': 8,      # Fewer epochs for faster iteration
+        })
+        print("🔧 Applied CPU optimizations:")
+        print(f"   - Reduced batch size to {optimized_params['batch_size']}")
+        print(f"   - Reduced steps to {optimized_params['n_steps']}")
+        return optimized_params
+
+def test_device_performance(device_info):
+    """
+    Test the performance of the detected device with a simple benchmark.
+    """
+    print(f"\n🔍 Testing {device_info['description']} performance...")
+    
+    device = torch.device(device_info['device'])
+    
+    # Create test tensors
+    size = 1000
+    x = torch.randn(size, size, device=device)
+    y = torch.randn(size, size, device=device)
+    
+    # Warm up
+    for _ in range(3):
+        _ = torch.mm(x, y)
+    
+    # Benchmark
+    start_time = time.time()
+    for _ in range(10):
+        z = torch.mm(x, y)
+    end_time = time.time()
+    
+    avg_time = (end_time - start_time) / 10
+    print(f"✅ Matrix multiplication benchmark: {avg_time:.3f}s per operation")
+    
+    if device_info['device'] == 'mps':
+        if avg_time < 0.1:
+            print("🚀 Excellent M1 GPU performance detected!")
+        elif avg_time < 0.2:
+            print("✅ Good M1 GPU performance detected!")
+        else:
+            print("⚠️  M1 GPU performance slower than expected")
+    elif device_info['device'] == 'cuda':
+        if avg_time < 0.05:
+            print("🚀 Excellent CUDA GPU performance detected!")
+        elif avg_time < 0.1:
+            print("✅ Good CUDA GPU performance detected!")
+        else:
+            print("⚠️  CUDA GPU performance slower than expected")
+    else:
+        print("ℹ️  CPU performance as expected")
+    
+    return avg_time
+
 class ExperimentTracker:
     def __init__(self, experiment_dir="experiments"):
         self.experiment_dir = experiment_dir
@@ -398,8 +537,51 @@ def parse_args():
 def main():
     args = parse_args()
     
+    print("🚀 Starting Minesweeper RL Training")
+    print("=" * 50)
+    
+    # Detect optimal device and test performance
+    device_info = detect_optimal_device()
+    test_device_performance(device_info)
+    
+    # Get optimal hyperparameters for the detected device
+    optimal_params = get_optimal_hyperparameters(device_info)
+    
+    # Override args with optimal parameters if device is auto
+    if args.device == "auto":
+        args.device = device_info['device']
+        print(f"🔧 Auto-detected device: {args.device}")
+    
+    # Update hyperparameters with optimal values
+    args.batch_size = optimal_params['batch_size']
+    args.n_steps = optimal_params['n_steps']
+    args.n_epochs = optimal_params['n_epochs']
+    args.learning_rate = optimal_params['learning_rate']
+    args.gamma = optimal_params['gamma']
+    args.gae_lambda = optimal_params['gae_lambda']
+    args.clip_range = optimal_params['clip_range']
+    args.ent_coef = optimal_params['ent_coef']
+    args.vf_coef = optimal_params['vf_coef']
+    args.max_grad_norm = optimal_params['max_grad_norm']
+    
+    print(f"\n📊 Training Configuration:")
+    print(f"   Device: {args.device} ({device_info['description']})")
+    print(f"   Batch Size: {args.batch_size}")
+    print(f"   Steps per Update: {args.n_steps}")
+    print(f"   Epochs: {args.n_epochs}")
+    print(f"   Learning Rate: {args.learning_rate}")
+    print(f"   Total Timesteps: {args.total_timesteps:,}")
+    
     # Create experiment tracker
     experiment_tracker = ExperimentTracker()
+    
+    # Save device and performance information
+    experiment_tracker.metrics["device_info"] = {
+        "device": device_info['device'],
+        "description": device_info['description'],
+        "performance_notes": device_info['performance_notes'],
+        "hyperparameters": optimal_params
+    }
     
     # Define curriculum stages with detailed information
     curriculum_stages = [
@@ -469,6 +651,8 @@ def main():
         max_mines=curriculum_stages[current_stage]['mines']
     )])
     
+    print(f"\n🏗️  Creating PPO model with {device_info['description']}...")
+    
     # Create model
     model = PPO(
         policy=args.policy,
@@ -493,6 +677,8 @@ def main():
         device=args.device,
         _init_setup_model=args._init_setup_model
     )
+    
+    print("✅ Model created successfully!")
     
     # Create evaluation environment
     eval_env = DummyVecEnv([make_env(
@@ -530,6 +716,9 @@ def main():
         print(f"Target Win Rate: {stage['win_rate_threshold']*100:.0f}%")
         print(f"Description: {stage['description']}")
     print("\n=====================================")
+    
+    print(f"\n🎯 Starting training with {device_info['description']}...")
+    print(f"   Expected performance: {device_info['performance_notes']}")
     
     for stage in range(len(curriculum_stages)):
         current_stage_info = curriculum_stages[stage]

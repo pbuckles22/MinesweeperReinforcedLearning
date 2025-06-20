@@ -1,5 +1,34 @@
 # TODO
 
+## 🎯 **IMMEDIATE PRIORITIES** (Current Sprint)
+
+### 1. **M1 MacBook GPU Support** (High Priority)
+- [ ] Install PyTorch with MPS (Metal Performance Shaders) support for M1
+- [ ] Update requirements.txt for M1 compatibility
+- [ ] Test GPU acceleration on M1 MacBook
+- [ ] Create M1-specific installation guide
+- [ ] Verify training performance improvements
+
+### 2. **Training Verification** (High Priority)
+- [ ] Run quick training session to verify everything works
+- [ ] Check if training produces expected results
+- [ ] Verify TensorBoard logging functionality
+- [ ] Test curriculum learning progression
+- [ ] Validate model evaluation pipeline
+
+### 3. **Deprecation Warning Fix** (Medium Priority)
+- [ ] Update pygame or find alternative to fix pkg_resources deprecation
+- [ ] Test compatibility with updated dependencies
+- [ ] Ensure no breaking changes from updates
+
+### 4. **Cross-Platform Setup Guide** (Medium Priority)
+- [ ] Create comprehensive setup guide for Windows
+- [ ] Create comprehensive setup guide for M1 MacBook
+- [ ] Document platform-specific requirements
+- [ ] Add troubleshooting section for common issues
+
+---
+
 ## ✅ **COMPLETED ITEMS**
 
 ### Script Mode: RL Agent Training and Evaluation
