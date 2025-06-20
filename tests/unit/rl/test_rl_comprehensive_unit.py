@@ -309,6 +309,7 @@ class TestEvaluateModel:
         model.predict.return_value = (0, None)
         return model
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_basic(self, mock_model, mock_env):
         """Test basic model evaluation."""
         # Mock environment to simulate a simple game
@@ -328,6 +329,7 @@ class TestEvaluateModel:
         assert "n_episodes" in result
         assert result["n_episodes"] == 1
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_multiple_episodes(self, mock_model, mock_env):
         """Test evaluation with multiple episodes."""
         # Mock environment to simulate multiple games
@@ -353,10 +355,10 @@ class TestMainFunction:
     @patch('src.core.train_agent.ExperimentTracker')
     @patch('src.core.train_agent.DummyVecEnv')
     @patch('src.core.train_agent.PPO')
-    @patch('src.core.train_agent.EvalCallback')
+    @patch('src.core.train_agent.CustomEvalCallback')
     @patch('src.core.train_agent.IterationCallback')
     @patch('src.core.train_agent.evaluate_model')
-    def test_main_function_structure(self, mock_evaluate_model, mock_iteration_callback, mock_eval_callback, 
+    def test_main_function_structure(self, mock_evaluate_model, mock_iteration_callback, mock_custom_eval_callback, 
                                    mock_ppo, mock_dummy_vec_env, mock_experiment_tracker, 
                                    mock_parse_args):
         """Test the main function structure and component creation."""
@@ -461,8 +463,8 @@ class TestMainFunction:
         mock_ppo.return_value = mock_model_instance
         
         # Mock callbacks
-        mock_eval_callback_instance = Mock()
-        mock_eval_callback.return_value = mock_eval_callback_instance
+        mock_custom_eval_callback_instance = Mock()
+        mock_custom_eval_callback.return_value = mock_custom_eval_callback_instance
         mock_iteration_callback_instance = Mock()
         mock_iteration_callback.return_value = mock_iteration_callback_instance
         
@@ -484,7 +486,7 @@ class TestMainFunction:
         mock_experiment_tracker.assert_called_once()
         mock_dummy_vec_env.assert_called()
         mock_ppo.assert_called_once()
-        mock_eval_callback.assert_called_once()
+        mock_custom_eval_callback.assert_called_once()
         mock_iteration_callback.assert_called_once()
         
         # Verify model training was called

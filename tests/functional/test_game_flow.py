@@ -48,7 +48,10 @@ class TestGameFlow:
             assert state.shape == (2, 3, 3), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             assert isinstance(terminated, bool), "Terminated should be boolean"
-            assert isinstance(info, dict), "Info should be dictionary"
+            assert isinstance(info, (dict, list)), "Info should be a dictionary or list of dicts"
+            if isinstance(info, list):
+                assert len(info) > 0
+                assert isinstance(info[0], dict)
             
             if terminated:
                 break

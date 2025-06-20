@@ -55,6 +55,10 @@ class MinesweeperEnv(gym.Env):
         self.consecutive_mine_hits = 0
         self.max_consecutive_mine_hits = 5  # Maximum allowed consecutive mine hits
         
+        # Add counter for consecutive invalid actions to prevent infinite loops
+        self.consecutive_invalid_actions = 0
+        self.max_consecutive_invalid_actions = 10  # Terminate after 10 consecutive invalid actions
+        
         # Handle tuple board sizes
         if isinstance(max_board_size, tuple):
             self.max_board_width, self.max_board_height = max_board_size
@@ -199,15 +203,20 @@ class MinesweeperEnv(gym.Env):
         # Channel 0: Game state (all unrevealed initially)
         self.state[0] = CELL_UNREVEALED
         
-        # Channel 1: Safety hints (unknown initially)
+        # Channel 1: Safety hints (all unknown initially)
         self.state[1] = UNKNOWN_SAFETY
         
-        # Reset game state
+        # Reset game state variables
+        self.revealed_count = 0
+        self.won = False
         self.terminated = False
         self.truncated = False
         self.is_first_move = True
-        self.first_move_done = False
         self.mines_placed = False
+        self.first_move_done = False
+        
+        # Reset consecutive invalid actions counter
+        self.consecutive_invalid_actions = 0
         
         # Place mines unconditionally
         self._place_mines()
@@ -381,16 +390,30 @@ class MinesweeperEnv(gym.Env):
 
         # Check if action is within bounds first
         if action < 0 or action >= self.action_space.n:
+            self.consecutive_invalid_actions += 1
+            if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
+                self.terminated = True
+                info['won'] = False
+                return self.state, REWARD_INVALID_ACTION, True, False, info
             return self.state, REWARD_INVALID_ACTION, False, False, info
 
         # Check if action is valid using action masks
         if not self.action_masks[action]:
+            self.consecutive_invalid_actions += 1
             # Check if ALL actions are invalid - if so, terminate the game
             if not np.any(self.action_masks):
                 self.terminated = True
                 info['won'] = False
                 return self.state, REWARD_INVALID_ACTION, True, False, info
+            # Check if we've had too many consecutive invalid actions
+            if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
+                self.terminated = True
+                info['won'] = False
+                return self.state, REWARD_INVALID_ACTION, True, False, info
             return self.state, REWARD_INVALID_ACTION, False, False, info
+
+        # Reset consecutive invalid actions counter since we got a valid action
+        self.consecutive_invalid_actions = 0
 
         # Convert action to (x, y) coordinates
         col = action % self.current_board_width

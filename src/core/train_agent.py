@@ -77,6 +77,86 @@ class ExperimentTracker:
             with open(os.path.join(self.current_run, "metrics.json"), "w") as f:
                 json.dump(self.metrics, f, indent=2)
 
+class CustomEvalCallback(BaseCallback):
+    """Custom evaluation callback that works with our Minesweeper environment"""
+    def __init__(self, eval_env, eval_freq=1000, n_eval_episodes=5, verbose=1, 
+                 best_model_save_path=None, log_path=None):
+        super().__init__(verbose)
+        self.eval_env = eval_env
+        self.eval_freq = eval_freq
+        self.n_eval_episodes = n_eval_episodes
+        self.best_mean_reward = -np.inf
+        self.best_model_save_path = best_model_save_path
+        self.log_path = log_path
+        
+        # Create directories if needed
+        if self.best_model_save_path and not os.path.exists(self.best_model_save_path):
+            os.makedirs(self.best_model_save_path)
+        if self.log_path and not os.path.exists(self.log_path):
+            os.makedirs(self.log_path)
+    
+    def _on_step(self):
+        if self.n_calls % self.eval_freq == 0:
+            if self.verbose > 0:
+                print(f"Evaluating at step {self.n_calls}...")
+            
+            # Run evaluation episodes
+            rewards = []
+            wins = 0
+            
+            for _ in range(self.n_eval_episodes):
+                obs = self.eval_env.reset()
+                done = False
+                episode_reward = 0
+                episode_won = False
+                
+                while not done:
+                    action = self.model.predict(obs, deterministic=True)[0]
+                    step_result = self.eval_env.step(action)
+                    
+                    # Handle both old gym API (4 values) and new gymnasium API (5 values)
+                    if len(step_result) == 4:
+                        obs, reward, terminated, truncated = step_result
+                        info = {}
+                    else:
+                        obs, reward, terminated, truncated, info = step_result
+                    
+                    done = terminated or truncated
+                    episode_reward += reward[0] if isinstance(reward, np.ndarray) else reward
+                    
+                    # Check if the episode was won from the info dictionary
+                    if info and isinstance(info, list) and len(info) > 0:
+                        if info[0].get('won', False):
+                            episode_won = True
+                
+                rewards.append(episode_reward)
+                if episode_won:
+                    wins += 1
+            
+            # Calculate metrics
+            mean_reward = np.mean(rewards)
+            win_rate = (wins / self.n_eval_episodes) * 100
+            
+            if self.verbose > 0:
+                print(f"Evaluation completed. Mean reward: {mean_reward:.2f}, Win rate: {win_rate:.1f}%")
+            
+            # Save best model if reward improved
+            if mean_reward > self.best_mean_reward:
+                self.best_mean_reward = mean_reward
+                if self.best_model_save_path:
+                    best_model_path = os.path.join(self.best_model_save_path, "best_model")
+                    self.model.save(best_model_path)
+                    if self.verbose > 0:
+                        print(f"New best model saved with mean reward: {self.best_mean_reward:.2f}")
+            
+            # Log metrics
+            if self.log_path:
+                log_file = os.path.join(self.log_path, "eval_log.txt")
+                with open(log_file, "a") as f:
+                    f.write(f"Step {self.n_calls}: mean_reward={mean_reward:.2f}, win_rate={win_rate:.1f}%\n")
+        
+        return True
+
 class IterationCallback(BaseCallback):
     """Custom callback for logging iteration information"""
     def __init__(self, verbose=0, debug_level=2, experiment_tracker=None):
@@ -420,14 +500,13 @@ def main():
     )])
     
     # Create evaluation callback
-    eval_callback = EvalCallback(
+    eval_callback = CustomEvalCallback(
         eval_env,
-        best_model_save_path="./best_model",
-        log_path="./logs/",
         eval_freq=args.eval_freq,
         n_eval_episodes=args.n_eval_episodes,
-        deterministic=True,
-        render=False
+        verbose=args.verbose,
+        best_model_save_path="./best_model",
+        log_path="./logs/"
     )
     
     # Create iteration callback
@@ -467,6 +546,13 @@ def main():
             max_mines=current_stage_info['mines']
         )])
         model.set_env(env)
+        
+        # Update evaluation environment for current stage
+        eval_env = DummyVecEnv([make_env(
+            max_board_size=current_stage_info['size'],
+            max_mines=current_stage_info['mines']
+        )])
+        eval_callback.eval_env = eval_env
         
         # Train for this stage
         model.learn(
@@ -524,58 +610,74 @@ def main():
         print(f"Completed at: {stage_info['completed_at']}")
 
 def evaluate_model(model, env, n_episodes=100):
-    """Evaluate model with proper statistical analysis"""
+    """Evaluate model with proper statistical analysis, supporting both vectorized and non-vectorized environments."""
     rewards = []
     lengths = []
     wins = 0
-    
+
     # Check if this is a vectorized environment
-    is_vectorized = hasattr(env, 'num_envs')
-    
-    for _ in range(n_episodes):
+    # More robust detection: check for num_envs attribute AND that it's actually a vectorized env
+    is_vectorized = hasattr(env, 'num_envs') and hasattr(env, 'step') and callable(getattr(env, 'step', None))
+
+    for episode in range(n_episodes):
         if is_vectorized:
             obs = env.reset()
         else:
-            obs, info = env.reset()
-        
+            obs, _ = env.reset()
+
         done = False
         episode_reward = 0
         episode_length = 0
         episode_won = False
-        
+
         while not done:
             action, _ = model.predict(obs)
             step_result = env.step(action)
-            
+
             # Handle both old gym API (4 values) and new gymnasium API (5 values)
             if len(step_result) == 4:
                 obs, reward, terminated, truncated = step_result
-                info = {}
+                info = {}  # No info in old API
             else:
                 obs, reward, terminated, truncated, info = step_result
-            
-            done = terminated or truncated
-            episode_reward += reward
+
+            # For vectorized envs, unwrap arrays/lists
+            if is_vectorized:
+                # DummyVecEnv returns arrays/lists of length num_envs
+                # Check if terminated/truncated are arrays/lists before indexing
+                if isinstance(terminated, (list, np.ndarray)) and len(terminated) > 0:
+                    done = bool(terminated[0] or truncated[0])
+                else:
+                    done = bool(terminated or truncated)
+                
+                r = reward[0] if isinstance(reward, (np.ndarray, list)) else reward
+                episode_reward += r
+                # Info can be a list of dicts
+                info_dict = info[0] if isinstance(info, (list, tuple)) and len(info) > 0 else info
+                if info_dict.get('won', False):
+                    episode_won = True
+            else:
+                done = bool(terminated or truncated)
+                episode_reward += reward
+                if info.get('won', False):
+                    episode_won = True
+
             episode_length += 1
-            
-            # Check if the episode was won from the info dictionary
-            if info.get('won', False):
-                episode_won = True
-        
+
         rewards.append(episode_reward)
         lengths.append(episode_length)
         if episode_won:
             wins += 1
-    
+
     # Calculate statistics
     win_rate = (wins / n_episodes) * 100
     avg_reward = float(np.mean(rewards))
     avg_length = float(np.mean(lengths))
-    
+
     # Calculate standard error for confidence intervals
     reward_std = float(np.std(rewards) / np.sqrt(len(rewards)) if len(rewards) > 1 else 0.0)
     length_std = float(np.std(lengths) / np.sqrt(len(lengths)) if len(lengths) > 1 else 0.0)
-    
+
     # Return dictionary with all metrics
     return {
         "win_rate": win_rate,

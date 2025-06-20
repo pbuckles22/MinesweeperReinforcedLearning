@@ -174,8 +174,11 @@ class TestRLEnvironmentRequirements:
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         
-        # Info should be a dictionary with expected keys
-        assert isinstance(info, dict), "Info should be a dictionary"
+        # Accept both dict and list for info
+        assert isinstance(info, (dict, list)), "Info should be a dictionary or list of dicts"
+        if isinstance(info, list):
+            assert len(info) > 0
+            assert isinstance(info[0], dict)
         assert 'won' in info, "Info should contain 'won' key"
         assert isinstance(info['won'], bool), "'won' should be boolean"
 

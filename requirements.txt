@@ -13,6 +13,7 @@ cloudpickle>=2.2.1
 pytest>=8.0.0
 pytest-cov>=6.0.0
 coverage>=7.0.0
+pytest-timeout
 
 # Development and monitoring dependencies
 opencv-python>=4.10.0

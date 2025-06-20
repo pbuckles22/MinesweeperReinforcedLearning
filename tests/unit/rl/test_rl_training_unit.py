@@ -216,6 +216,7 @@ class TestEvaluateModel:
         model.predict.return_value = (0, None)
         return model
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_basic(self, mock_model, mock_env):
         """Test basic model evaluation."""
         # Mock environment to simulate a simple game
@@ -237,6 +238,7 @@ class TestEvaluateModel:
         assert result["avg_reward"] == 3.0  # Sum of rewards (1.0 + 2.0)
         assert result["n_episodes"] == 1
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_multiple_episodes(self, mock_model, mock_env):
         """Test evaluation with multiple episodes."""
         # Mock environment to simulate multiple games

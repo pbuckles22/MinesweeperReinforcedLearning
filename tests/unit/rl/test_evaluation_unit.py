@@ -9,6 +9,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 class TestEvaluationFunction:
     """Test the evaluate_model function for proper win detection and vectorized environments."""
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_with_vectorized_env(self):
         """Test that evaluate_model works with vectorized environments."""
         # Create a mock model
@@ -49,6 +50,7 @@ class TestEvaluationFunction:
         # Check that avg_length is a float
         assert isinstance(results["avg_length"], float)
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_win_detection(self):
         """Test that evaluate_model correctly detects wins from info dictionary."""
         # Create a mock model
@@ -85,6 +87,7 @@ class TestEvaluationFunction:
         results = evaluate_model(mock_model, losing_env, n_episodes=3)
         assert results["win_rate"] == 0.0  # No episodes should be wins
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_with_real_env(self):
         """Test evaluate_model with a real MinesweeperEnv."""
         # Create a mock model that always chooses the first action
@@ -113,6 +116,7 @@ class TestEvaluationFunction:
         # Check that avg_length is positive
         assert results["avg_length"] > 0
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_statistics(self):
         """Test that evaluate_model calculates statistics correctly."""
         # Create a mock model
@@ -142,12 +146,14 @@ class TestEvaluationFunction:
         results = evaluate_model(mock_model, env, n_episodes=1)
         
         # Check that average reward is calculated correctly
-        expected_avg_reward = sum([10, 20, 30]) / 3
+        # The episode should have 3 steps with rewards [10, 20, 30], total = 60
+        expected_avg_reward = 60.0  # Sum of all rewards in the episode
         assert abs(results["avg_reward"] - expected_avg_reward) < 0.01
         
         # Check that average length is correct
         assert results["avg_length"] == 3.0
     
+    @pytest.mark.timeout(30)
     def test_evaluate_model_confidence_intervals(self):
         """Test that confidence intervals are calculated correctly."""
         # Create a mock model

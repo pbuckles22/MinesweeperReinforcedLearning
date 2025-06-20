@@ -368,6 +368,12 @@ class TestComprehensiveRL:
         action = 0
         state, reward, terminated, truncated, info = rl_env.step(action)
         
+        # Accept both dict and list for info
+        assert isinstance(info, (dict, list)), "Info should be a dictionary or list of dicts"
+        if isinstance(info, list):
+            assert len(info) > 0
+            assert isinstance(info[0], dict)
+        
         # Verify info is a dictionary
         assert isinstance(info, dict), "Info should be a dictionary"
         

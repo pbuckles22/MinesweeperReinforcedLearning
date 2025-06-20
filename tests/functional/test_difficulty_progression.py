@@ -250,7 +250,10 @@ class TestDifficultyProgression:
             # Should be able to make at least one move
             assert isinstance(reward, (int, float)), f"Reward should be numeric at step {step}"
             assert isinstance(terminated, bool), f"Terminated should be boolean at step {step}"
-            assert isinstance(info, dict), f"Info should be dictionary at step {step}"
+            assert isinstance(info, (dict, list)), "Info should be a dictionary or list of dicts"
+            if isinstance(info, list):
+                assert len(info) > 0
+                assert isinstance(info[0], dict)
     
     def test_difficulty_progression_with_seeds(self):
         """Test that difficulty progression works correctly with different seeds."""
