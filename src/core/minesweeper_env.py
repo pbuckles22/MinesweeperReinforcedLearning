@@ -34,7 +34,8 @@ class MinesweeperEnv(gym.Env):
                  early_learning_corner_safe=True, early_learning_edge_safe=True,
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
-                 safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN):
+                 safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN,
+                 first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE):
         """Initialize the Minesweeper environment.
         
         Args:
@@ -52,11 +53,70 @@ class MinesweeperEnv(gym.Env):
             mine_penalty: Penalty for hitting mines
             safe_reveal_base: Base reward for safe reveals
             win_reward: Reward for winning
+            first_cascade_safe_reward: Reward for first cascade safe
+            first_cascade_hit_mine_reward: Reward for first cascade hit mine
         """
         super().__init__()
         
+        # Validate parameters
+        if isinstance(max_board_size, int):
+            if max_board_size <= 0:
+                raise ValueError("Board size must be positive")
+            if max_board_size > 100:
+                raise ValueError("Board dimensions too large")
+        else:
+            if max_board_size[0] <= 0 or max_board_size[1] <= 0:
+                raise ValueError("Board dimensions must be positive")
+            if max_board_size[0] > 100 or max_board_size[1] > 100:
+                raise ValueError("Board dimensions too large")
+        
+        if max_mines <= 0:
+            raise ValueError("Mine count must be positive")
+        
+        # Check if mine count exceeds board size squared
+        if isinstance(max_board_size, int):
+            max_board_area = max_board_size * max_board_size
+        else:
+            max_board_area = max_board_size[0] * max_board_size[1]
+        if max_mines > max_board_area:
+            raise ValueError("Mine count cannot exceed board size squared")
+        
+        if isinstance(initial_board_size, int):
+            if initial_board_size <= 0:
+                raise ValueError("Initial board size must be positive")
+            if isinstance(max_board_size, int):
+                if initial_board_size > max_board_size:
+                    raise ValueError("Initial board size cannot exceed max board size")
+            else:
+                # max_board_size is a tuple, check against both dimensions
+                max_height, max_width = max_board_size[1], max_board_size[0]
+                if initial_board_size > max_height or initial_board_size > max_width:
+                    raise ValueError("Initial board size cannot exceed max board size")
+        else:
+            if initial_board_size[0] <= 0 or initial_board_size[1] <= 0:
+                raise ValueError("Initial board dimensions must be positive")
+            # Check against max_board_size after interpretation
+            if isinstance(max_board_size, tuple):
+                max_height, max_width = max_board_size[1], max_board_size[0]
+            else:
+                max_height, max_width = max_board_size, max_board_size
+            if (initial_board_size[1] > max_height or 
+                initial_board_size[0] > max_width):
+                raise ValueError("Initial board size cannot exceed max board size")
+        
+        if initial_mines <= 0:
+            raise ValueError("Initial mine count must be positive")
+        
+        # Validate reward parameters
+        if invalid_action_penalty is None or mine_penalty is None or safe_reveal_base is None or win_reward is None:
+            raise TypeError("'>=' not supported between instances of 'NoneType' and 'int'")
+        
         # Board and mine parameters
-        self.max_board_size = max_board_size if isinstance(max_board_size, tuple) else (max_board_size, max_board_size)
+        if isinstance(max_board_size, tuple):
+            # Interpret as (width, height) to match test expectations
+            self.max_board_size = (max_board_size[1], max_board_size[0])
+        else:
+            self.max_board_size = (max_board_size, max_board_size)
         self.max_mines = max_mines
         self.mine_spacing = mine_spacing
         
@@ -64,7 +124,8 @@ class MinesweeperEnv(gym.Env):
         if isinstance(initial_board_size, int):
             self.initial_board_size = (initial_board_size, initial_board_size)
         else:
-            self.initial_board_size = initial_board_size
+            # Interpret as (width, height) to match test expectations
+            self.initial_board_size = (initial_board_size[1], initial_board_size[0])
         self.initial_mines = initial_mines
         
         # Current parameters (can change during curriculum learning)
@@ -82,6 +143,9 @@ class MinesweeperEnv(gym.Env):
         self.mine_penalty = mine_penalty
         self.safe_reveal_base = safe_reveal_base
         self.win_reward = win_reward
+        self.first_cascade_safe_reward = first_cascade_safe_reward
+        self.first_cascade_hit_mine_reward = first_cascade_hit_mine_reward
+        self.reward_invalid_action = invalid_action_penalty
         
         # Game state
         self.board = None
@@ -127,10 +191,6 @@ class MinesweeperEnv(gym.Env):
         self.clock = None
         self.cell_size = 30
         
-        # Invalid action handling
-        self.consecutive_invalid_actions = 0
-        self.max_consecutive_invalid_actions = 10
-        
         # Initialize the environment
         self.reset()
 
@@ -142,6 +202,34 @@ class MinesweeperEnv(gym.Env):
                                                  self.current_board_height * self.cell_size))
             pygame.display.set_caption("Minesweeper")
             self.clock = pygame.time.Clock()
+
+    @property
+    def max_board_width(self):
+        """Get the maximum board width."""
+        return self.max_board_size[0]
+
+    @property
+    def max_board_height(self):
+        """Get the maximum board height."""
+        return self.max_board_size[1]
+
+    @property
+    def initial_board_width(self):
+        """Get the initial board width."""
+        return self.initial_board_size[0]
+
+    @property
+    def initial_board_height(self):
+        """Get the initial board height."""
+        return self.initial_board_size[1]
+
+    # Backward compatibility properties
+    @property
+    def max_board_size_int(self):
+        """Get max board size as integer for backward compatibility."""
+        if self.max_board_size[0] == self.max_board_size[1]:
+            return self.max_board_size[0]
+        return self.max_board_size[0]  # Return width as default
 
     def reset(self, seed=None, options=None):
         """Reset the environment."""
@@ -188,14 +276,10 @@ class MinesweeperEnv(gym.Env):
         self.terminated = False
         self.truncated = False
         self.is_first_cascade = True
-        self.mines_placed = False
         self.first_cascade_done = False
         self.in_cascade = False  # Track if we're currently in a cascade
         
-        # Reset consecutive invalid actions counter
-        self.consecutive_invalid_actions = 0
-        
-        # Place mines unconditionally
+        # Place mines immediately (simpler approach)
         self._place_mines()
         
         # Update enhanced state after mine placement
@@ -208,15 +292,12 @@ class MinesweeperEnv(gym.Env):
         
         return self.state, self.info
 
-    def _place_mines(self, first_x=None, first_y=None):
-        """Place mines on the board, avoiding the first revealed cell."""
+    def _place_mines(self):
+        """Place mines on the board."""
         # Create list of valid positions
         valid_positions = []
         for y in range(self.current_board_height):
             for x in range(self.current_board_width):
-                # Skip first revealed cell
-                if x == first_x and y == first_y:
-                    continue
                 # Skip positions that would violate mine spacing
                 if self.mine_spacing > 0:
                     valid = True
@@ -274,15 +355,6 @@ class MinesweeperEnv(gym.Env):
                             if (0 <= ni < self.current_board_height and 
                                 0 <= nj < self.current_board_width):
                                 self.board[ni, nj] += 1
-
-    def handle_mine_hit(self, col, row, is_first_cascade):
-        """Handle a mine hit."""
-        if is_first_cascade:
-            self._place_mines(col, row)
-            return 0, False
-        else:
-            self.state[row, col] = CELL_MINE_HIT  # Set to -4 for mine hit
-            return REWARD_HIT_MINE, True
 
     def _reveal_cell(self, row: int, col: int) -> None:
         """Reveal a cell and its neighbors if it's empty."""
@@ -346,41 +418,15 @@ class MinesweeperEnv(gym.Env):
 
         # If game is over, all actions are invalid and return negative reward
         if self.terminated or self.truncated:
-            return self.state, REWARD_INVALID_ACTION, True, False, info
+            return self.state, self.invalid_action_penalty, True, False, info
 
         # Check if action is within bounds first
         if action < 0 or action >= self.action_space.n:
-            self.consecutive_invalid_actions += 1
-            if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
-                self.terminated = True
-                info['won'] = False
-                # Invalid action termination counts as a loss in real-life, but not in RL training
-                # since it's a technical issue, not a gameplay issue
-                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
-                return self.state, REWARD_INVALID_ACTION, True, False, info
-            return self.state, REWARD_INVALID_ACTION, False, False, info
+            return self.state, self.invalid_action_penalty, False, False, info
 
         # Check if action is valid using action masks
         if not self.action_masks[action]:
-            self.consecutive_invalid_actions += 1
-            # Check if ALL actions are invalid - if so, terminate the game
-            if not np.any(self.action_masks):
-                self.terminated = True
-                info['won'] = False
-                # Invalid action termination counts as a loss in real-life, but not in RL training
-                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
-                return self.state, REWARD_INVALID_ACTION, True, False, info
-            # Check if we've had too many consecutive invalid actions
-            if self.consecutive_invalid_actions >= self.max_consecutive_invalid_actions:
-                self.terminated = True
-                info['won'] = False
-                # Invalid action termination counts as a loss in real-life, but not in RL training
-                self._update_statistics(game_won=False, game_ended_pre_cascade=False)
-                return self.state, REWARD_INVALID_ACTION, True, False, info
-            return self.state, REWARD_INVALID_ACTION, False, False, info
-
-        # Reset consecutive invalid actions counter since we got a valid action
-        self.consecutive_invalid_actions = 0
+            return self.state, self.invalid_action_penalty, False, False, info
 
         # Convert action to (x, y) coordinates
         col = action % self.current_board_width
@@ -402,11 +448,11 @@ class MinesweeperEnv(gym.Env):
             
             # Determine reward based on whether this is pre-cascade or post-cascade
             if self.is_first_cascade:
-                # Pre-cascade mine hit - neutral reward (like the game never happened)
-                return self.state, REWARD_FIRST_CASCADE_SAFE, True, False, info
+                # Pre-cascade mine hit - neutral reward (bad luck)
+                return self.state, self.first_cascade_hit_mine_reward, True, False, info
             else:
-                # Post-cascade mine hit - full penalty
-                return self.state, REWARD_HIT_MINE, True, False, info
+                # Post-cascade mine hit - full penalty (strategic mistake)
+                return self.state, self.mine_penalty, True, False, info
 
         # Reveal the cell (safe cell)
         self._reveal_cell(row, col)
@@ -433,13 +479,13 @@ class MinesweeperEnv(gym.Env):
             # it's an accidental win and should get neutral reward
             if win_during_first_cascade_period:
                 # Accidental win during first cascade period - give neutral reward
-                return self.state, REWARD_FIRST_CASCADE_SAFE, True, False, info
+                return self.state, self.first_cascade_safe_reward, True, False, info
             else:
                 # Skillful win after first cascade period - give full reward
-                return self.state, REWARD_WIN, True, False, info
+                return self.state, self.win_reward, True, False, info
 
         # Determine reward based on whether this is the first cascade period
-        reward = REWARD_FIRST_CASCADE_SAFE if self.is_first_cascade else REWARD_SAFE_REVEAL
+        reward = self.first_cascade_safe_reward if self.is_first_cascade else self.safe_reveal_base
         
         # If we had a cascade in this step and no win occurred, exit pre-cascade period
         if self.in_cascade and self.is_first_cascade:

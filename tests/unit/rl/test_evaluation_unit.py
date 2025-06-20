@@ -4,6 +4,7 @@ from unittest.mock import Mock, MagicMock
 from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.train_agent import evaluate_model
 from src.core.minesweeper_env import MinesweeperEnv
+from src.core.constants import REWARD_WIN, REWARD_HIT_MINE
 
 
 class TestEvaluationFunction:
@@ -71,9 +72,9 @@ class TestEvaluationFunction:
                 self.step_count += 1
                 # Simulate a win after 3 steps if should_win is True
                 if self.should_win and self.step_count >= 3:
-                    return (np.zeros((4, 4, 2)), 100.0, True, False, {"won": True})
+                    return (np.zeros((4, 4, 2)), REWARD_WIN, True, False, {"won": True})
                 elif not self.should_win and self.step_count >= 3:
-                    return (np.zeros((4, 4, 2)), -10.0, True, False, {"won": False})
+                    return (np.zeros((4, 4, 2)), REWARD_HIT_MINE, True, False, {"won": False})
                 else:
                     return (np.zeros((4, 4, 2)), 1.0, False, False, {"won": False})
         
@@ -90,9 +91,16 @@ class TestEvaluationFunction:
     @pytest.mark.timeout(30)
     def test_evaluate_model_with_real_env(self):
         """Test evaluate_model with a real MinesweeperEnv."""
-        # Create a mock model that always chooses the first action
-        mock_model = Mock()
-        mock_model.predict.return_value = (np.array([0]), None)
+        # Create a mock model that always chooses the first available valid action
+        class ValidActionModel:
+            def predict(self, obs):
+                # Find the first valid action from the action mask
+                env = self.env
+                valid_actions = np.where(env.action_masks)[0]
+                if len(valid_actions) > 0:
+                    return np.array([valid_actions[0]]), None
+                else:
+                    return np.array([0]), None  # fallback
         
         # Create a real environment
         env = MinesweeperEnv(
@@ -100,9 +108,11 @@ class TestEvaluationFunction:
             initial_mines=2,
             early_learning_mode=True
         )
+        model = ValidActionModel()
+        model.env = env
         
         # Run evaluation
-        results = evaluate_model(mock_model, env, n_episodes=3)
+        results = evaluate_model(model, env, n_episodes=3)
         
         # Check that results are valid
         assert "win_rate" in results

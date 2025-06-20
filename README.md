@@ -7,7 +7,7 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 ✅ **Environment**: Fully functional 2-channel Minesweeper RL environment  
 ✅ **Test Coverage**: 504 tests passing (100% success rate)  
 ✅ **Training System**: Complete RL training pipeline with curriculum learning  
-✅ **First-Move Safety**: Guaranteed safe first move with proper RL contract  
+✅ **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.  
 ✅ **State Representation**: Enhanced 2-channel state with safety hints  
 ✅ **Action Masking**: Intelligent action masking for revealed cells  
 ✅ **Reward System**: Comprehensive reward system for RL training  
@@ -60,7 +60,7 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 
 ### Environment Features
 - **2-Channel State**: Game state + safety hints for enhanced learning
-- **First-Move Safety**: Guaranteed safe first move with mine relocation
+- **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.
 - **Cascade Revelation**: Automatic neighbor revelation for empty cells
 - **Action Masking**: Intelligent masking of revealed cells
 - **Curriculum Learning**: Progressive difficulty scaling with 7 stages
@@ -73,7 +73,7 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 - **Channel 1**: Safety hints (adjacent mine counts for unrevealed cells)
 
 ### Reward System
-- `REWARD_FIRST_CASCADE_SAFE = 0`: First cascade safe reveal
+- `REWARD_FIRST_CASCADE_SAFE = 0`: First cascade safe reveal (pre-cascade moves, including first move, have neutral reward; first move can be a mine)
 - `REWARD_SAFE_REVEAL = 5`: Regular safe reveal
 - `REWARD_WIN = 100`: Game win
 - `REWARD_HIT_MINE = -50`: Mine hit penalty

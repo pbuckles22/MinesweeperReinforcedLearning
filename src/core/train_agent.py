@@ -4,7 +4,7 @@ import time
 import json
 from datetime import datetime
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import EvalCallback, BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CheckpointCallback, CallbackList
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.utils import safe_mean
@@ -12,6 +12,7 @@ from src.core.minesweeper_env import MinesweeperEnv
 import argparse
 import torch
 from scipy import stats
+from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
 
 class ExperimentTracker:
     def __init__(self, experiment_dir="experiments"):
@@ -333,10 +334,10 @@ def make_env(max_board_size, max_mines):
             mine_spacing=1,
             initial_board_size=4,  # Start with 4x4
             initial_mines=2,       # Start with 2 mines
-            invalid_action_penalty=-0.1,
-            mine_penalty=-10.0,
-            safe_reveal_base=5.0,
-            win_reward=100.0
+            invalid_action_penalty=REWARD_INVALID_ACTION,
+            mine_penalty=REWARD_HIT_MINE,
+            safe_reveal_base=REWARD_SAFE_REVEAL,
+            win_reward=REWARD_WIN
         )
         env = Monitor(env)
         return env

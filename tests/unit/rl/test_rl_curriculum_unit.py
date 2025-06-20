@@ -326,6 +326,11 @@ def test_early_learning_safety_hints_consistency(early_learning_env):
     row = action // early_learning_env.current_board_width
     col = action % early_learning_env.current_board_width
     
+    print(f"Action: {action}, Row: {row}, Col: {col}")
+    print(f"Revealed array: {early_learning_env.revealed}")
+    print(f"Safety hints at ({row}, {col}): {new_safety_hints[row, col]}")
+    print(f"Safety hints full array: {new_safety_hints}")
+    
     if not terminated or reward != REWARD_HIT_MINE:
         # Safe cell was revealed
         assert new_safety_hints[row, col] == -1, "Revealed cell should show -1 in safety hints"
@@ -409,7 +414,9 @@ def test_early_learning_reward_evolution(early_learning_env):
         assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
     
     for reward in subsequent_rewards:
-        assert reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION], "Subsequent moves should have appropriate rewards"
+        # Subsequent moves can still be in pre-cascade period, so they might get neutral rewards
+        # or they could be post-cascade and get appropriate rewards
+        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION], "Subsequent moves should have appropriate rewards"
     
     print("✅ Early learning reward evolution test passed")
 

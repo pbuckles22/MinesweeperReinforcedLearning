@@ -127,35 +127,17 @@ class TestDeterministicScenarios:
     def test_deterministic_pre_cascade_mine_hit(self):
         """Test deterministic scenario: hitting mine on pre-cascade."""
         print("🧪 Testing deterministic pre-cascade mine hit...")
-        
-        # Set up deterministic board: mine at (0,0)
-        self.env.reset()
-        self.env.mines.fill(False)
-        self.env.mines[0, 0] = True  # Mine at first cell
-        self.env._update_adjacent_counts()
-        self.env.mines_placed = True
-        self.env.is_first_cascade = True
-        self.env.first_cascade_done = False
-        
-        # Hit mine on pre-cascade
-        action = 0  # (0,0)
-        state, reward, terminated, truncated, info = self.env.step(action)
-        
-        # Verify deterministic outcome: mine should be relocated and cell revealed
-        # Note: Pre-cascade mine hit can result in win if cascade reveals all cells
-        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_WIN], f"Should get pre-cascade safe or win reward, got {reward}"
-        assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed after mine relocation"
-        assert state[0, 0, 0] != CELL_MINE_HIT, "Cell should not show mine hit after relocation"
-        assert not self.env.mines[0, 0], "Mine should be removed from original position"
-        
-        # If it's a win, verify the game is terminated and marked as won
-        if reward == REWARD_WIN:
-            assert terminated, "Game should be terminated on win"
-            assert info.get('won', False), "Game should be marked as won"
-        else:
-            assert not terminated, "Game should not terminate on safe pre-cascade"
-            assert not info.get('won', False), "Game should not be marked as won"
-        
+        env = MinesweeperEnv(initial_board_size=(3, 3), initial_mines=1)
+        env.reset()
+        env.mines.fill(False)
+        env.mines[0, 0] = True
+        env._update_adjacent_counts()
+        env.mines_placed = True
+        # Hit mine on pre-cascade (no relocation logic)
+        state, reward, terminated, truncated, info = env.step(0)
+        # Should get neutral reward for pre-cascade mine hit
+        assert reward == REWARD_FIRST_CASCADE_HIT_MINE, f"Should get pre-cascade neutral reward, got {reward}"
+        assert terminated, "Game should terminate on pre-cascade mine hit"
         print("✅ Deterministic pre-cascade mine hit passed")
     
     def test_deterministic_adjacent_mine_counts(self):

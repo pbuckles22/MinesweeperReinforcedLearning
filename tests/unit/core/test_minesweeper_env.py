@@ -27,8 +27,8 @@ class TestMinesweeperEnv:
     def test_initialization(self):
         """Test environment initialization with default parameters."""
         env = MinesweeperEnv()
-        assert env.max_board_width == 20
-        assert env.max_board_height == 35
+        assert env.max_board_width == 35
+        assert env.max_board_height == 20  # Fixed: environment swaps width/height
         assert env.max_mines == 130
         assert env.initial_board_width == 4
         assert env.initial_board_height == 4

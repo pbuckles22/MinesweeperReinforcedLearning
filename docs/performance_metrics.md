@@ -26,7 +26,7 @@
 - **Test Coverage**: 100% test pass rate with comprehensive validation
 
 ### Key Optimizations
-1. **Mine Relocation**: Efficient first-move safety without environment reset
+1. **Mine Relocation**: (Removed) There is no mine relocation; the first move can be a mine. The environment is intentionally simple for RL and maintainability.
 2. **State Updates**: Optimized `_update_enhanced_state()` method
 3. **Action Masking**: Improved mask calculation efficiency
 4. **Memory Management**: Reduced memory footprint with 2-channel state

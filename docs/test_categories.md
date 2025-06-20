@@ -25,7 +25,7 @@
 ### Issue Resolved
 - **Problem**: Environment was resetting after first-move mine hits, breaking RL contract
 - **Root Cause**: `step()` method called `self.reset()` on first-move mine hits
-- **Solution**: Added `_relocate_mine_from_position()` method for proper first-move safety
+- **Solution**: No mine relocation; first move can be a mine.
 - **Impact**: All tests now pass with correct RL environment behavior
 
 ### Test Updates Made
@@ -417,7 +417,7 @@ python -m pytest tests/integration/test_environment.py -v
 - **Coverage**: 100% of critical functionality
 - **Pass Rate**: 100% (250/250)
 - **RL Contract Compliance**: ✅ Verified
-- **First-Move Safety**: ✅ Guaranteed
+- **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.
 - **State Consistency**: ✅ Validated
 - **Action Masking**: ✅ Working
 - **Reward System**: ✅ Comprehensive

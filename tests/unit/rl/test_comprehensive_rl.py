@@ -112,7 +112,10 @@ class TestComprehensiveRL:
             
             # Verify termination logic
             if terminated:
-                assert info.get('won', False) or reward == REWARD_HIT_MINE, "Termination should indicate win or mine hit"
+                # Termination can be due to win, mine hit (post-cascade), or pre-cascade mine hit
+                assert (info.get('won', False) or 
+                       reward == REWARD_HIT_MINE or 
+                       reward == REWARD_FIRST_CASCADE_HIT_MINE), "Termination should indicate win or mine hit"
             
             # Reset for next test
             rl_env.reset()

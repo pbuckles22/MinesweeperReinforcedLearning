@@ -42,14 +42,15 @@ def test_pre_cascade_mine_hit_reward(env):
     env._update_adjacent_counts()
     env.mines_placed = True
     
-    # Pre-cascade mine hit should relocate the mine and reveal the cell
+    # Pre-cascade mine hit should end the game with neutral reward
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    if terminated:
-        assert reward == REWARD_WIN, "Pre-cascade should give win reward if all safe cells are revealed"
-    else:
-        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade mine hit should relocate mine and give neutral reward"
+    # Game should terminate on mine hit
+    assert terminated, "Game should terminate on mine hit"
+    # Pre-cascade mine hit should give neutral reward (not full penalty)
+    assert reward == REWARD_FIRST_CASCADE_HIT_MINE, f"Pre-cascade mine hit should give neutral reward, got {reward}"
+    assert not info['won'], "Game should not be won when hitting a mine"
 
 def test_safe_reveal_after_pre_cascade(env):
     """Test reward for safe reveal after pre-cascade."""
@@ -192,14 +193,20 @@ def test_reward_scaling_with_board_size():
     assert large_reward == REWARD_FIRST_CASCADE_SAFE, f"Large board should give neutral reward, got {large_reward}"
 
 def test_reward_with_custom_parameters():
-    """Test rewards with custom reward parameters."""
+    """Test rewards with custom reward parameters (for ablation/customization research)."""
+    # This test intentionally sets custom rewards to verify the environment supports them.
+    custom_invalid_penalty = -5.0
+    custom_mine_penalty = -10.0
+    custom_safe_reveal = 2.0
+    custom_win_reward = 50.0
+    
     env = MinesweeperEnv(
         initial_board_size=(4, 4),
         initial_mines=2,
-        invalid_action_penalty=-5.0,
-        mine_penalty=-10.0,
-        safe_reveal_base=2.0,
-        win_reward=50.0
+        invalid_action_penalty=custom_invalid_penalty,
+        mine_penalty=custom_mine_penalty,
+        safe_reveal_base=custom_safe_reveal,
+        win_reward=custom_win_reward
     )
     
     env.reset()
@@ -208,8 +215,8 @@ def test_reward_with_custom_parameters():
     invalid_action = 1000
     state, reward, terminated, truncated, info = env.step(invalid_action)
     
-    # Should get the default invalid action penalty (environment doesn't use custom values)
-    assert reward == REWARD_INVALID_ACTION
+    # Should get the custom invalid action penalty
+    assert reward == custom_invalid_penalty
 
 def test_reward_info_dict():
     """Test that reward information is included in info dict."""

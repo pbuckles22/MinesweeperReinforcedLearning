@@ -236,7 +236,7 @@ class TestMakeEnv:
         assert isinstance(env, Monitor)
         # Check the underlying environment
         assert isinstance(env.env, MinesweeperEnv)
-        assert env.env.max_board_size == 4
+        assert env.env.max_board_size_int == 4
         assert env.env.max_mines == 2
         assert env.env.early_learning_mode is True
         assert env.env.early_learning_threshold == 200

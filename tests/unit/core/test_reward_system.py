@@ -44,7 +44,7 @@ def test_safe_reveal_reward(env):
     env.is_first_cascade = False
     env.first_cascade_done = True
     
-    # Make first move safe (should reveal limited area)
+    # Make first move (can be a mine or safe, no special logic)
     action = 2  # (0,2) - should be safe and not cause large cascade
     state, reward, terminated, truncated, info = env.step(action)
     assert reward == REWARD_SAFE_REVEAL  # Not first cascade anymore
@@ -67,7 +67,7 @@ def test_mine_hit_reward(env):
     env.is_first_cascade = False
     env.first_cascade_done = True
     
-    # Make first move safe
+    # Make first move (can be a mine or safe, no special logic)
     action = 2  # (0,2) - safe cell
     state, reward, terminated, truncated, info = env.step(action)
     
@@ -153,14 +153,20 @@ def test_reward_scaling_with_board_size():
     assert large_reward == REWARD_FIRST_CASCADE_SAFE, f"Large board should give neutral reward, got {large_reward}"
 
 def test_reward_with_custom_parameters():
-    """Test rewards with custom reward parameters."""
+    """Test rewards with custom reward parameters (for ablation/customization research)."""
+    # This test intentionally sets custom rewards to verify the environment supports them.
+    custom_invalid_penalty = -5.0
+    custom_mine_penalty = -10.0
+    custom_safe_reveal = 2.0
+    custom_win_reward = 50.0
+    
     env = MinesweeperEnv(
         initial_board_size=(4, 4),
         initial_mines=2,
-        invalid_action_penalty=-5.0,
-        mine_penalty=-10.0,
-        safe_reveal_base=2.0,
-        win_reward=50.0
+        invalid_action_penalty=custom_invalid_penalty,
+        mine_penalty=custom_mine_penalty,
+        safe_reveal_base=custom_safe_reveal,
+        win_reward=custom_win_reward
     )
     
     env.reset()
@@ -169,8 +175,8 @@ def test_reward_with_custom_parameters():
     invalid_action = 1000
     state, reward, terminated, truncated, info = env.step(invalid_action)
     
-    # Should get the default invalid action penalty (environment doesn't use custom values)
-    assert reward == REWARD_INVALID_ACTION
+    # Should get the custom invalid action penalty
+    assert reward == custom_invalid_penalty
 
 def test_reward_info_dict():
     """Test that reward information is included in info dict."""
@@ -246,7 +252,7 @@ def test_win_after_first_cascade_deterministic():
     # Manually set all non-mine cells to 0 (empty)
     env.board.fill(0)
     env.board[0, 0] = 9
-    # First move: reveal (1,1) to trigger cascade
+    # First move: reveal (1,1) to trigger cascade (no special logic)
     state, reward, terminated, truncated, info = env.step(4)  # (1,1)
     assert reward == REWARD_FIRST_CASCADE_SAFE
     assert env.is_first_cascade is False
@@ -269,13 +275,10 @@ def test_first_cascade_mine_hit_deterministic():
     env.mines[1, 1] = True
     env._update_adjacent_counts()
     env.mines_placed = True
-    # First move: reveal (1,1) which is a mine
+    # First move: reveal (1,1) which is a mine (no relocation logic)
     state, reward, terminated, truncated, info = env.step(4)  # (1,1)
-    # Should relocate the mine and give first cascade safe reward (since mine is relocated)
-    assert reward == REWARD_FIRST_CASCADE_SAFE or reward == REWARD_FIRST_CASCADE_HIT_MINE
-    # Now, reveal (1,1) again (should be safe now)
-    if not env.revealed[1,1]:
-        state, reward, terminated, truncated, info = env.step(4)
+    # Should get neutral reward for pre-cascade mine hit
+    assert reward == REWARD_FIRST_CASCADE_HIT_MINE
     # Now, reveal a mine after first cascade period
     env.is_first_cascade = False
     env.first_cascade_done = True
@@ -283,7 +286,7 @@ def test_first_cascade_mine_hit_deterministic():
     env._update_adjacent_counts()
     env.mines_placed = True
     state, reward, terminated, truncated, info = env.step(0)  # (0,0)
-    assert reward != REWARD_FIRST_CASCADE_HIT_MINE  # Should not be first cascade reward 
+    assert reward != REWARD_FIRST_CASCADE_HIT_MINE  # Should not be first cascade reward
 
 def test_win_during_first_cascade_is_neutral_reward():
     """(Scenario 3) Test win during pre-cascade gives neutral reward."""
@@ -315,12 +318,10 @@ def test_mine_hit_during_first_cascade_is_neutral_reward():
     env._update_adjacent_counts()
     env.mines_placed = True
 
-    # First move hits the mine
+    # First move hits the mine (no relocation logic)
     state, reward, terminated, truncated, info = env.step(4)
-
-    assert not terminated, "Game should not end on first cascade mine hit"
-    # Mine is relocated, so the reward is the safe one for the first cascade.
-    assert reward == REWARD_FIRST_CASCADE_SAFE
+    assert terminated, "Game should terminate on pre-cascade mine hit"
+    assert reward == REWARD_FIRST_CASCADE_HIT_MINE
 
 
 def test_win_after_first_cascade_is_win_reward():
@@ -335,7 +336,7 @@ def test_win_after_first_cascade_is_win_reward():
     env._update_adjacent_counts()
     env.mines_placed = True
 
-    # First move at (2,0) triggers a cascade
+    # First move at (2,0) triggers a cascade (no special logic)
     state, reward, terminated, truncated, info = env.step(8)  # (2,0)
     assert not env.is_first_cascade, "is_first_cascade should be False after a cascade"
     assert not terminated, "Game should not end on first move"

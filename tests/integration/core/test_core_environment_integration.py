@@ -106,7 +106,7 @@ class TestMinesweeperEnv:
 
     def test_initialization(self, env):
         """Test that the environment initializes correctly"""
-        assert env.max_board_size == 4
+        assert env.max_board_size_int == 4
         assert env.max_mines == 2
         assert env.mine_spacing == 2
 
@@ -125,35 +125,35 @@ class TestMinesweeperEnv:
         """Test revealing a mine."""
         env.reset()
 
-        # Make a safe first move to get past first move protection
-        safe_action = 0
-        state, reward, terminated, truncated, info = env.step(safe_action)
-
+        # Make a first move (can be a mine or safe, no special logic)
+        action = 0
+        state, reward, terminated, truncated, info = env.step(action)
         # If the first move caused a win, we can't test mine hits
-        if terminated:
+        if info.get('won', False):
             print("First move caused win, skipping mine hit test")
             return
-
-        # Find a mine on the board
-        mine_found = False
-        for i in range(env.current_board_width * env.current_board_height):
-            row = i // env.current_board_width
-            col = i % env.current_board_width
-            if env.mines[row, col]:
-                mine_found = True
-                action = i
-                break
-
-        assert mine_found, "No mine found on board"
-
-        # Reveal the mine (this is now after first move but before cascade)
-        state, reward, terminated, truncated, info = env.step(action)
-
-        # This should be a mine hit before cascade (neutral reward)
+        
+        # Check if we're still in pre-cascade period
         if env.is_first_cascade:
-            assert reward == REWARD_FIRST_CASCADE_SAFE, "Mine hit before cascade should give neutral reward"
+            # If still in pre-cascade, the next mine hit should give neutral reward
+            # Find a mine and hit it
+            mine_positions = np.where(env.mines)
+            if len(mine_positions[0]) > 0:
+                row, col = mine_positions[0][0], mine_positions[1][0]
+                action = row * env.current_board_width + col
+                state, reward, terminated, truncated, info = env.step(action)
+                assert reward == REWARD_FIRST_CASCADE_HIT_MINE, "Pre-cascade mine hit should give neutral reward"
+                assert terminated, "Game should terminate on mine hit"
         else:
-            assert reward == REWARD_HIT_MINE, "Mine hit after cascade should give mine hit reward"
+            # If post-cascade, mine hit should give full penalty
+            # Find a mine and hit it
+            mine_positions = np.where(env.mines)
+            if len(mine_positions[0]) > 0:
+                row, col = mine_positions[0][0], mine_positions[1][0]
+                action = row * env.current_board_width + col
+                state, reward, terminated, truncated, info = env.step(action)
+                assert reward == REWARD_HIT_MINE, "Post-cascade mine hit should give mine hit reward"
+                assert terminated, "Game should terminate on mine hit"
 
     def test_reset(self, env):
         """Test that reset returns the correct observation and info"""
@@ -734,6 +734,16 @@ class TestEnvironmentIntegration:
         # Verify game played properly
         assert moves_made > 0, "Should have made some moves"
         assert isinstance(total_reward, (int, float)), "Total reward should be numeric"
+
+    def test_initialization(self):
+        """Test environment initialization."""
+        env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
+        assert env.max_board_size_int == 35  # Default max board width (after interpretation)
+        assert env.initial_board_size == (4, 4)
+        assert env.initial_mines == 2
+        assert env.current_board_height == 4
+        assert env.current_board_width == 4
+        assert env.current_mines == 2
 
 if __name__ == "__main__":
     sys.exit(main()) 

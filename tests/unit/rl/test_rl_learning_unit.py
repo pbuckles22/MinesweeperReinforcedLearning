@@ -112,20 +112,20 @@ class TestComprehensiveRL:
             
             # Verify termination logic
             if terminated:
-                assert info.get('won', False) or reward == REWARD_HIT_MINE, "Termination should indicate win or mine hit"
+                # Termination can be due to win, mine hit (post-cascade), or pre-cascade mine hit
+                assert (info.get('won', False) or 
+                       reward == REWARD_HIT_MINE or 
+                       reward == REWARD_FIRST_CASCADE_HIT_MINE), "Termination should indicate win or mine hit"
             
             # Reset for next test
             rl_env.reset()
 
     def test_deterministic_training_scenarios(self, deterministic_env):
         """Test deterministic scenarios for training stability."""
-        # Test 1: Known safe cell
+        # Test 1: Known safe cell or mine (no first-move safety)
         action = 0  # Corner cell
         state, reward, terminated, truncated, info = deterministic_env.step(action)
-        
-        # Should not hit mine on first move (first move safety)
-        assert not terminated or reward != REWARD_HIT_MINE, "First move should be safe"
-        
+        # First move can be a mine or safe, no special logic
         # Test 2: Known mine position (after first move)
         deterministic_env.reset(seed=42)
         deterministic_env.mines.fill(False)
@@ -134,15 +134,12 @@ class TestComprehensiveRL:
         deterministic_env.mines_placed = True
         deterministic_env.is_first_cascade = False
         deterministic_env.first_cascade_done = True
-        
         # Take safe move first
         safe_action = 0
         state, reward, terminated, truncated, info = deterministic_env.step(safe_action)
-        
         # Then hit mine
         mine_action = 1 * deterministic_env.current_board_width + 1  # (1,1)
         state, reward, terminated, truncated, info = deterministic_env.step(mine_action)
-        
         assert terminated, "Hitting mine should terminate game"
         assert reward == REWARD_HIT_MINE, "Hitting mine should give mine hit reward"
 
@@ -344,21 +341,18 @@ class TestComprehensiveRL:
     def test_agent_reward_consistency(self, rl_env):
         """Test that rewards are consistent and appropriate for RL training."""
         rl_env.reset()
-        
-        # Test first move rewards
+        # Test first move rewards (can be a mine or safe, no special logic)
         action = 0
         state, reward, terminated, truncated, info = rl_env.step(action)
-        
-        # First move should have neutral reward
-        assert reward == REWARD_FIRST_CASCADE_SAFE, "First move should have neutral reward"
-        
+        # First move should have neutral reward if not a mine, or neutral mine reward if a mine
+        valid_first_rewards = [REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE]
+        assert reward in valid_first_rewards, "First move should have neutral reward or neutral mine reward"
         # Test subsequent move rewards
         if not terminated:
             action = 1
             state, reward, terminated, truncated, info = rl_env.step(action)
-            
             # Subsequent moves should have appropriate rewards (could still be pre-cascade if no cascade occurred)
-            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_FIRST_CASCADE_SAFE]
+            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE]
             assert reward in valid_rewards, f"Subsequent move should have valid reward, got {reward}"
 
     def test_agent_info_consistency(self, rl_env):

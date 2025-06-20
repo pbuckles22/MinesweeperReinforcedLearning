@@ -71,30 +71,18 @@ def test_invalid_action_type():
 
 def test_invalid_board_dimensions():
     """Test that invalid board dimensions raise appropriate error."""
-    with pytest.raises(AssertionError, match="n \\(counts\\) have to be positive"):
+    with pytest.raises(ValueError, match="Initial board dimensions must be positive"):
         MinesweeperEnv(initial_board_size=(0, 4))
 
 def test_invalid_mine_count_zero():
     """Test that zero mine count raises appropriate error."""
-    # The environment doesn't actually validate this in __init__, 
-    # it only validates during mine placement, so this should work
-    env = MinesweeperEnv(initial_mines=0)
-    env.reset()
-    # Should work with zero mines
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    assert state is not None
+    with pytest.raises(ValueError, match="Initial mine count must be positive"):
+        MinesweeperEnv(initial_mines=0)
 
 def test_invalid_mine_count_negative():
     """Test that negative mine count raises appropriate error."""
-    # The environment doesn't actually validate this in __init__,
-    # it only validates during mine placement, so this should work
-    env = MinesweeperEnv(initial_mines=-1)
-    env.reset()
-    # Should work with negative mines (though it will place 0 mines)
-    action = 0
-    state, reward, terminated, truncated, info = env.step(action)
-    assert state is not None
+    with pytest.raises(ValueError, match="Initial mine count must be positive"):
+        MinesweeperEnv(initial_mines=-1)
 
 def test_invalid_threshold():
     """Test that invalid early learning threshold is handled gracefully."""
@@ -183,9 +171,9 @@ def test_error_message_clarity():
     """Test that error messages are clear and informative."""
     try:
         MinesweeperEnv(initial_board_size=(0, 4))
-        assert False, "Should have raised AssertionError"
-    except AssertionError as e:
-        assert "n (counts) have to be positive" in str(e)
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "Initial board dimensions must be positive" in str(e)
 
 def test_error_recovery_after_invalid_action():
     """Test that environment recovers after invalid action."""
@@ -269,7 +257,7 @@ def test_error_handling_consistency():
     """Test that error handling is consistent across multiple calls."""
     # Test that same invalid parameters always raise same error
     for _ in range(3):
-        with pytest.raises(AssertionError, match="n \\(counts\\) have to be positive"):
+        with pytest.raises(ValueError, match="Initial board dimensions must be positive"):
             MinesweeperEnv(initial_board_size=(0, 4))
 
 def test_error_handling_performance():
@@ -282,7 +270,7 @@ def test_error_handling_performance():
     for _ in range(10):
         try:
             MinesweeperEnv(initial_board_size=(0, 4))
-        except AssertionError:
+        except ValueError:
             pass
     
     end_time = time.time()
@@ -302,7 +290,7 @@ def test_error_handling_memory():
     for _ in range(100):
         try:
             MinesweeperEnv(initial_board_size=(0, 4))
-        except AssertionError:
+        except ValueError:
             pass
     
     # Force garbage collection after test

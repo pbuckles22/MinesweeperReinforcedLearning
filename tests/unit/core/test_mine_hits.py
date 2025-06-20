@@ -29,10 +29,10 @@ def test_pre_cascade_mine_hit(env):
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get neutral reward since it's during pre-cascade period
-    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade mine hit should give neutral reward"
-    assert not terminated, "Game should not terminate on pre-cascade mine hit"
-    assert state[0, 0, 0] != CELL_MINE_HIT, "Mine should be relocated, not hit"
+    # Should get neutral reward since it's during pre-cascade period, but game should terminate
+    assert reward == REWARD_FIRST_CASCADE_HIT_MINE, "Pre-cascade mine hit should give neutral reward"
+    assert terminated, "Game should terminate on pre-cascade mine hit"
+    assert state[0, 0, 0] == CELL_MINE_HIT, "Mine hit should be visible"
 
 def test_mine_hit_after_pre_cascade(env):
     """Test mine hit after pre-cascade period."""
@@ -72,7 +72,7 @@ def test_multiple_mine_hits(env):
     env.is_first_cascade = False
     env.first_cascade_done = True
 
-    # Make first move safe
+    # Make first move (can be a mine or safe, no special logic)
     action = 3
     state, reward, terminated, truncated, info = env.step(action)
     assert reward == REWARD_SAFE_REVEAL
@@ -132,7 +132,7 @@ def test_mine_hit_with_cascade(env):
     env.is_first_cascade = False
     env.first_cascade_done = True
 
-    # Make first move safe (should trigger cascade)
+    # Make first move (can be a mine or safe, no special logic)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     assert reward == REWARD_SAFE_REVEAL

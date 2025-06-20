@@ -12,7 +12,7 @@
 
 ### Environment and Core Functionality
 - [x] Implement 2-channel state representation with safety hints
-- [x] Add first-move safety guarantee with mine relocation
+- [x] Remove first-move safety guarantee and mine relocation logic. The first move can be a mine; the environment is intentionally simple for RL.
 - [x] Implement action masking for revealed cells
 - [x] Add comprehensive reward system for RL training
 - [x] Support rectangular boards and curriculum learning
@@ -97,7 +97,7 @@
 - **Quality**: All quality gates met
 
 ### 🎯 **Key Achievements**
-- **First-Move Safety**: Guaranteed safe first move with proper RL contract
+- **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.
 - **Curriculum Learning**: Progressive difficulty scaling from 4x4 to 20x35 boards
 - **Experiment Tracking**: Comprehensive metrics collection and persistence
 - **Model Evaluation**: Statistical analysis with confidence intervals

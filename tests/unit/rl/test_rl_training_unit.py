@@ -27,6 +27,12 @@ from src.core.train_agent import (
     evaluate_model
 )
 from src.core.minesweeper_env import MinesweeperEnv
+from src.core.constants import (
+    REWARD_INVALID_ACTION,
+    REWARD_HIT_MINE,
+    REWARD_SAFE_REVEAL,
+    REWARD_WIN
+)
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 class TestExperimentTracker:
@@ -174,10 +180,14 @@ class TestMakeEnv:
         # Get the underlying environment
         underlying_env = env.env
         assert isinstance(underlying_env, MinesweeperEnv)
-        assert underlying_env.max_board_size == 4
+        assert underlying_env.max_board_size_int == 4
         assert underlying_env.max_mines == 2
         assert underlying_env.early_learning_mode is True
         assert underlying_env.early_learning_threshold == 200
+        assert underlying_env.reward_invalid_action == REWARD_INVALID_ACTION
+        assert underlying_env.mine_penalty == REWARD_HIT_MINE
+        assert underlying_env.safe_reveal_base == REWARD_SAFE_REVEAL
+        assert underlying_env.win_reward == REWARD_WIN
     
     def test_make_env_parameters(self):
         """Test environment creation with different parameters."""
@@ -189,14 +199,14 @@ class TestMakeEnv:
         assert isinstance(env, Monitor)
         # Get the underlying environment
         underlying_env = env.env
-        assert underlying_env.max_board_size == 8
+        assert underlying_env.max_board_size_int == 8
         assert underlying_env.max_mines == 10
         assert underlying_env.initial_board_width == 4  # Default
         assert underlying_env.initial_mines == 2  # Default
-        assert underlying_env.reward_invalid_action == -0.1
-        assert underlying_env.reward_hit_mine == -10.0
-        assert underlying_env.reward_safe_reveal == 5.0
-        assert underlying_env.reward_win == 100.0
+        assert underlying_env.reward_invalid_action == REWARD_INVALID_ACTION
+        assert underlying_env.mine_penalty == REWARD_HIT_MINE
+        assert underlying_env.safe_reveal_base == REWARD_SAFE_REVEAL
+        assert underlying_env.win_reward == REWARD_WIN
 
 class TestEvaluateModel:
     """Unit tests for evaluate_model function."""
