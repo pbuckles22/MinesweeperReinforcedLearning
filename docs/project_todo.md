@@ -2,65 +2,55 @@
 
 ## 🎯 **IMMEDIATE PRIORITIES** (Current Sprint)
 
-### 1. **M1 MacBook GPU Support** (High Priority)
-- [ ] Install PyTorch with MPS (Metal Performance Shaders) support for M1
-- [ ] Update requirements.txt for M1 compatibility
-- [ ] Test GPU acceleration on M1 MacBook
-- [ ] Create M1-specific installation guide
-- [ ] Verify training performance improvements
+### 1. **Graphical Visualization & UX** (High Priority)
+- [ ] Enhance the environment's `render()` method to support graphical output (e.g., using Matplotlib, Pygame, or Tkinter)
+- [ ] Create a visualization script (`visualize_agent.py`) to display the agent's actions in real-time
+- [ ] Add controls for manual play or step-by-step execution
+- [ ] Implement training progress visualization with real-time metrics
+- [ ] **Agent Play Visualization App**
+  - [ ] Load and run best trained model from `best_model/` directory
+  - [ ] Create graphical interface showing Minesweeper board in real-time
+  - [ ] Add play/pause controls for watching agent games
+  - [ ] Implement step-by-step mode to see each agent decision
+  - [ ] Add speed controls (slow, normal, fast) for different viewing preferences
+  - [ ] Show agent's confidence/probability for each move
+  - [ ] Display game statistics (moves made, win/loss status, time elapsed)
+  - [ ] Add replay functionality to watch the same game multiple times
+  - [ ] Support multiple board sizes and difficulty levels
+  - [ ] Add save/load functionality for interesting games
+  - [ ] Create demo mode for showcasing agent performance
+  - [ ] Add comparison mode to watch multiple agents play simultaneously
 
-### 2. **Training Verification** (High Priority)
-- [ ] Run quick training session to verify everything works
-- [ ] Check if training produces expected results
-- [ ] Verify MLflow logging functionality
-- [ ] Test curriculum learning progression
-- [ ] Validate model evaluation pipeline
-
-### 3. **Deprecation Warning Fix** (Medium Priority)
-- [ ] Update pygame or find alternative to fix pkg_resources deprecation
-- [ ] Test compatibility with updated dependencies
-- [ ] Ensure no breaking changes from updates
-
-### 4. **Cross-Platform Setup Guide** (Medium Priority)
-- [ ] Create comprehensive setup guide for Windows
-- [ ] Create comprehensive setup guide for M1 MacBook
-- [ ] Document platform-specific requirements
-- [ ] Add troubleshooting section for common issues
+### 2. **Advanced Training Features** (Medium Priority)
+- [ ] Add support for different RL algorithms (DQN, A2C, SAC)
+- [ ] Implement hyperparameter optimization (Optuna, Ray Tune)
+- [ ] Add distributed training support for large-scale experiments
+- [ ] Implement model comparison and ensemble methods
+- [ ] Add support for custom reward functions and curriculum designs
 
 ---
 
-## ✅ **COMPLETED ITEMS**
+## ✅ **RECENTLY COMPLETED (2024-06)**
 
-### Script Mode: RL Agent Training and Evaluation
-- [x] Implement a training script (`train_agent.py`) using Stable Baselines3 PPO
-- [x] Add comprehensive training pipeline with curriculum learning (7 stages)
-- [x] Implement experiment tracking and metrics collection
-- [x] Add model evaluation with statistical analysis
-- [x] Document the training and evaluation process in the README
-- [x] Create complete test suite (486 tests passing)
+### Cross-Platform & Environment
+- [x] M1 MacBook GPU support (PyTorch MPS, requirements, performance verification)
+- [x] Cross-platform script reorganization (`scripts/windows`, `scripts/linux`, `scripts/mac`)
+- [x] Parity for install_and_run scripts across all platforms
+- [x] Clean requirements.txt and requirements_full.txt (removed unused deps, exact versions)
+- [x] PowerShell and shell script tests updated for new locations and names
+- [x] Improved venv removal logic for Windows (handles locked files gracefully)
 
-### Environment and Core Functionality
-- [x] Implement 2-channel state representation with safety hints
-- [x] Remove first-move safety guarantee and mine relocation logic. The first move can be a mine; the environment is intentionally simple for RL.
-- [x] Implement action masking for revealed cells
-- [x] Add comprehensive reward system for RL training
-- [x] Support rectangular boards and curriculum learning
-- [x] Add early learning mode with safety features
-
-### Testing and Quality Assurance
-- [x] Create comprehensive test suite (486 tests)
-- [x] Implement unit tests for all components
-- [x] Add integration tests for cross-component behavior
-- [x] Create functional tests for end-to-end scenarios
-- [x] Add performance benchmarks and stress tests
-- [x] Achieve 100% test pass rate
+### Testing & Quality
+- [x] Expanded test suite to 516 tests (unit, integration, functional, e2e)
+- [x] All tests passing (516/516)
+- [x] Updated test scripts to be platform-aware
+- [x] Suppressed deprecation warnings (protobuf, pkg_resources)
+- [x] Removed TensorBoard, migrated fully to MLflow
 
 ### Documentation
-- [x] Add comprehensive README.md with usage examples
-- [x] Create detailed test running guide
-- [x] Document training history and configurations
-- [x] Add test checklist and quality gates
-- [x] Create performance benchmarks documentation
+- [x] Updated README and CONTEXT.md for new features and structure
+- [x] Added/updated test running guide, platform setup guides, and troubleshooting
+- [x] Documented requirements cleanup and environment setup
 
 ---
 
@@ -83,7 +73,7 @@
 - [ ] Optimize environment performance for faster training
 - [ ] Add support for vectorized environments with multiple workers
 - [ ] Implement memory-efficient training for large boards
-- [ ] Add GPU acceleration for neural network training
+- [ ] Add GPU acceleration for neural network training (multi-platform)
 - [ ] Optimize test suite execution time
 
 ### Advanced Features
@@ -121,16 +111,18 @@
 ### ✅ **Production Ready**
 - **Environment**: Fully functional 2-channel Minesweeper RL environment
 - **Training Pipeline**: Complete curriculum learning system (7 stages)
-- **Test Suite**: 486 tests passing (100% success rate)
+- **Test Suite**: 516 tests passing (100% success rate)
 - **Documentation**: Comprehensive guides and examples
 - **Quality**: All quality gates met
 
 ### 🎯 **Key Achievements**
 - **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.
 - **Curriculum Learning**: Progressive difficulty scaling from 4x4 to 20x35 boards
-- **Experiment Tracking**: Comprehensive metrics collection and persistence
+- **Experiment Tracking**: Comprehensive metrics collection and persistence (MLflow)
 - **Model Evaluation**: Statistical analysis with confidence intervals
 - **Test Coverage**: Comprehensive coverage across all components
+- **Cross-Platform**: Scripts and setup fully supported on Windows, Linux, and Mac (including M1)
+- **Requirements**: Clean, minimal, and reproducible
 
 ### 🚀 **Ready for Use**
 The system is now production-ready and can be used for:
@@ -142,7 +134,7 @@ The system is now production-ready and can be used for:
 
 ---
 
-**Last Updated**: 2024-12-19  
+**Last Updated**: 2024-06-20  
 **Status**: ✅ Production ready with complete training pipeline  
-**Test Status**: 486/486 tests passing (100%)  
+**Test Status**: 516/516 tests passing (100%)  
 **Next Priority**: Graphical visualization and advanced training features 

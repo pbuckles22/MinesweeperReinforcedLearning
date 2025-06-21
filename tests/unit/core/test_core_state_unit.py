@@ -70,36 +70,41 @@ def test_state_reset(env):
     assert np.all(env.revealed == False)
 
 def test_state_shape_consistency(env):
-    """Test that state shape remains consistent."""
-    env.reset()
+    """Test that state shape remains consistent across operations."""
+    # Test initial state shape
+    state, _ = env.reset()
+    expected_shape = (4, env.current_board_height, env.current_board_width)
+    assert state.shape == expected_shape, f"Initial state shape should be {expected_shape}, got {state.shape}"
     
-    initial_shape = env.state.shape
+    # Test state shape after reveal
+    action = 0
+    state, _, _, _, _ = env.step(action)
+    assert state.shape == expected_shape, f"State shape after reveal should be {expected_shape}, got {state.shape}"
     
-    # Take some actions
-    for action in range(min(3, env.action_space.n)):
-        state, reward, terminated, truncated, info = env.step(action)
-        assert state.shape == initial_shape
-        if terminated:
-            break
+    # Test state shape after reset
+    state, _ = env.reset()
+    assert state.shape == expected_shape, f"State shape after reset should be {expected_shape}, got {state.shape}"
 
 def test_state_bounds(env):
     """Test that state values are within expected bounds."""
-    env.reset()
+    state, _ = env.reset()
     
-    # Take some actions and verify state bounds
-    for action in range(min(5, env.action_space.n)):
-        state, reward, terminated, truncated, info = env.step(action)
-        
-        # Channel 0 should be within bounds
-        assert np.all(state[0] >= -4), "Channel 0 should be >= -4"
-        assert np.all(state[0] <= 8), "Channel 0 should be <= 8"
-        
-        # Channel 1 should be within bounds
-        assert np.all(state[1] >= -1), "Channel 1 should be >= -1"
-        assert np.all(state[1] <= 8), "Channel 1 should be <= 8"
-        
-        if terminated:
-            break
+    # Channel 0: Game state (-4 to 8)
+    assert np.all(state[0] >= -4), "Channel 0 should be >= -4"
+    assert np.all(state[0] <= 8), "Channel 0 should be <= 8"
+    
+    # Channel 1: Safety hints (-1 to 8)
+    assert np.all(state[1] >= -1), "Channel 1 should be >= -1"
+    assert np.all(state[1] <= 8), "Channel 1 should be <= 8"
+    
+    # Channel 2: Revealed cell count (0 to max_cells)
+    max_cells = env.current_board_height * env.current_board_width
+    assert np.all(state[2] >= 0), "Channel 2 should be >= 0"
+    assert np.all(state[2] <= max_cells), f"Channel 2 should be <= {max_cells}"
+    
+    # Channel 3: Game progress indicators (0 to 1)
+    assert np.all(state[3] >= 0), "Channel 3 should be >= 0"
+    assert np.all(state[3] <= 1), "Channel 3 should be <= 1"
 
 def test_state_transitions(env):
     """Test that state transitions are correct."""

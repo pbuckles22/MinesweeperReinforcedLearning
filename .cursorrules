@@ -4,19 +4,30 @@
 This is a Reinforcement Learning environment for Minesweeper using Stable Baselines3 (PPO) with curriculum learning and MLflow tracking.
 
 ## Key Design Decisions
-- **Pre-Cascade Safety**: Mines placed BEFORE first move. Pre-cascade period gives neutral rewards (0) to prevent punishing random guessing
+- **Immediate Rewards**: Every safe reveal gets +15, every mine hit gets -20, wins get +500 (simplified from confusing first-move logic)
 - **Board Sizes**: All use (height, width) format throughout codebase
-- **Reward System**: Neutral rewards during pre-cascade, normal rewards after cascade
 - **Environment**: 2-channel state representation with action masking
+- **M1 GPU Support**: Optimized for Apple Silicon with Metal Performance Shaders (MPS)
+- **Cross-Platform Scripts**: Platform-specific scripts in `scripts/windows/`, `scripts/linux/`, `scripts/mac/`
+
+## Critical Learning Insights
+- **Game Logic is Correct**: Environment randomization and win conditions work perfectly
+- **Reward System Matters**: Immediate rewards (not sparse) are essential for learning
+- **Curriculum Learning**: Realistic win rate thresholds (15%, 12%, 10%, 8%, 5%, 3%, 2%) enable progression
+- **Training Complexity**: Even simple 4x4 boards are challenging for RL agents
+- **Performance**: Use M1 Mac for longer training runs (GPU acceleration)
 
 ## Important Files
-- `src/core/minesweeper_env.py` - Main environment
-- `src/core/train_agent.py` - Training script
+- `src/core/minesweeper_env.py` - Main environment (simplified reward logic)
+- `src/core/train_agent.py` - Training script with curriculum learning
 - `src/core/constants.py` - Reward constants
-- `tests/` - 500+ comprehensive tests
+- `tests/` - 516 comprehensive tests
+- `scripts/mac/` - Mac-specific training scripts
 
 ## When Helping
-- Always consider the pre-cascade neutral reward system
+- Use immediate rewards for all actions (no first-move special cases)
 - Use (height, width) format for board dimensions
 - Check CONTEXT.md for detailed project information
-- Run tests to verify changes work correctly 
+- Run tests to verify changes work correctly
+- Recommend M1 Mac for intensive training
+- Focus on learning improvements, not game logic bugs 

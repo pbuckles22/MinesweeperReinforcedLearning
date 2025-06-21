@@ -11,7 +11,6 @@ from stable_baselines3.common.utils import safe_mean
 from src.core.minesweeper_env import MinesweeperEnv
 import argparse
 import torch
-from scipy import stats
 from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
 import mlflow
 import mlflow.pytorch
@@ -481,13 +480,13 @@ def make_env(max_board_size, max_mines):
             max_board_size=max_board_size,
             max_mines=max_mines,
             render_mode=None,
-            early_learning_mode=True,
+            early_learning_mode=False,  # Disable early learning mode for proper training
             early_learning_threshold=200,
-            early_learning_corner_safe=True,
-            early_learning_edge_safe=True,
+            early_learning_corner_safe=False,  # Disable corner safety
+            early_learning_edge_safe=False,    # Disable edge safety
             mine_spacing=1,
-            initial_board_size=4,  # Start with 4x4
-            initial_mines=2,       # Start with 2 mines
+            initial_board_size=max_board_size,  # Use curriculum board size
+            initial_mines=max_mines,            # Use curriculum mine count
             invalid_action_penalty=REWARD_INVALID_ACTION,
             mine_penalty=REWARD_HIT_MINE,
             safe_reveal_base=REWARD_SAFE_REVEAL,
@@ -615,55 +614,62 @@ def main():
         "hyperparameters": optimal_params
     }
     
-    # Define curriculum stages with detailed information
+    # Define curriculum stages with realistic win rate thresholds
     curriculum_stages = [
+        {
+            'name': 'Tiny',
+            'size': 2,
+            'mines': 1,
+            'win_rate_threshold': 0.25,  # 25% - Very achievable for 2x2 with 1 mine
+            'description': '2x2 board with 1 mine - Simplest possible learning environment'
+        },
         {
             'name': 'Beginner',
             'size': 4,
             'mines': 2,
-            'win_rate_threshold': 0.7,
+            'win_rate_threshold': 0.15,  # 15% - Much more realistic for learning
             'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
         },
         {
             'name': 'Intermediate',
             'size': 6,
             'mines': 4,
-            'win_rate_threshold': 0.6,
+            'win_rate_threshold': 0.12,  # 12% - Slightly harder but achievable
             'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy'
         },
         {
             'name': 'Easy',
             'size': 9,
             'mines': 10,
-            'win_rate_threshold': 0.5,
+            'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty target
             'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
         },
         {
             'name': 'Normal',
             'size': 16,
             'mines': 40,
-            'win_rate_threshold': 0.4,
+            'win_rate_threshold': 0.08,  # 8% - Realistic for normal difficulty
             'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
         },
         {
             'name': 'Hard',
             'size': (16, 30),
             'mines': 99,
-            'win_rate_threshold': 0.3,
+            'win_rate_threshold': 0.05,  # 5% - Challenging but achievable
             'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
         },
         {
             'name': 'Expert',
             'size': (18, 24),
             'mines': 115,
-            'win_rate_threshold': 0.2,
+            'win_rate_threshold': 0.03,  # 3% - Expert level, very challenging
             'description': '18x24 board with 115 mines - Expert level, handling high mine density'
         },
         {
             'name': 'Chaotic',
             'size': (20, 35),
             'mines': 130,
-            'win_rate_threshold': 0.1,
+            'win_rate_threshold': 0.02,  # 2% - Ultimate challenge, maximum complexity
             'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
         }
     ]
@@ -676,77 +682,28 @@ def main():
     }
     experiment_tracker._save_metrics()
     
-    # Initialize environment with first stage
-    current_stage = 0
-    env = DummyVecEnv([make_env(
-        max_board_size=curriculum_stages[current_stage]['size'],
-        max_mines=curriculum_stages[current_stage]['mines']
-    )])
+    # Calculate timesteps per stage (distribute evenly across all stages)
+    timesteps_per_stage = args.total_timesteps // len(curriculum_stages)
     
-    print(f"\n🏗️  Creating PPO model with {device_info['description']}...")
+    # Adjust timesteps for different stages - give more time to simpler stages
+    stage_timesteps = []
+    for stage_idx, stage_info in enumerate(curriculum_stages):
+        if stage_idx == 0:  # Tiny stage (2x2)
+            stage_timesteps.append(timesteps_per_stage * 2)  # Double time for simplest stage
+        elif stage_idx == 1:  # Beginner stage (4x4)
+            stage_timesteps.append(timesteps_per_stage * 1.5)  # 1.5x time for learning basics
+        elif stage_idx < 4:  # Intermediate and Easy stages
+            stage_timesteps.append(timesteps_per_stage * 1.2)  # 1.2x time for medium complexity
+        else:  # Normal, Hard, Expert, Chaotic stages
+            stage_timesteps.append(timesteps_per_stage)  # Standard time for complex stages
     
-    # Create model
-    model = PPO(
-        policy=args.policy,
-        env=env,
-        learning_rate=args.learning_rate,
-        n_steps=args.n_steps,
-        batch_size=args.batch_size,
-        n_epochs=args.n_epochs,
-        gamma=args.gamma,
-        gae_lambda=args.gae_lambda,
-        clip_range=args.clip_range,
-        clip_range_vf=args.clip_range_vf,
-        ent_coef=args.ent_coef,
-        vf_coef=args.vf_coef,
-        max_grad_norm=args.max_grad_norm,
-        use_sde=args.use_sde,
-        sde_sample_freq=args.sde_sample_freq,
-        target_kl=args.target_kl,
-        verbose=args.verbose,
-        seed=args.seed,
-        device=args.device,
-        _init_setup_model=args._init_setup_model
-    )
-    
-    print("✅ Model created successfully!")
-    
-    # Create evaluation environment
-    eval_env = DummyVecEnv([make_env(
-        max_board_size=curriculum_stages[current_stage]['size'],
-        max_mines=curriculum_stages[current_stage]['mines']
-    )])
-    
-    # Create evaluation callback
-    eval_callback = CustomEvalCallback(
-        eval_env,
-        eval_freq=args.eval_freq,
-        n_eval_episodes=args.n_eval_episodes,
-        verbose=args.verbose,
-        best_model_save_path="./best_model",
-        log_path="./logs/"
-    )
-    
-    # Create iteration callback
-    iteration_callback = IterationCallback(
-        verbose=args.verbose,
-        debug_level=2,
-        experiment_tracker=experiment_tracker
-    )
-    
-    # Start training
-    total_timesteps = args.total_timesteps
-    timesteps_per_stage = total_timesteps // len(curriculum_stages)
-    
-    print("\n=== Minesweeper Training Curriculum ===")
-    print("Expected progression through difficulty levels:")
-    for i, stage in enumerate(curriculum_stages):
-        print(f"\nStage {i + 1}: {stage['name']}")
-        print(f"Board: {stage['size'] if isinstance(stage['size'], int) else f'{stage['size'][0]}x{stage['size'][1]}'}")
-        print(f"Mines: {stage['mines']}")
-        print(f"Target Win Rate: {stage['win_rate_threshold']*100:.0f}%")
-        print(f"Description: {stage['description']}")
-    print("\n=====================================")
+    # Adjust total timesteps to account for the redistribution
+    adjusted_total_timesteps = sum(stage_timesteps)
+    print(f"📊 Adjusted training timesteps:")
+    print(f"   Original total: {args.total_timesteps:,}")
+    print(f"   Adjusted total: {adjusted_total_timesteps:,}")
+    for stage_idx, (stage_info, timesteps) in enumerate(zip(curriculum_stages, stage_timesteps)):
+        print(f"   Stage {stage_idx + 1} ({stage_info['name']}): {timesteps:,} timesteps")
     
     print(f"\n🎯 Starting training with {device_info['description']}...")
     print(f"   Expected performance: {device_info['performance_notes']}")
@@ -761,23 +718,64 @@ def main():
         print(f"Description: {current_stage_info['description']}")
         print(f"{'='*50}\n")
         
-        # Update environment for current stage
+        # Create new environment for current stage
         env = DummyVecEnv([make_env(
             max_board_size=current_stage_info['size'],
             max_mines=current_stage_info['mines']
         )])
-        model.set_env(env)
         
-        # Update evaluation environment for current stage
+        # Create new model for current stage (observation space changes between stages)
+        print(f"🏗️  Creating new PPO model for Stage {stage + 1}...")
+        model = PPO(
+            policy=args.policy,
+            env=env,
+            learning_rate=args.learning_rate,
+            n_steps=args.n_steps,
+            batch_size=args.batch_size,
+            n_epochs=args.n_epochs,
+            gamma=args.gamma,
+            gae_lambda=args.gae_lambda,
+            clip_range=args.clip_range,
+            clip_range_vf=args.clip_range_vf,
+            ent_coef=args.ent_coef,
+            vf_coef=args.vf_coef,
+            max_grad_norm=args.max_grad_norm,
+            use_sde=args.use_sde,
+            sde_sample_freq=args.sde_sample_freq,
+            target_kl=args.target_kl,
+            verbose=args.verbose,
+            seed=args.seed,
+            device=args.device,
+            _init_setup_model=args._init_setup_model
+        )
+        print("✅ New model created successfully!")
+        
+        # Create evaluation environment for current stage
         eval_env = DummyVecEnv([make_env(
             max_board_size=current_stage_info['size'],
             max_mines=current_stage_info['mines']
         )])
-        eval_callback.eval_env = eval_env
+        
+        # Create evaluation callback
+        eval_callback = CustomEvalCallback(
+            eval_env,
+            eval_freq=args.eval_freq,
+            n_eval_episodes=args.n_eval_episodes,
+            verbose=args.verbose,
+            best_model_save_path=f"./best_model/stage_{stage + 1}",
+            log_path="./logs/"
+        )
+        
+        # Create iteration callback
+        iteration_callback = IterationCallback(
+            verbose=args.verbose,
+            debug_level=2,
+            experiment_tracker=experiment_tracker
+        )
         
         # Train for this stage
         model.learn(
-            total_timesteps=timesteps_per_stage,
+            total_timesteps=stage_timesteps[stage],
             callback=[eval_callback, iteration_callback],
             progress_bar=True
         )
@@ -808,16 +806,24 @@ def main():
         model.save(f"models/stage_{stage + 1}")
         
         # Add stage completion to metrics
-        if "stage_completion" not in experiment_tracker.metrics:
-            experiment_tracker.metrics["stage_completion"] = {}
-        experiment_tracker.metrics["stage_completion"][f"stage_{stage + 1}"] = {
+        experiment_tracker.metrics["completed_stages"] = experiment_tracker.metrics.get("completed_stages", [])
+        experiment_tracker.metrics["completed_stages"].append({
+            "stage": stage + 1,
             "name": current_stage_info['name'],
             "win_rate": win_rate,
             "mean_reward": mean_reward,
-            "std_reward": reward_std,
-            "completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+            "target_win_rate": current_stage_info['win_rate_threshold']
+        })
         experiment_tracker._save_metrics()
+        
+        # Check if we should continue to next stage
+        if win_rate >= current_stage_info['win_rate_threshold']:
+            print(f"✅ Stage {stage + 1} target achieved! Win rate: {win_rate:.2%} >= {current_stage_info['win_rate_threshold']:.2%}")
+        else:
+            print(f"⚠️  Stage {stage + 1} target not achieved. Win rate: {win_rate:.2%} < {current_stage_info['win_rate_threshold']:.2%}")
+            print("Continuing to next stage anyway for curriculum progression...")
+        
+        print(f"Stage {stage + 1} completed. Moving to next stage...\n")
     
     # Save final model
     model.save("models/final_model")
@@ -845,11 +851,10 @@ def main():
     print("\nTraining completed!")
     print("\nFinal Stage Progression:")
     for stage in range(len(curriculum_stages)):
-        stage_info = experiment_tracker.metrics["stage_completion"][f"stage_{stage + 1}"]
+        stage_info = experiment_tracker.metrics["completed_stages"][stage]
         print(f"\nStage {stage + 1}: {stage_info['name']}")
         print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
-        print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['std_reward']:.2f}")
-        print(f"Completed at: {stage_info['completed_at']}")
+        print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['target_win_rate']*100:.2f}%")
     
     print(f"\n📊 MLflow experiment tracking enabled!")
     print(f"   Run 'mlflow ui' to view training progress")

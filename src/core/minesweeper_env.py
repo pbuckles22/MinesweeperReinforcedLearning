@@ -155,15 +155,15 @@ class MinesweeperEnv(gym.Env):
         self.current_game_ended_pre_cascade = False
         
         # Action space and observation space
-        self.action_space = gym.spaces.Discrete(self.current_board_height * self.current_board_width)
+        self.action_space = gym.spaces.Discrete(self.current_board_width * self.current_board_height)
         self.observation_space = gym.spaces.Box(
             low=-1, high=9, 
-            shape=(2, self.current_board_height, self.current_board_width), 
+            shape=(4, self.current_board_height, self.current_board_width), 
             dtype=np.float32
         )
         
         # State representation
-        self.state = np.zeros((2, self.current_board_height, self.current_board_width), dtype=np.float32)
+        self.state = np.zeros((4, self.current_board_height, self.current_board_width), dtype=np.float32)
         
         # Rendering
         self.render_mode = render_mode
@@ -222,17 +222,21 @@ class MinesweeperEnv(gym.Env):
         # Initialize or update action space based on current board size
         self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
         
-        # Initialize enhanced state space with 2 channels
-        low_bounds = np.full((2, self.current_board_height, self.current_board_width), -1, dtype=np.float32)
+        # Initialize enhanced state space with 4 channels for better pattern recognition
+        low_bounds = np.full((4, self.current_board_height, self.current_board_width), -1, dtype=np.float32)
         low_bounds[0] = -4  # Channel 0: game state can go as low as -4 (mine hit)
         low_bounds[1] = -1  # Channel 1: safety hints can go as low as -1 (unknown)
+        low_bounds[2] = 0   # Channel 2: revealed cell count (always >= 0)
+        low_bounds[3] = 0   # Channel 3: game progress indicators (always >= 0)
         
-        high_bounds = np.full((2, self.current_board_height, self.current_board_width), 8, dtype=np.float32)
+        high_bounds = np.full((4, self.current_board_height, self.current_board_width), 8, dtype=np.float32)
+        high_bounds[2] = self.current_board_height * self.current_board_width  # Max revealed cells
+        high_bounds[3] = 1  # Binary indicators
         
         self.observation_space = spaces.Box(
             low=low_bounds,
             high=high_bounds,
-            shape=(2, self.current_board_height, self.current_board_width),
+            shape=(4, self.current_board_height, self.current_board_width),
             dtype=np.float32
         )
         
@@ -241,14 +245,20 @@ class MinesweeperEnv(gym.Env):
         self.mines = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         self.revealed = np.zeros((self.current_board_height, self.current_board_width), dtype=bool)
         
-        # Initialize enhanced state with 2 channels
-        self.state = np.zeros((2, self.current_board_height, self.current_board_width), dtype=np.float32)
+        # Initialize enhanced state with 4 channels
+        self.state = np.zeros((4, self.current_board_height, self.current_board_width), dtype=np.float32)
         
         # Channel 0: Game state (all unrevealed initially)
         self.state[0] = CELL_UNREVEALED
         
         # Channel 1: Safety hints (all unknown initially)
         self.state[1] = UNKNOWN_SAFETY
+        
+        # Channel 2: Revealed cell count (0 initially)
+        self.state[2] = 0
+        
+        # Channel 3: Game progress indicators (0 initially)
+        self.state[3] = 0
         
         # Reset game state variables
         self.revealed_count = 0
@@ -432,13 +442,8 @@ class MinesweeperEnv(gym.Env):
             # Update statistics
             self._update_statistics(game_won=False, game_ended_pre_cascade=game_ended_pre_cascade)
             
-            # Determine reward based on whether this is pre-cascade or post-cascade
-            if self.is_first_cascade:
-                # Pre-cascade mine hit - neutral reward (bad luck)
-                return self.state, self.first_cascade_hit_mine_reward, True, False, info
-            else:
-                # Post-cascade mine hit - full penalty (strategic mistake)
-                return self.state, self.mine_penalty, True, False, info
+            # Mine hit penalty - immediate negative feedback
+            return self.state, self.mine_penalty, True, False, info
 
         # Reveal the cell (safe cell)
         self._reveal_cell(row, col)
@@ -461,17 +466,11 @@ class MinesweeperEnv(gym.Env):
             # Update statistics
             self._update_statistics(game_won=True, game_ended_pre_cascade=game_ended_pre_cascade)
             
-            # If the win happened during the first cascade period (before any cascade),
-            # it's an accidental win and should get neutral reward
-            if win_during_first_cascade_period:
-                # Accidental win during first cascade period - give neutral reward
-                return self.state, self.first_cascade_safe_reward, True, False, info
-            else:
-                # Skillful win after first cascade period - give full reward
-                return self.state, self.win_reward, True, False, info
+            # Win reward - always give full win reward
+            return self.state, self.win_reward, True, False, info
 
-        # Determine reward based on whether this is the first cascade period
-        reward = self.first_cascade_safe_reward if self.is_first_cascade else self.safe_reveal_base
+        # Safe reveal reward - immediate positive feedback
+        reward = self.safe_reveal_base
         
         # If we had a cascade in this step and no win occurred, exit pre-cascade period
         if self.in_cascade and self.is_first_cascade:
@@ -485,19 +484,90 @@ class MinesweeperEnv(gym.Env):
 
     @property
     def action_masks(self):
-        """Return a boolean mask indicating which actions are valid."""
+        """Return a boolean mask indicating which actions are valid, including smart masking for obviously bad moves."""
         # If game is over, all actions are invalid
         if self.terminated or self.truncated:
             return np.zeros(self.action_space.n, dtype=bool)
         
         masks = np.ones(self.action_space.n, dtype=bool)
+        
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
                 # Reveal action
                 reveal_idx = i * self.current_board_width + j
-                if self.revealed[i, j]:  # Can't reveal revealed cells
+                
+                # Basic masking: can't reveal already revealed cells
+                if self.revealed[i, j]:
                     masks[reveal_idx] = False
+                    continue
+                
+                # Smart masking: avoid cells that are guaranteed to be mines
+                if self._is_guaranteed_mine(i, j):
+                    masks[reveal_idx] = False
+                    continue
+                
+                # Smart masking: prefer cells that are guaranteed to be safe
+                # (This is optional - we could prioritize safe cells but still allow others)
+                # For now, we'll just avoid guaranteed mines
+                
         return masks
+    
+    def _is_guaranteed_mine(self, row: int, col: int) -> bool:
+        """Check if a cell is guaranteed to be a mine based on revealed cell information."""
+        # Check all adjacent revealed cells
+        for di in [-1, 0, 1]:
+            for dj in [-1, 0, 1]:
+                if di == 0 and dj == 0:
+                    continue
+                ni, nj = row + di, col + dj
+                if (0 <= ni < self.current_board_height and 
+                    0 <= nj < self.current_board_width and 
+                    self.revealed[ni, nj] and 
+                    not self.mines[ni, nj]):
+                    
+                    # Get the number of adjacent mines for this revealed cell
+                    cell_value = self.board[ni, nj]
+                    
+                    # Count how many adjacent cells are already revealed as mines
+                    revealed_mines = 0
+                    for ddi in [-1, 0, 1]:
+                        for ddj in [-1, 0, 1]:
+                            if ddi == 0 and ddj == 0:
+                                continue
+                            nni, nnj = ni + ddi, nj + ddj
+                            if (0 <= nni < self.current_board_height and 
+                                0 <= nnj < self.current_board_width and 
+                                self.revealed[nni, nnj] and 
+                                self.mines[nni, nnj]):
+                                revealed_mines += 1
+                    
+                    # Count how many adjacent cells are flagged as mines (we don't have flags, so skip)
+                    # For now, we'll use a simpler heuristic
+                    
+                    # If this revealed cell has X mines adjacent and we've already found X mines,
+                    # then any remaining adjacent unrevealed cells must be safe
+                    # If this revealed cell has X mines adjacent and we've found X-1 mines,
+                    # then any remaining adjacent unrevealed cells must be mines
+                    
+                    # Count unrevealed adjacent cells
+                    unrevealed_adjacent = 0
+                    for ddi in [-1, 0, 1]:
+                        for ddj in [-1, 0, 1]:
+                            if ddi == 0 and ddj == 0:
+                                continue
+                            nni, nnj = ni + ddi, nj + ddj
+                            if (0 <= nni < self.current_board_height and 
+                                0 <= nnj < self.current_board_width and 
+                                not self.revealed[nni, nnj]):
+                                unrevealed_adjacent += 1
+                    
+                    # If we have exactly the right number of unrevealed cells to match the mine count
+                    # and we've found all the mines we need, then this cell must be a mine
+                    remaining_mines_needed = cell_value - revealed_mines
+                    if unrevealed_adjacent == remaining_mines_needed and remaining_mines_needed > 0:
+                        return True
+        
+        return False
 
     def render(self):
         """Render the environment."""
@@ -563,7 +633,7 @@ class MinesweeperEnv(gym.Env):
         return self.board[row, col]
 
     def _update_enhanced_state(self):
-        """Update the enhanced state representation."""
+        """Update the enhanced state representation with 4 channels for better pattern recognition."""
         # Channel 0: Game state (revealed cells with numbers, unrevealed as -1, mine hits as -4)
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
@@ -574,6 +644,7 @@ class MinesweeperEnv(gym.Env):
                         self.state[0, i, j] = self.board[i, j]
                 else:
                     self.state[0, i, j] = CELL_UNREVEALED
+        
         # Channel 1: Safety hints (number of adjacent mines for unrevealed cells, -1 for unknown)
         for i in range(self.current_board_height):
             for j in range(self.current_board_width):
@@ -592,6 +663,32 @@ class MinesweeperEnv(gym.Env):
                                 self.mines[ni, nj]):
                                 adjacent_mines += 1
                     self.state[1, i, j] = adjacent_mines
+        
+        # Channel 2: Revealed cell count (total number of revealed cells across the board)
+        total_revealed = np.sum(self.revealed)
+        self.state[2] = total_revealed
+        
+        # Channel 3: Game progress indicators (binary flags for important game states)
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                # Set to 1 if this cell is a "safe bet" (adjacent to revealed cells with 0 mines)
+                is_safe_bet = 0
+                if not self.revealed[i, j]:  # Only for unrevealed cells
+                    for di in [-1, 0, 1]:
+                        for dj in [-1, 0, 1]:
+                            if di == 0 and dj == 0:
+                                continue
+                            ni, nj = i + di, j + dj
+                            if (0 <= ni < self.current_board_height and 
+                                0 <= nj < self.current_board_width and 
+                                self.revealed[ni, nj] and 
+                                not self.mines[ni, nj] and 
+                                self.board[ni, nj] == 0):  # Adjacent to revealed cell with 0 mines
+                                is_safe_bet = 1
+                                break
+                        if is_safe_bet:
+                            break
+                self.state[3, i, j] = is_safe_bet
 
     def get_real_life_statistics(self):
         """Get real-life statistics (what would happen in actual Minesweeper gameplay).

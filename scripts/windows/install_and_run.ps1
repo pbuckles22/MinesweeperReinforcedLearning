@@ -20,7 +20,39 @@ if ([version]$pythonVersion -lt [version]"3.8") {
 # Handle -Force parameter: Delete existing venv if it exists
 if ($Force -and (Test-Path "venv")) {
     Write-Host "Force flag detected. Removing existing virtual environment..."
-    Remove-Item -Path "venv" -Recurse -Force
+    
+    # First, try to deactivate if it's currently active
+    if ($env:VIRTUAL_ENV) {
+        Write-Host "Deactivating current virtual environment..."
+        deactivate
+    }
+    
+    # Wait a moment for processes to finish
+    Start-Sleep -Seconds 2
+    
+    # Try to remove the virtual environment with better error handling
+    try {
+        # First try to remove with standard method
+        Remove-Item -Path "venv" -Recurse -Force -ErrorAction Stop
+        Write-Host "Successfully removed existing virtual environment."
+    }
+    catch {
+        Write-Host "Warning: Could not remove virtual environment completely. Some files may be locked."
+        Write-Host "This is normal on Windows. The script will continue with the existing environment."
+        Write-Host "If you encounter issues, please:"
+        Write-Host "1. Close any terminals/IDEs using this environment"
+        Write-Host "2. Restart your terminal"
+        Write-Host "3. Run the script again without -Force flag"
+        Write-Host ""
+        
+        # Try to remove what we can
+        try {
+            Get-ChildItem -Path "venv" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Host "Some files could not be removed. Continuing with existing environment..."
+        }
+    }
 }
 
 # Create virtual environment if it doesn't exist

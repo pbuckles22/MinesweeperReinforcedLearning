@@ -22,35 +22,30 @@ def env():
     return MinesweeperEnv(initial_board_size=4, initial_mines=3)  # More complex setup
 
 def test_pre_cascade_safe_reward(env):
-    """Test reward for safe pre-cascade."""
+    """Test that safe reveals get immediate rewards (no more pre-cascade neutral)."""
     env.reset()
     
-    # Pre-cascade should be safe but not win (due to 3 mines in 4x4 board)
+    # Take first action (should get immediate reward now)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should give neutral reward"
-    assert not terminated, "Pre-cascade should not terminate game"
+    if not env.mines[0, 0]:  # If safe cell
+        assert reward == REWARD_SAFE_REVEAL, f"Safe reveal should get immediate reward, got {reward}"
+    else:  # If mine
+        assert reward == REWARD_HIT_MINE, f"Mine hit should get immediate penalty, got {reward}"
 
 def test_pre_cascade_mine_hit_reward(env):
-    """Test reward for hitting mine on pre-cascade."""
+    """Test that mine hits get immediate penalties (no more pre-cascade neutral)."""
     env.reset()
     
-    # Set up a mine at the first action location
-    env.mines.fill(False)
-    env.mines[0, 0] = True
-    env._update_adjacent_counts()
-    env.mines_placed = True
-    
-    # Pre-cascade mine hit should end the game with neutral reward
+    # Take first action (should get immediate penalty now)
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Game should terminate on mine hit
-    assert terminated, "Game should terminate on mine hit"
-    # Pre-cascade mine hit should give neutral reward (not full penalty)
-    assert reward == REWARD_FIRST_CASCADE_HIT_MINE, f"Pre-cascade mine hit should give neutral reward, got {reward}"
-    assert not info['won'], "Game should not be won when hitting a mine"
+    if env.mines[0, 0]:  # If mine
+        assert reward == REWARD_HIT_MINE, f"Mine hit should get immediate penalty, got {reward}"
+    else:  # If safe cell
+        assert reward == REWARD_SAFE_REVEAL, f"Safe reveal should get immediate reward, got {reward}"
 
 def test_safe_reveal_after_pre_cascade(env):
     """Test reward for safe reveal after pre-cascade."""
@@ -145,10 +140,10 @@ def test_game_over_invalid_action_reward(env):
     assert reward == REWARD_INVALID_ACTION
 
 def test_reward_consistency(env):
-    """Test that rewards are consistent for the same actions in the same game state."""
+    """Test that rewards are consistent for the same actions."""
     env.reset()
     
-    # Take same action multiple times and verify consistent rewards
+    # Take first action
     action = 0
     state1, reward1, terminated1, truncated1, info1 = env.step(action)
     
@@ -156,9 +151,15 @@ def test_reward_consistency(env):
     env.reset()
     state2, reward2, terminated2, truncated2, info2 = env.step(action)
     
-    # Both should be pre-cascade rewards (neutral) since no cascade has occurred
-    assert reward1 == REWARD_FIRST_CASCADE_SAFE, f"First action should give neutral reward, got {reward1}"
-    assert reward2 == REWARD_FIRST_CASCADE_SAFE, f"Second action should give neutral reward, got {reward2}"
+    # Rewards should be consistent (immediate rewards now)
+    if not env.mines[0, 0]:  # If safe cell
+        assert reward1 == REWARD_SAFE_REVEAL, f"First action should give immediate reward, got {reward1}"
+        assert reward2 == REWARD_SAFE_REVEAL, f"Second action should give immediate reward, got {reward2}"
+    else:  # If mine
+        assert reward1 == REWARD_HIT_MINE, f"First action should give immediate penalty, got {reward1}"
+        assert reward2 == REWARD_HIT_MINE, f"Second action should give immediate penalty, got {reward2}"
+    
+    assert reward1 == reward2, "Same action should give same reward"
 
 def test_reward_bounds(env):
     """Test that rewards are within expected bounds."""
