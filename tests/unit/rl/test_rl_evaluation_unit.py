@@ -51,7 +51,7 @@ class TestTrainAgent:
         # Vector environments have different action space structure
         assert hasattr(env.action_space, 'n') or env.action_space.shape == ()  # Discrete or empty shape
         # Vector environments have shape (channels, width, width) not (num_envs, channels, width, width)
-        assert env.observation_space.shape == (2, 4, 4)  # (channels, height, width)
+        assert env.observation_space.shape == (4, 4, 4)  # (channels, height, width)
 
     def test_environment_reset(self, env):
         """Test that the environment resets correctly"""
@@ -64,7 +64,7 @@ class TestTrainAgent:
             info = {}
             
         # Vector environments return shape (num_envs, channels, height, width)
-        assert obs.shape == (1, 2, 4, 4)  # (num_envs, channels, height, width)
+        assert obs.shape == (1, 4, 4, 4)  # (num_envs, channels, height, width)
         assert np.all(obs[0, 0] == CELL_UNREVEALED)  # All cells should be hidden in channel 0
 
     def test_environment_step(self, env):
@@ -79,7 +79,7 @@ class TestTrainAgent:
             terminated = done
             truncated = np.array([False])
             
-        assert obs.shape == (1, 2, 4, 4)
+        assert obs.shape == (1, 4, 4, 4)
         assert isinstance(reward, np.ndarray)
         assert isinstance(terminated, np.ndarray)
         assert isinstance(truncated, np.ndarray)
@@ -161,7 +161,7 @@ class TestTrainAgent:
                 truncated = np.array([False])
             
             # Check that the environment returns valid data
-            assert obs.shape == (1, 2, 4, 4)
+            assert obs.shape == (1, 4, 4, 4)
             assert isinstance(terminated, np.ndarray)
             assert isinstance(truncated, np.ndarray)
             

@@ -135,7 +135,7 @@ class TestRLTrainingIntegration:
         else:
             obs = reset_result
             info = {}
-        assert obs.shape == (1, 2, 4, 4)
+        assert obs.shape == (1, 4, 4, 4)
         step_result = small_env.step([0])
         if len(step_result) == 4:
             obs, reward, terminated, truncated = step_result
@@ -328,8 +328,8 @@ class TestEnvironmentAPICompatibility:
         else:
             vec_obs = vec_reset
             vec_info = {}
-        assert single_obs.shape == (2, 4, 4)
-        assert vec_obs.shape == (1, 2, 4, 4)
+        assert single_obs.shape == (4, 4, 4)
+        assert vec_obs.shape == (1, 4, 4, 4)
         single_step = single_env.step(0)
         vec_step = vec_env.step([0])
         if len(single_step) == 4:
@@ -424,7 +424,7 @@ class TestErrorHandling:
         
         # Reset should work
         new_obs = env.reset()
-        assert new_obs.shape == (1, 2, 4, 4)
+        assert new_obs.shape == (1, 4, 4, 4)
 
 
 if __name__ == "__main__":

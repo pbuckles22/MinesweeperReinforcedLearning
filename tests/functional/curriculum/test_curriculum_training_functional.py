@@ -69,9 +69,6 @@ class TestTrainingCycle:
             "advanced": DummyVecEnv([lambda: make_env(max_board_size=8, max_mines=8)()])
         }
         
-        # Create model
-        model = PPO("MlpPolicy", envs["beginner"], verbose=0)
-        
         # Create tracker
         tracker = ExperimentTracker(experiment_dir=temp_dir)
         tracker.start_new_run({"curriculum": "enabled"})
@@ -79,10 +76,12 @@ class TestTrainingCycle:
         # Train through curriculum stages
         for stage, env in envs.items():
             callback = IterationCallback(verbose=0, debug_level=0, experiment_tracker=tracker)
-            model.set_env(env)
+            
+            # Create a new model for each stage (different environment sizes require new models)
+            stage_model = PPO("MlpPolicy", env, verbose=0)
             
             with patch('builtins.print'):
-                model.learn(total_timesteps=100, callback=callback)
+                stage_model.learn(total_timesteps=100, callback=callback)
             
             # Save stage completion
             tracker.add_validation_metric(f"{stage}_completion", True)

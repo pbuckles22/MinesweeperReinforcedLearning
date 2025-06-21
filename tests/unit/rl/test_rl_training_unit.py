@@ -182,7 +182,7 @@ class TestMakeEnv:
         assert isinstance(underlying_env, MinesweeperEnv)
         assert underlying_env.max_board_size_int == 4
         assert underlying_env.max_mines == 2
-        assert underlying_env.early_learning_mode is True
+        assert underlying_env.early_learning_mode is False
         assert underlying_env.early_learning_threshold == 200
         assert underlying_env.reward_invalid_action == REWARD_INVALID_ACTION
         assert underlying_env.mine_penalty == REWARD_HIT_MINE
@@ -201,8 +201,8 @@ class TestMakeEnv:
         underlying_env = env.env
         assert underlying_env.max_board_size_int == 8
         assert underlying_env.max_mines == 10
-        assert underlying_env.initial_board_width == 4  # Default
-        assert underlying_env.initial_mines == 2  # Default
+        assert underlying_env.initial_board_width == 8  # Should match max_board_size
+        assert underlying_env.initial_mines == 10  # Should match max_mines
         assert underlying_env.reward_invalid_action == REWARD_INVALID_ACTION
         assert underlying_env.mine_penalty == REWARD_HIT_MINE
         assert underlying_env.safe_reveal_base == REWARD_SAFE_REVEAL

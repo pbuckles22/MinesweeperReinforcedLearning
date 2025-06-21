@@ -168,7 +168,7 @@ class TestPerformance:
         assert obs_time < 0.1, f"Observation space operations should be very fast, took {obs_time:.3f}s for 100 ops"
         
         # Verify observation space consistency
-        assert obs_shape == (2, 10, 10), "Observation shape should be (2, 10, 10)"
+        assert obs_shape == (4, 10, 10), "Observation shape should be (4, 10, 10)"
         assert obs_contains, "State should be within observation space bounds"
     
     def test_concurrent_environment_creation(self):
@@ -196,7 +196,7 @@ class TestPerformance:
         for i, env in enumerate(envs):
             action = 0
             state, reward, terminated, truncated, info = env.step(action)
-            assert state.shape == (2, 6, 6), f"Environment {i} should have correct state shape"
+            assert state.shape == (4, 6, 6), f"Environment {i} should have correct state shape"
     
     def test_large_scale_simulation(self):
         """Test performance in large-scale simulation scenarios."""
@@ -253,7 +253,7 @@ class TestPerformance:
         assert step_time < 0.1, f"Steps should be fast for rectangular boards, took {step_time:.3f}s"
         
         # Verify rectangular dimensions
-        assert env.state.shape == (2, 8, 16), "State should match rectangular dimensions"
+        assert env.state.shape == (4, 8, 16), "State should match rectangular dimensions"
         assert env.action_space.n == 128, "Action space should match rectangular dimensions"
     
     def test_early_learning_performance(self):

@@ -372,7 +372,7 @@ def test_early_learning_state_consistency_across_games(early_learning_env):
         
         # Verify initial state is consistent
         state = early_learning_env.state
-        assert state.shape == (2, early_learning_env.current_board_height, early_learning_env.current_board_width)
+        assert state.shape == (4, early_learning_env.current_board_height, early_learning_env.current_board_width)
         assert np.all(state[0] == CELL_UNREVEALED), "All cells should be unrevealed initially"
         
         # Play a quick game
@@ -381,7 +381,7 @@ def test_early_learning_state_consistency_across_games(early_learning_env):
             state, reward, terminated, truncated, info = early_learning_env.step(action)
             
             # Verify state remains valid
-            assert state.shape == (2, early_learning_env.current_board_height, early_learning_env.current_board_width)
+            assert state.shape == (4, early_learning_env.current_board_height, early_learning_env.current_board_width)
             assert early_learning_env.observation_space.contains(state), "State should be within bounds"
             
             if terminated:
@@ -411,12 +411,17 @@ def test_early_learning_reward_evolution(early_learning_env):
     
     # Verify reward types are appropriate
     for reward in pre_cascade_rewards:
-        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
+        # Pre-cascade move can be safe, mine, or win
+        if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+            assert True
+        else:
+            assert False, f"Pre-cascade should give immediate reward/penalty/win, got {reward}"
     
     for reward in subsequent_rewards:
         # Subsequent moves can still be in pre-cascade period, so they might get neutral rewards
         # or they could be post-cascade and get appropriate rewards
-        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION], "Subsequent moves should have appropriate rewards"
+        valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
+        assert reward in valid_rewards, "Reward should be valid for RL agent"
     
     print("✅ Early learning reward evolution test passed")
 

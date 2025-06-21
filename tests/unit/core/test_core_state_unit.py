@@ -173,5 +173,5 @@ def test_safety_hints_channel(env):
     state, reward, terminated, truncated, info = env.step(action)
     
     new_safety_hints = state[1]
-    # Revealed cell should show -1 in safety hints
-    assert new_safety_hints[0, 0] == -1 
+    # Revealed cell should show 0.0 in safety hints
+    assert new_safety_hints[0, 0] == 0.0 

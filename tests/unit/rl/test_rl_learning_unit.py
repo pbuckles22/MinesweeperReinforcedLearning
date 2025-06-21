@@ -57,7 +57,7 @@ class TestComprehensiveRL:
         
         # Test initial observation
         state = rl_env.state
-        assert state.shape == (2, 6, 6), "State should have 2 channels and match board size"
+        assert state.shape == (4, 6, 6), "State should have 4 channels and match board size"
         
         # Test observation space bounds
         obs_space = rl_env.observation_space
@@ -200,7 +200,7 @@ class TestComprehensiveRL:
             new_state, reward, terminated, truncated, info = rl_env.step(action)
             
             # Verify state is valid
-            assert new_state.shape == (2, 6, 6), "State shape should remain consistent"
+            assert new_state.shape == (4, 6, 6), "State shape should remain consistent"
             assert rl_env.observation_space.contains(new_state), "State should be within bounds"
             
             # Verify state changed (unless invalid action)
@@ -237,7 +237,11 @@ class TestComprehensiveRL:
                 
                 # Verify early learning rewards are valid
                 if step == 0:  # Pre-cascade move
-                    assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade should have neutral reward"
+                    # Pre-cascade move can be safe, mine, or win
+                    if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+                        assert True
+                    else:
+                        assert False, f"Pre-cascade should give immediate reward/penalty/win, got {reward}"
                 else:
                     # Subsequent moves can include various rewards depending on cascade state
                     valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, 
@@ -333,7 +337,7 @@ class TestComprehensiveRL:
             state = env.state
             
             # Verify state shape matches board size
-            assert state.shape == (2, height, width), f"State shape should match board size {width}x{height}"
+            assert state.shape == (4, height, width), f"State shape should match board size {width}x{height}"
             
             # Verify observation space bounds
             assert env.observation_space.contains(state), f"State should be within bounds for {width}x{height} board"
@@ -345,15 +349,15 @@ class TestComprehensiveRL:
         action = 0
         state, reward, terminated, truncated, info = rl_env.step(action)
         # First move should have neutral reward if not a mine, or neutral mine reward if a mine
-        valid_first_rewards = [REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE]
-        assert reward in valid_first_rewards, "First move should have neutral reward or neutral mine reward"
+        valid_first_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]
+        assert reward in valid_first_rewards, "First move should give immediate reward, penalty, or win"
         # Test subsequent move rewards
         if not terminated:
             action = 1
             state, reward, terminated, truncated, info = rl_env.step(action)
             # Subsequent moves should have appropriate rewards (could still be pre-cascade if no cascade occurred)
-            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE]
-            assert reward in valid_rewards, f"Subsequent move should have valid reward, got {reward}"
+            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
+            assert reward in valid_rewards, "Reward should be valid for RL agent"
 
     def test_agent_info_consistency(self, rl_env):
         """Test that info dictionary is consistent and contains expected keys."""

@@ -55,7 +55,7 @@ class TestMinesweeperEnv:
         """Verify board is created with correct dimensions and initialization."""
         # Check board dimensions
         assert self.env.board.shape == (4, 4)
-        assert self.env.state.shape == (2, 4, 4)  # 2 channels
+        assert self.env.state.shape == (4, 4, 4)  # 4 channels
         assert self.env.mines.shape == (4, 4)
 
         # Verify board is square
@@ -102,12 +102,12 @@ class TestMinesweeperEnv:
             )
             env.reset(seed=42)
             # Test board and state shapes
-            assert env.state.shape == (2, height, width)  # 2 channels
+            assert env.state.shape == (4, height, width)  # 4 channels
             # Test action space
             expected_actions = width * height  # Only reveal actions
             assert env.action_space.n == expected_actions
             # Test observation space
-            assert env.observation_space.shape == (2, height, width)  # 2 channels
+            assert env.observation_space.shape == (4, height, width)  # 4 channels
             
             # Test mine count by examining the mines array directly
             actual_mines = np.sum(env.mines)
@@ -131,8 +131,8 @@ class TestMinesweeperEnv:
             if terminated:
                 env.reset(seed=42)
         # Check board and state shapes
-        assert env.state.shape == (2, height, width)  # 2 channels
-        assert env.observation_space.shape == (2, height, width)  # 2 channels
+        assert env.state.shape == (4, height, width)  # 4 channels
+        assert env.observation_space.shape == (4, height, width)  # 4 channels
         assert env.action_space.n == width * height  # Only reveal actions
 
     def test_safe_cell_reveal(self):
@@ -183,7 +183,7 @@ class TestMinesweeperEnv:
             
             # Verify board shapes
             assert env.board.shape == (height, width)
-            assert env.state.shape == (2, height, width)  # 2 channels
+            assert env.state.shape == (4, height, width)  # 4 channels
             assert env.mines.shape == (height, width)
             
             # Verify action space
@@ -191,7 +191,7 @@ class TestMinesweeperEnv:
             assert env.action_space.n == expected_actions
             
             # Verify observation space
-            assert env.observation_space.shape == (2, height, width)  # 2 channels
+            assert env.observation_space.shape == (4, height, width)  # 4 channels
             
             # Test mine placement
             mine_count = np.sum(env.mines)

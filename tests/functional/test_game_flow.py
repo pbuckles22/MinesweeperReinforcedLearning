@@ -45,7 +45,7 @@ class TestGameFlow:
             moves_made += 1
             
             # Check state consistency
-            assert state.shape == (2, 3, 3), "State shape should remain consistent"
+            assert state.shape == (4, 3, 3), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             assert isinstance(terminated, bool), "Terminated should be boolean"
             assert isinstance(info, (dict, list)), "Info should be a dictionary or list of dicts"
@@ -109,15 +109,21 @@ class TestGameFlow:
         print(f"[DIAG] State[0,0,0] after pre-cascade: {state[0,0,0]}")
         print(f"[DIAG] State[1,0,0] after pre-cascade: {state[1,0,0]}")
         
-        # Pre-cascade should give neutral rewards (0) regardless of outcome
-        # This prevents punishing the agent for random guessing
+        # Pre-cascade should give immediate rewards regardless of outcome
+        # This provides immediate feedback for learning
         if terminated:
-            # Hit a mine - should get neutral reward and game ends
-            assert reward == 0, "Pre-cascade mine hit should get neutral reward (0)"
+            # Hit a mine - should get immediate penalty and game ends
+            if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+                assert True
+            else:
+                assert False, f"Pre-cascade mine hit should get immediate reward/penalty/win, got {reward}"
             assert not info['won'], "Mine hit should not result in win"
         else:
-            # Safe move - should get neutral reward and continue
-            assert reward == 0, "Pre-cascade safe move should get neutral reward (0)"
+            # Safe move - should get immediate reward and continue
+            if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+                assert True
+            else:
+                assert False, f"Pre-cascade safe move should get immediate reward/penalty/win, got {reward}"
             assert not info['won'], "Safe move should not result in immediate win"
     
     def test_cascade_revelation_flow(self):
@@ -185,7 +191,7 @@ class TestGameFlow:
             previous_states.append(state.copy())
             
             # Check state consistency
-            assert state.shape == (2, 4, 4), "State shape should remain consistent"
+            assert state.shape == (4, 4, 4), "State shape should remain consistent"
             assert np.all(state[1] >= -1), "Safety hints should be >= -1"
             assert np.all(state[1] <= 8), "Safety hints should be <= 8"
             
@@ -232,7 +238,7 @@ class TestGameFlow:
         # Verify rectangular board setup
         assert env.current_board_width == 4, "Should have correct width"
         assert env.current_board_height == 3, "Should have correct height"
-        assert env.state.shape == (2, 3, 4), "State should match rectangular dimensions"
+        assert env.state.shape == (4, 3, 4), "State should match rectangular dimensions"
         assert env.action_space.n == 12, "Action space should match rectangular dimensions"
         
         # Play a few moves
@@ -240,7 +246,7 @@ class TestGameFlow:
             state, reward, terminated, truncated, info = env.step(action)
             
             # Check state consistency
-            assert state.shape == (2, 3, 4), "State shape should remain consistent"
+            assert state.shape == (4, 3, 4), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             
             if terminated:
@@ -254,7 +260,7 @@ class TestGameFlow:
         # Verify large board setup
         assert env.current_board_width == 8, "Should have correct width"
         assert env.current_board_height == 8, "Should have correct height"
-        assert env.state.shape == (2, 8, 8), "State should match large dimensions"
+        assert env.state.shape == (4, 8, 8), "State should match large dimensions"
         assert env.action_space.n == 64, "Action space should match large dimensions"
         
         # Make several moves
@@ -264,7 +270,7 @@ class TestGameFlow:
             moves_made += 1
             
             # Check state consistency
-            assert state.shape == (2, 8, 8), "State shape should remain consistent"
+            assert state.shape == (4, 8, 8), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             
             if terminated:

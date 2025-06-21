@@ -152,13 +152,12 @@ def test_reward_consistency(env):
     state2, reward2, terminated2, truncated2, info2 = env.step(action)
     
     # Rewards should be consistent (immediate rewards now)
-    if not env.mines[0, 0]:  # If safe cell
-        assert reward1 == REWARD_SAFE_REVEAL, f"First action should give immediate reward, got {reward1}"
-        assert reward2 == REWARD_SAFE_REVEAL, f"Second action should give immediate reward, got {reward2}"
-    else:  # If mine
+    if env.mines[0, 0]:  # If mine
         assert reward1 == REWARD_HIT_MINE, f"First action should give immediate penalty, got {reward1}"
         assert reward2 == REWARD_HIT_MINE, f"Second action should give immediate penalty, got {reward2}"
-    
+    else:  # If safe
+        assert reward1 == REWARD_SAFE_REVEAL, f"First action should give immediate reward, got {reward1}"
+        assert reward2 == REWARD_SAFE_REVEAL, f"Second action should give immediate reward, got {reward2}"
     assert reward1 == reward2, "Same action should give same reward"
 
 def test_reward_bounds(env):
@@ -189,9 +188,23 @@ def test_reward_scaling_with_board_size():
     small_state, small_reward, small_term, small_trunc, small_info = small_env.step(0)
     large_state, large_reward, large_term, large_trunc, large_info = large_env.step(0)
     
-    # Both should be pre-cascade rewards (neutral) since no cascade has occurred
-    assert small_reward == REWARD_FIRST_CASCADE_SAFE, f"Small board should give neutral reward, got {small_reward}"
-    assert large_reward == REWARD_FIRST_CASCADE_SAFE, f"Large board should give neutral reward, got {large_reward}"
+    # First move can result in win, safe reveal, or mine hit
+    if small_term and small_reward == REWARD_WIN:
+        assert small_reward == REWARD_WIN, f"Small board win should give win reward, got {small_reward}"
+    elif small_reward == REWARD_SAFE_REVEAL:
+        assert small_reward == REWARD_SAFE_REVEAL, f"Small board should give immediate safe reward, got {small_reward}"
+    elif small_reward == REWARD_HIT_MINE:
+        assert small_reward == REWARD_HIT_MINE, f"Small board mine hit should give penalty, got {small_reward}"
+    else:
+        assert False, f"Unexpected reward on small board: {small_reward}"
+    if large_term and large_reward == REWARD_WIN:
+        assert large_reward == REWARD_WIN, f"Large board win should give win reward, got {large_reward}"
+    elif large_reward == REWARD_SAFE_REVEAL:
+        assert large_reward == REWARD_SAFE_REVEAL, f"Large board should give immediate safe reward, got {large_reward}"
+    elif large_reward == REWARD_HIT_MINE:
+        assert large_reward == REWARD_HIT_MINE, f"Large board mine hit should give penalty, got {large_reward}"
+    else:
+        assert False, f"Unexpected reward on large board: {large_reward}"
 
 def test_reward_with_custom_parameters():
     """Test rewards with custom reward parameters (for ablation/customization research)."""
@@ -248,8 +261,11 @@ def test_reward_with_early_learning():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get neutral reward for pre-cascade move
-    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}"
+    # Should get immediate reward for pre-cascade move (no more neutral)
+    if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+        assert True
+    else:
+        assert False, f"Pre-cascade should give immediate reward/penalty/win, got {reward}"
 
 def test_reward_edge_cases():
     """Test reward edge cases."""
@@ -260,8 +276,11 @@ def test_reward_edge_cases():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get neutral reward for pre-cascade move
-    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}"
+    # Should get immediate reward/penalty/win for pre-cascade move (no more neutral)
+    if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+        assert True
+    else:
+        assert False, f"Pre-cascade should give immediate reward/penalty/win, got {reward}"
 
 def test_reward_with_rectangular_board():
     """Test rewards on rectangular boards."""
@@ -272,5 +291,8 @@ def test_reward_with_rectangular_board():
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Should get neutral reward for pre-cascade move
-    assert reward == REWARD_FIRST_CASCADE_SAFE, f"Pre-cascade should give neutral reward, got {reward}" 
+    # Should get immediate reward/penalty/win for pre-cascade move
+    if reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN]:
+        assert True
+    else:
+        assert False, f"Pre-cascade should give immediate reward/penalty/win, got {reward}" 

@@ -184,10 +184,10 @@ class TestEdgeCases:
         action = 0
         state, reward, terminated, truncated, info = self.env.step(action)
         
-        # Should win immediately with neutral reward (pre-cascade win)
+        # Should win immediately with full win reward (immediate rewards now)
         assert terminated, "Game should terminate on win"
         assert info.get('won', False), "Game should be marked as won"
-        assert reward == REWARD_FIRST_CASCADE_SAFE, "Pre-cascade win should get neutral reward"
+        assert reward == REWARD_WIN, "Win should get full win reward"
         
         print("✅ Win on pre-cascade passed")
 

@@ -3,6 +3,18 @@
 ## 🎯 **Project Overview**
 This is a Reinforcement Learning environment for Minesweeper using Stable Baselines3 (PPO) with curriculum learning, MLflow tracking, and comprehensive testing. Optimized for M1 MacBook performance with GPU acceleration.
 
+## 🚨 **CRITICAL DEVELOPMENT RULE** ⚡ **NEW**
+**When making ANY changes to the environment, reward system, or core functionality, IMMEDIATELY update the corresponding tests to match the new behavior. This prevents cascading test failures and ensures the test suite remains a reliable validation tool.**
+
+**Examples of changes that require test updates:**
+- Environment state representation changes (e.g., 2-channel → 4-channel)
+- Reward system modifications (e.g., neutral → immediate rewards)
+- Action space or masking changes
+- Board size conventions or defaults
+- Training configuration updates
+
+**This rule was learned from the painful experience of updating from 2-channel to 4-channel state representation and neutral to immediate rewards, which caused widespread test failures across the entire test suite.**
+
 ## 🏗️ **Key Design Decisions**
 
 ### **Simplified Reward System** ⚡ **UPDATED**
