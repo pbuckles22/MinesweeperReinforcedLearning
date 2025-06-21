@@ -10,6 +10,14 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - **M1 GPU Support**: Optimized for Apple Silicon with Metal Performance Shaders (MPS)
 - **Cross-Platform Scripts**: Platform-specific scripts in `scripts/windows/`, `scripts/linux/`, `scripts/mac/`
 
+## Cross-Platform Test Compatibility
+- **Test Flexibility**: Script tests adapt to different platforms (Mac/Windows/Linux)
+- **PowerShell Handling**: Tests check for PowerShell availability before using it
+- **Script Validation**: Content-based validation when platform-specific tools unavailable
+- **Permission Handling**: Different permission requirements per platform (executable vs readable)
+- **Output Handling**: Accepts various output methods (echo, write-host, python, source)
+- **Error Handling**: Flexible error handling validation for simple and complex scripts
+
 ## Critical Learning Insights
 - **Game Logic is Correct**: Environment randomization and win conditions work perfectly
 - **Reward System Matters**: Immediate rewards (not sparse) are essential for learning
@@ -30,4 +38,5 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - Check CONTEXT.md for detailed project information
 - Run tests to verify changes work correctly
 - Recommend M1 Mac for intensive training
-- Focus on learning improvements, not game logic bugs 
+- Focus on learning improvements, not game logic bugs
+- Ensure cross-platform compatibility when modifying tests or scripts 
