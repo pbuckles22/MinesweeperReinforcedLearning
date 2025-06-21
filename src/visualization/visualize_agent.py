@@ -7,7 +7,6 @@ import pygame
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.minesweeper_env import MinesweeperEnv
-from src.core.vec_env import DummyVecEnv
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
@@ -44,7 +43,12 @@ class MinesweeperVisualizer:
         pygame.display.set_caption("Minesweeper RL Agent")
         
         # Initialize environment and model
-        self.env = DummyVecEnv([lambda: MinesweeperEnv(max_board_size=board_size, max_mines=num_mines)])
+        self.env = DummyVecEnv([lambda: MinesweeperEnv(
+            max_board_size=(board_size, board_size), 
+            max_mines=num_mines,
+            initial_board_size=(board_size, board_size),
+            initial_mines=num_mines
+        )])
         self.model = PPO("MlpPolicy", self.env, verbose=0)
         
         # Game state
@@ -68,21 +72,22 @@ class MinesweeperVisualizer:
                                  self.cell_size, self.cell_size)
                 pygame.draw.rect(self.screen, GRAY, rect, 1)
                 
-                # Get cell state
-                cell = obs[0, i, j]
-                if cell[0] == 1:  # Revealed
-                    if cell[1] == 1:  # Mine
-                        pygame.draw.circle(self.screen, RED, 
-                                        (j * self.cell_size + self.cell_size//2,
-                                         i * self.cell_size + self.cell_size//2),
-                                        self.cell_size//3)
-                    else:  # Number
-                        number = self.env.envs[0].get_number(i, j)
-                        if number > 0:
-                            text = self.font.render(str(number), True, COLORS.get(number, BLACK))
-                            text_rect = text.get_rect(center=(j * self.cell_size + self.cell_size//2,
-                                                            i * self.cell_size + self.cell_size//2))
-                            self.screen.blit(text, text_rect)
+                # Get cell state from channel 0 (game state)
+                cell_value = obs[0, i, j]
+                if cell_value == -1:  # Unrevealed
+                    pygame.draw.rect(self.screen, GRAY, rect)
+                elif cell_value == -4:  # Mine hit
+                    pygame.draw.circle(self.screen, RED, 
+                                    (j * self.cell_size + self.cell_size//2,
+                                     i * self.cell_size + self.cell_size//2),
+                                    self.cell_size//3)
+                elif cell_value >= 0:  # Revealed with number
+                    pygame.draw.rect(self.screen, WHITE, rect)
+                    if cell_value > 0:
+                        text = self.font.render(str(int(cell_value)), True, COLORS.get(int(cell_value), BLACK))
+                        text_rect = text.get_rect(center=(j * self.cell_size + self.cell_size//2,
+                                                        i * self.cell_size + self.cell_size//2))
+                        self.screen.blit(text, text_rect)
 
         # Draw stats
         stats_text = f"Episode: {self.episode} | Score: {self.score}"
@@ -117,7 +122,7 @@ class MinesweeperVisualizer:
     def run(self, episodes=1):
         """Run the visualization"""
         self.episode = 1
-        obs = self.env.reset()
+        obs, _ = self.env.reset()
         
         while self.running and self.episode <= episodes:
             self.handle_events()
@@ -125,7 +130,7 @@ class MinesweeperVisualizer:
             if not self.paused:
                 # Get agent's action
                 action, _ = self.model.predict(obs, deterministic=True)
-                obs, reward, done, _ = self.env.step(action)
+                obs, reward, done, truncated, info = self.env.step(action)
                 self.score += reward[0]
                 
                 # Draw current state
@@ -133,11 +138,11 @@ class MinesweeperVisualizer:
                 pygame.display.flip()
                 
                 # Handle episode completion
-                if done:
+                if done[0] or truncated[0]:
                     time.sleep(1)  # Pause to show final state
                     if self.episode < episodes:
                         self.next_episode()
-                        obs = self.env.reset()
+                        obs, _ = self.env.reset()
                     else:
                         self.running = False
                 
