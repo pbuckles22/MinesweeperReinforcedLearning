@@ -116,6 +116,193 @@ pytest
 4. **Longer Training Runs**: Use M1 Mac for extended training with new features
 5. **Win Rate Analysis**: Monitor if enhanced features improve win rates
 
+## 🚀 **Next Training Steps** ⚡ **NEW**
+
+### **Immediate Next Steps (Recommended Order)**
+
+#### **1. Quick Training Test (5-10 minutes)**
+```bash
+# On Mac (recommended for GPU acceleration)
+./scripts/mac/quick_test.sh
+
+# On Windows
+.\scripts\windows\quick_test.ps1
+
+# On Linux
+./scripts/linux/quick_test.sh
+```
+**Purpose**: Verify the new 4-channel state and immediate rewards work correctly
+**Expected**: Agent should achieve positive rewards (8-15 range) and show learning progress
+
+#### **2. Medium Training Test (15-30 minutes)**
+```bash
+# On Mac (recommended)
+./scripts/mac/medium_test.sh
+
+# On Windows
+.\scripts\windows\medium_test.ps1
+
+# On Linux
+./scripts/linux/medium_test.sh
+```
+**Purpose**: Test curriculum learning progression through multiple stages
+**Expected**: Agent should progress through Tiny (2x2) → Beginner (4x4) → Intermediate (6x6) stages
+
+#### **3. Full Training Run (1-2 hours)**
+```bash
+# On Mac (recommended for M1 GPU acceleration)
+./scripts/mac/full_training.sh
+
+# On Windows
+.\scripts\windows\full_training.ps1
+
+# On Linux
+./scripts/linux/full_training.sh
+```
+**Purpose**: Complete curriculum learning through all 8 stages
+**Expected**: Agent should progress through all stages with realistic win rate thresholds
+
+### **Training Command Reference**
+
+#### **Quick Test (10k timesteps, ~5-10 minutes)**
+```bash
+python src/core/train_agent.py \
+    --total_timesteps 10000 \
+    --eval_freq 2000 \
+    --n_eval_episodes 20 \
+    --verbose 1
+```
+
+#### **Medium Test (50k timesteps, ~15-30 minutes)**
+```bash
+python src/core/train_agent.py \
+    --total_timesteps 50000 \
+    --eval_freq 5000 \
+    --n_eval_episodes 50 \
+    --verbose 1
+```
+
+#### **Full Training (1M timesteps, ~1-2 hours)**
+```bash
+python src/core/train_agent.py \
+    --total_timesteps 1000000 \
+    --eval_freq 10000 \
+    --n_eval_episodes 100 \
+    --verbose 1
+```
+
+### **Curriculum Learning Stages**
+
+| Stage | Board Size | Mines | Win Rate Target | Expected Time |
+|-------|------------|-------|-----------------|---------------|
+| **Tiny** | 2x2 | 1 | 25% | 2-5 minutes |
+| **Beginner** | 4x4 | 2 | 15% | 5-10 minutes |
+| **Intermediate** | 6x6 | 4 | 12% | 10-15 minutes |
+| **Easy** | 9x9 | 10 | 10% | 15-25 minutes |
+| **Normal** | 16x16 | 40 | 8% | 25-40 minutes |
+| **Hard** | 16x30 | 99 | 5% | 40-60 minutes |
+| **Expert** | 18x24 | 115 | 3% | 60-90 minutes |
+| **Chaotic** | 20x35 | 130 | 2% | 90-120 minutes |
+
+### **Monitoring Training Progress**
+
+#### **Real-time Monitoring**
+```bash
+# Start MLflow UI to monitor training
+mlflow ui
+
+# Open in browser: http://localhost:5000
+```
+
+#### **Key Metrics to Watch**
+- **Win Rate**: Should increase as agent learns each stage
+- **Average Reward**: Should be positive (8-15 range) for safe reveals
+- **Stage Progression**: Agent should advance through curriculum stages
+- **Episode Length**: Should increase as agent learns to avoid mines
+
+#### **Success Indicators**
+- ✅ Agent achieves positive rewards consistently
+- ✅ Win rates meet stage thresholds (25%, 15%, 12%, etc.)
+- ✅ Smooth progression through curriculum stages
+- ✅ No training crashes or hanging issues
+
+### **Troubleshooting Training Issues**
+
+#### **If Training Hangs**
+```bash
+# Use the debug training script
+.\scripts\debug_training.ps1
+```
+
+#### **If Win Rates Are Too Low**
+- Check if agent is getting positive rewards for safe reveals
+- Verify curriculum thresholds are realistic (they are!)
+- Consider running longer on simpler stages
+
+#### **If Agent Isn't Learning**
+- Verify 4-channel state is working correctly
+- Check that immediate rewards are being given
+- Ensure action masking is preventing obviously bad moves
+
+### **Advanced Training Options**
+
+#### **Custom Hyperparameters**
+```bash
+python src/core/train_agent.py \
+    --total_timesteps 1000000 \
+    --learning_rate 0.0001 \
+    --batch_size 128 \
+    --n_steps 2048 \
+    --verbose 1
+```
+
+#### **Device-Specific Optimizations**
+- **M1 Mac**: Automatically uses MPS with optimized batch sizes
+- **NVIDIA GPU**: Automatically uses CUDA with larger batches
+- **CPU**: Automatically optimizes for CPU training
+
+#### **Experiment Tracking**
+```bash
+# All training runs are automatically logged to MLflow
+# View experiments at: http://localhost:5000
+```
+
+### **Post-Training Analysis**
+
+#### **Model Evaluation**
+```bash
+# Evaluate trained model
+python src/core/train_agent.py --evaluate_only --model_path best_model/
+```
+
+#### **Agent Visualization**
+```bash
+# Watch trained agent play
+python src/visualization/visualize_agent.py --model-path best_model/
+```
+
+#### **Performance Analysis**
+- Review MLflow metrics and charts
+- Analyze win rates across different stages
+- Compare with previous training runs
+
+### **Next Research Directions**
+
+#### **Short Term (Next 1-2 weeks)**
+1. **Hyperparameter Optimization**: Tune learning rates, batch sizes, etc.
+2. **Architecture Improvements**: Try different neural network architectures
+3. **Reward Function Tuning**: Experiment with different reward values
+
+#### **Medium Term (Next 1-2 months)**
+1. **Advanced Curriculum**: Dynamic difficulty adjustment
+2. **Multi-Agent Training**: Competitive scenarios
+3. **Transfer Learning**: Pre-trained model utilization
+
+#### **Long Term (Next 3-6 months)**
+1. **Novel Architectures**: Transformer-based models
+2. **Hierarchical Learning**: Multi-level decision making
+3. **Meta-Learning**: Learning to learn new board configurations
+
 ## 💡 **Important Notes**
 - **Use M1 Mac for intensive training** (GPU acceleration)
 - **Environment randomizes properly** between episodes
