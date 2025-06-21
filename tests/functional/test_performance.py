@@ -231,7 +231,7 @@ class TestPerformance:
     
     def test_rectangular_board_performance(self):
         """Test performance with rectangular boards."""
-        env = MinesweeperEnv(initial_board_size=(16, 8), initial_mines=20)
+        env = MinesweeperEnv(initial_board_size=(8, 16), initial_mines=20)
         
         # Measure reset time
         start_time = time.time()

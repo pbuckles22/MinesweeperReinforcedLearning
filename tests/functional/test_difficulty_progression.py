@@ -133,9 +133,9 @@ class TestDifficultyProgression:
     def test_rectangular_board_progression(self):
         """Test progression with rectangular boards."""
         env = MinesweeperEnv(
-            initial_board_size=(4, 3),
+            initial_board_size=(3, 4),
             initial_mines=2,
-            max_board_size=(8, 6),
+            max_board_size=(6, 8),
             max_mines=10
         )
         env.reset(seed=42)

@@ -822,8 +822,20 @@ def main():
     # Save final model
     model.save("models/final_model")
     
-    # Log final model to MLflow
-    mlflow.pytorch.log_model(model, "final_model")
+    # Log final model to MLflow (SB3 models need to be logged as artifacts)
+    try:
+        # Ensure models directory exists
+        os.makedirs("models", exist_ok=True)
+        
+        # Check if the model file exists before logging
+        model_path = "models/final_model.zip"
+        if os.path.exists(model_path):
+            mlflow.log_artifact(model_path, "final_model")
+            print("   ✅ Final model logged to MLflow successfully")
+        else:
+            print(f"   ⚠️  Model file not found at {model_path}")
+    except Exception as e:
+        print(f"   ⚠️  Model logging failed: {e}")
     
     # Log final metrics
     mlflow.log_metric("final_win_rate", win_rate)

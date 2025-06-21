@@ -1,0 +1,22 @@
+# Minesweeper RL Project Rules
+
+## Project Context
+This is a Reinforcement Learning environment for Minesweeper using Stable Baselines3 (PPO) with curriculum learning and MLflow tracking.
+
+## Key Design Decisions
+- **Pre-Cascade Safety**: Mines placed BEFORE first move. Pre-cascade period gives neutral rewards (0) to prevent punishing random guessing
+- **Board Sizes**: All use (height, width) format throughout codebase
+- **Reward System**: Neutral rewards during pre-cascade, normal rewards after cascade
+- **Environment**: 2-channel state representation with action masking
+
+## Important Files
+- `src/core/minesweeper_env.py` - Main environment
+- `src/core/train_agent.py` - Training script
+- `src/core/constants.py` - Reward constants
+- `tests/` - 500+ comprehensive tests
+
+## When Helping
+- Always consider the pre-cascade neutral reward system
+- Use (height, width) format for board dimensions
+- Check CONTEXT.md for detailed project information
+- Run tests to verify changes work correctly 

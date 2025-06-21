@@ -264,7 +264,7 @@ def test_reward_edge_cases():
 
 def test_reward_with_rectangular_board():
     """Test rewards on rectangular boards."""
-    env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=3)
+    env = MinesweeperEnv(initial_board_size=(5, 3), initial_mines=3)
     env.reset()
     
     # Make pre-cascade move

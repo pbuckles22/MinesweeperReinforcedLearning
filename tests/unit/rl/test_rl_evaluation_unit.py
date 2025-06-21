@@ -50,7 +50,7 @@ class TestTrainAgent:
         """Test that the environment is created correctly"""
         # Vector environments have different action space structure
         assert hasattr(env.action_space, 'n') or env.action_space.shape == ()  # Discrete or empty shape
-        # Vector environments have shape (channels, height, width) not (num_envs, channels, height, width)
+        # Vector environments have shape (channels, width, width) not (num_envs, channels, width, width)
         assert env.observation_space.shape == (2, 4, 4)  # (channels, height, width)
 
     def test_environment_reset(self, env):

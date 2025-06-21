@@ -357,8 +357,9 @@ class TestMainFunction:
     @patch('src.core.train_agent.CustomEvalCallback')
     @patch('src.core.train_agent.IterationCallback')
     @patch('src.core.train_agent.evaluate_model')
-    def test_main_function_structure(self, mock_evaluate_model, mock_iteration_callback, mock_custom_eval_callback, 
-                                   mock_ppo, mock_dummy_vec_env, mock_experiment_tracker, 
+    @patch('src.core.train_agent.mlflow')
+    def test_main_function_structure(self, mock_mlflow, mock_evaluate_model, mock_iteration_callback, mock_custom_eval_callback,
+                                   mock_ppo, mock_dummy_vec_env, mock_experiment_tracker,
                                    mock_parse_args):
         """Test the main function structure and component creation."""
         # Mock arguments
@@ -385,9 +386,9 @@ class TestMainFunction:
         mock_args.seed = None
         mock_args.device = "auto"
         mock_args._init_setup_model = True
-        
+
         mock_parse_args.return_value = mock_args
-        
+
         # Mock experiment tracker with proper dict support
         mock_tracker_instance = Mock()
         mock_tracker_instance.metrics = {
@@ -445,13 +446,14 @@ class TestMainFunction:
         }
         mock_tracker_instance._save_metrics = Mock()
         mock_experiment_tracker.return_value = mock_tracker_instance
-        
+
         # Mock environment
         mock_env_instance = Mock()
         mock_env_instance.reset.return_value = np.zeros((1, 2, 4, 4))
         mock_env_instance.step.return_value = (np.zeros((1, 2, 4, 4)), np.array([1.0]), np.array([False]), np.array([False]), [{}])
+
         mock_dummy_vec_env.return_value = mock_env_instance
-        
+
         # Mock model
         mock_model_instance = Mock()
         mock_model_instance.set_env = Mock()
@@ -459,13 +461,13 @@ class TestMainFunction:
         mock_model_instance.save = Mock()
         mock_model_instance.predict.return_value = (0, None)  # Return proper tuple
         mock_ppo.return_value = mock_model_instance
-        
+
         # Mock callbacks
         mock_custom_eval_callback_instance = Mock()
         mock_custom_eval_callback.return_value = mock_custom_eval_callback_instance
         mock_iteration_callback_instance = Mock()
         mock_iteration_callback.return_value = mock_iteration_callback_instance
-        
+
         # Mock evaluate_model to return simple results
         mock_evaluate_model.return_value = {
             "win_rate": 50.0,
@@ -475,7 +477,12 @@ class TestMainFunction:
             "length_ci": 1.0,
             "n_episodes": 10
         }
-        
+
+        # Mock MLflow context manager
+        mock_mlflow_context = Mock()
+        mock_mlflow.start_run.return_value.__enter__ = Mock(return_value=mock_mlflow_context)
+        mock_mlflow.start_run.return_value.__exit__ = Mock(return_value=None)
+    
         # Call main function
         with patch('builtins.print'):  # Suppress print statements
             main()

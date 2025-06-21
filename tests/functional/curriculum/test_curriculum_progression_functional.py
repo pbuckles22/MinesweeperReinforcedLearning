@@ -133,17 +133,17 @@ class TestDifficultyProgression:
     def test_rectangular_board_progression(self):
         """Test progression with rectangular boards."""
         env = MinesweeperEnv(
-            initial_board_size=(4, 3),
+            initial_board_size=(4, 3),  # height=3, width=4
             initial_mines=2,
-            max_board_size=(8, 6),
+            max_board_size=(8, 6),  # height=6, width=8
             max_mines=10
         )
         env.reset(seed=42)
         
         # Should start with rectangular board
-        assert env.current_board_width == 4, "Should start with specified width"
-        assert env.current_board_height == 3, "Should start with specified height"
-        assert env.state.shape == (2, 3, 4), "State should match rectangular dimensions"
+        assert env.current_board_width == 3, "Should start with specified width"
+        assert env.current_board_height == 4, "Should start with specified height"
+        assert env.state.shape == (2, 4, 3), "State should match rectangular dimensions"
         assert env.action_space.n == 12, "Action space should match rectangular dimensions"
         
         # Progress to larger rectangular board

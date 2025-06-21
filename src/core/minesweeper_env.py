@@ -29,7 +29,7 @@ class MinesweeperEnv(gym.Env):
     A Minesweeper environment for reinforcement learning with enhanced state representation and fixed observation/action space for curriculum learning.
     Supports multiple difficulty levels from easy to chaotic.
     """
-    def __init__(self, max_board_size=(20, 35), max_mines=130, render_mode=None,
+    def __init__(self, max_board_size=(35, 20), max_mines=130, render_mode=None,
                  early_learning_mode=False, early_learning_threshold=200,
                  early_learning_corner_safe=True, early_learning_edge_safe=True,
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
@@ -64,23 +64,21 @@ class MinesweeperEnv(gym.Env):
                 raise ValueError("Board size must be positive")
             if max_board_size > 100:
                 raise ValueError("Board dimensions too large")
+            max_board_area = max_board_size * max_board_size
+            self.max_board_size = (max_board_size, max_board_size)
         else:
             if max_board_size[0] <= 0 or max_board_size[1] <= 0:
                 raise ValueError("Board dimensions must be positive")
             if max_board_size[0] > 100 or max_board_size[1] > 100:
                 raise ValueError("Board dimensions too large")
-        
+            max_board_area = max_board_size[0] * max_board_size[1]
+            self.max_board_size = max_board_size
         if max_mines <= 0:
             raise ValueError("Mine count must be positive")
-        
-        # Check if mine count exceeds board size squared
-        if isinstance(max_board_size, int):
-            max_board_area = max_board_size * max_board_size
-        else:
-            max_board_area = max_board_size[0] * max_board_size[1]
         if max_mines > max_board_area:
-            raise ValueError("Mine count cannot exceed board size squared")
+            raise ValueError("Mine count cannot exceed board size area (height*width)")
         
+        # Initial parameters
         if isinstance(initial_board_size, int):
             if initial_board_size <= 0:
                 raise ValueError("Initial board size must be positive")
@@ -88,44 +86,26 @@ class MinesweeperEnv(gym.Env):
                 if initial_board_size > max_board_size:
                     raise ValueError("Initial board size cannot exceed max board size")
             else:
-                # max_board_size is a tuple, check against both dimensions
-                max_height, max_width = max_board_size[1], max_board_size[0]
-                if initial_board_size > max_height or initial_board_size > max_width:
+                if initial_board_size > max_board_size[0] or initial_board_size > max_board_size[1]:
                     raise ValueError("Initial board size cannot exceed max board size")
+            self.initial_board_size = (initial_board_size, initial_board_size)
         else:
             if initial_board_size[0] <= 0 or initial_board_size[1] <= 0:
                 raise ValueError("Initial board dimensions must be positive")
-            # Check against max_board_size after interpretation
-            if isinstance(max_board_size, tuple):
-                max_height, max_width = max_board_size[1], max_board_size[0]
-            else:
-                max_height, max_width = max_board_size, max_board_size
-            if (initial_board_size[1] > max_height or 
-                initial_board_size[0] > max_width):
+            if initial_board_size[0] > self.max_board_size[0] or initial_board_size[1] > self.max_board_size[1]:
                 raise ValueError("Initial board size cannot exceed max board size")
-        
+            self.initial_board_size = initial_board_size
         if initial_mines <= 0:
             raise ValueError("Initial mine count must be positive")
+        if initial_mines > self.initial_board_size[0] * self.initial_board_size[1]:
+            raise ValueError("Initial mine count cannot exceed initial board area (height*width)")
         
         # Validate reward parameters
         if invalid_action_penalty is None or mine_penalty is None or safe_reveal_base is None or win_reward is None:
             raise TypeError("'>=' not supported between instances of 'NoneType' and 'int'")
         
-        # Board and mine parameters
-        if isinstance(max_board_size, tuple):
-            # Interpret as (width, height) to match test expectations
-            self.max_board_size = (max_board_size[1], max_board_size[0])
-        else:
-            self.max_board_size = (max_board_size, max_board_size)
         self.max_mines = max_mines
         self.mine_spacing = mine_spacing
-        
-        # Initial parameters
-        if isinstance(initial_board_size, int):
-            self.initial_board_size = (initial_board_size, initial_board_size)
-        else:
-            # Interpret as (width, height) to match test expectations
-            self.initial_board_size = (initial_board_size[1], initial_board_size[0])
         self.initial_mines = initial_mines
         
         # Current parameters (can change during curriculum learning)
@@ -204,23 +184,23 @@ class MinesweeperEnv(gym.Env):
             self.clock = pygame.time.Clock()
 
     @property
-    def max_board_width(self):
-        """Get the maximum board width."""
+    def max_board_height(self):
+        """Get the maximum board height."""
         return self.max_board_size[0]
 
     @property
-    def max_board_height(self):
-        """Get the maximum board height."""
+    def max_board_width(self):
+        """Get the maximum board width."""
         return self.max_board_size[1]
-
-    @property
-    def initial_board_width(self):
-        """Get the initial board width."""
-        return self.initial_board_size[0]
 
     @property
     def initial_board_height(self):
         """Get the initial board height."""
+        return self.initial_board_size[0]
+
+    @property
+    def initial_board_width(self):
+        """Get the initial board width."""
         return self.initial_board_size[1]
 
     # Backward compatibility properties
@@ -279,7 +259,7 @@ class MinesweeperEnv(gym.Env):
         self.first_cascade_done = False
         self.in_cascade = False  # Track if we're currently in a cascade
         
-        # Place mines immediately (simpler approach)
+        # Place mines immediately (before first move)
         self._place_mines()
         
         # Update enhanced state after mine placement

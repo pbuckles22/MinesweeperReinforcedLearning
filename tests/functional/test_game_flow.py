@@ -98,22 +98,27 @@ class TestGameFlow:
         assert state[0, 1, 1] == CELL_MINE_HIT, "Hit cell should show mine hit"
     
     def test_pre_cascade_safe_flow(self):
-        """Test game flow with pre-cascade safety guarantee."""
+        """Test game flow with pre-cascade neutral rewards (no punishment for guessing)."""
         env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
         env.reset(seed=42)
         
-        # Pre-cascade should always be safe
+        # Pre-cascade move (first move) - can hit mine or be safe
         action = 0
         state, reward, terminated, truncated, info = env.step(action)
         
         print(f"[DIAG] State[0,0,0] after pre-cascade: {state[0,0,0]}")
         print(f"[DIAG] State[1,0,0] after pre-cascade: {state[1,0,0]}")
         
-        # Should not lose on pre-cascade
-        assert not terminated or reward != REWARD_HIT_MINE, "Pre-cascade should not result in mine hit"
-        assert reward in [REWARD_FIRST_CASCADE_SAFE, REWARD_WIN], "Pre-cascade should have appropriate reward"
-        
-        # Hit a mine, but that's okay for pre-cascade safety test
+        # Pre-cascade should give neutral rewards (0) regardless of outcome
+        # This prevents punishing the agent for random guessing
+        if terminated:
+            # Hit a mine - should get neutral reward and game ends
+            assert reward == 0, "Pre-cascade mine hit should get neutral reward (0)"
+            assert not info['won'], "Mine hit should not result in win"
+        else:
+            # Safe move - should get neutral reward and continue
+            assert reward == 0, "Pre-cascade safe move should get neutral reward (0)"
+            assert not info['won'], "Safe move should not result in immediate win"
     
     def test_cascade_revelation_flow(self):
         """Test game flow with cascade revelation."""
@@ -221,7 +226,7 @@ class TestGameFlow:
     
     def test_rectangular_board_flow(self):
         """Test game flow with rectangular boards."""
-        env = MinesweeperEnv(initial_board_size=(4, 3), initial_mines=2)
+        env = MinesweeperEnv(initial_board_size=(3, 4), initial_mines=2)
         env.reset(seed=42)
         
         # Verify rectangular board setup

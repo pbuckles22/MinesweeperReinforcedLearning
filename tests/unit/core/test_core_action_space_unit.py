@@ -17,7 +17,7 @@ def test_action_space_size(env):
 
 def test_action_space_boundaries(env):
     """Test that action space boundaries are correct."""
-    # Test reveal actions (0 to width*height-1)
+    # Test reveal actions (0 to width*width-1)
     for i in range(env.current_board_height):
         for j in range(env.current_board_width):
             action = i * env.current_board_width + j

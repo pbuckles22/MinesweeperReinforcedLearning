@@ -270,7 +270,7 @@ class TestEdgeCases:
 
     def test_rectangular_board_cascade(self):
         """Test cascade behavior on rectangular boards."""
-        env = MinesweeperEnv(initial_board_size=(5, 3), initial_mines=2)
+        env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=2)
         env.reset()
         
         # Set up rectangular board (3x5: height=3, width=5)
@@ -502,7 +502,7 @@ class TestEdgeCases:
     def test_diagnostic_rectangular_board_dimensions(self):
         """Diagnostic test for rectangular board dimensions."""
         print("\n🔍 DIAGNOSTIC: Rectangular Board Dimensions")
-        env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=2)
+        env = MinesweeperEnv(initial_board_size=(5, 3), initial_mines=2)
         env.reset()
         
         print(f"Board shape: {env.mines.shape}")

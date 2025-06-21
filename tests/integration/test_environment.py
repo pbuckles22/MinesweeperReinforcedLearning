@@ -267,7 +267,7 @@ def test_environment_initialization():
     assert env.current_mines == env.initial_mines
     
     # Test with custom parameters
-    env = MinesweeperEnv(initial_board_size=(4, 5), initial_mines=3)
+    env = MinesweeperEnv(initial_board_size=(5, 4), initial_mines=3)
     assert env.current_board_width == 4
     assert env.current_board_height == 5
     assert env.current_mines == 3
@@ -313,7 +313,7 @@ def test_difficulty_levels():
     assert env.current_mines == 40
     
     # Test Hard (16x30, 99 mines)
-    env = MinesweeperEnv(initial_board_size=(16, 30), initial_mines=99)
+    env = MinesweeperEnv(initial_board_size=(30, 16), initial_mines=99)
     assert env.current_board_width == 16
     assert env.current_board_height == 30
     assert env.current_mines == 99
@@ -632,7 +632,7 @@ class TestEnvironmentIntegration:
     
     def test_environment_rectangular_integration(self):
         """Test environment integration with rectangular boards."""
-        env = MinesweeperEnv(initial_board_size=(6, 4), initial_mines=5)
+        env = MinesweeperEnv(initial_board_size=(4, 6), initial_mines=5)
         state, info = env.reset(seed=42)
         
         # Verify rectangular setup

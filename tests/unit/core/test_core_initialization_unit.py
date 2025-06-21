@@ -31,7 +31,7 @@ def test_invalid_mine_count():
         MinesweeperEnv(max_mines=0)
     
     # Test mine count greater than board size squared
-    with pytest.raises(ValueError, match="Mine count cannot exceed board size squared"):
+    with pytest.raises(ValueError, match="Mine count cannot exceed board size area"):
         MinesweeperEnv(max_board_size=3, max_mines=10)
 
 def test_invalid_mine_spacing():
@@ -51,8 +51,8 @@ def test_invalid_initial_parameters():
     with pytest.raises(ValueError, match="Initial board size cannot exceed max board size"):
         MinesweeperEnv(max_board_size=5, initial_board_size=6, max_mines=25)
     
-    # Test initial mine count greater than max board size squared
-    with pytest.raises(ValueError, match="Mine count cannot exceed board size squared"):
+    # Test initial mine count greater than max board size area
+    with pytest.raises(ValueError, match="Mine count cannot exceed board size area"):
         MinesweeperEnv(max_board_size=3, max_mines=10)
 
 def test_invalid_reward_parameters():

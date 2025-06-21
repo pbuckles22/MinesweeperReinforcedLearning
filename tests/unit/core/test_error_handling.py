@@ -14,15 +14,9 @@ def test_invalid_board_size():
 
 def test_invalid_mine_count():
     """Test that invalid mine count raises appropriate error."""
-    # The environment actually allows this and just warns about spacing constraints
-    # So we should test that it works but with a warning
-    import warnings
-    with warnings.catch_warnings(record=True) as w:
+    # Test initial mine count greater than initial board area
+    with pytest.raises(ValueError, match="Initial mine count cannot exceed initial board area"):
         env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=20)
-        env.reset()
-        # Should work but with warning about spacing constraints
-        assert len(w) > 0
-        assert "spacing constraints" in str(w[0].message)
 
 def test_invalid_mine_spacing():
     """Test that invalid mine spacing is handled gracefully."""
@@ -36,7 +30,7 @@ def test_invalid_mine_spacing():
 
 def test_invalid_initial_parameters():
     """Test that invalid initial parameters raise appropriate error."""
-    with pytest.raises(ValueError, match="Mine count cannot exceed board size squared"):
+    with pytest.raises(ValueError, match="Mine count cannot exceed board size area"):
         MinesweeperEnv(
             max_board_size=(4, 4),
             initial_board_size=(8, 8)
@@ -72,7 +66,7 @@ def test_invalid_action_type():
 def test_invalid_board_dimensions():
     """Test that invalid board dimensions raise appropriate error."""
     with pytest.raises(ValueError, match="Initial board dimensions must be positive"):
-        MinesweeperEnv(initial_board_size=(0, 4))
+        MinesweeperEnv(initial_board_size=(4, 0))
 
 def test_invalid_mine_count_zero():
     """Test that zero mine count raises appropriate error."""
@@ -139,8 +133,8 @@ def test_edge_case_minimum_board():
 def test_edge_case_maximum_board():
     """Test edge case with maximum board size."""
     env = MinesweeperEnv(
-        max_board_size=(20, 35),
-        initial_board_size=(20, 35),
+        max_board_size=(35, 20),
+        initial_board_size=(35, 20),
         initial_mines=130
     )
     env.reset()
@@ -170,7 +164,7 @@ def test_edge_case_maximum_mines():
 def test_error_message_clarity():
     """Test that error messages are clear and informative."""
     try:
-        MinesweeperEnv(initial_board_size=(0, 4))
+        MinesweeperEnv(initial_board_size=(4, 0))
         assert False, "Should have raised ValueError"
     except ValueError as e:
         assert "Initial board dimensions must be positive" in str(e)
@@ -243,7 +237,7 @@ def test_error_handling_with_custom_rewards():
 
 def test_edge_case_rectangular_board():
     """Test edge case with rectangular board."""
-    env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=3)
+    env = MinesweeperEnv(initial_board_size=(5, 3), initial_mines=3)
     env.reset()
     
     # Should work with rectangular board
@@ -258,7 +252,7 @@ def test_error_handling_consistency():
     # Test that same invalid parameters always raise same error
     for _ in range(3):
         with pytest.raises(ValueError, match="Initial board dimensions must be positive"):
-            MinesweeperEnv(initial_board_size=(0, 4))
+            MinesweeperEnv(initial_board_size=(4, 0))
 
 def test_error_handling_performance():
     """Test that error handling doesn't significantly impact performance."""
@@ -269,7 +263,7 @@ def test_error_handling_performance():
     # Test multiple error conditions
     for _ in range(10):
         try:
-            MinesweeperEnv(initial_board_size=(0, 4))
+            MinesweeperEnv(initial_board_size=(4, 0))
         except ValueError:
             pass
     
@@ -289,7 +283,7 @@ def test_error_handling_memory():
     # Test multiple error conditions
     for _ in range(100):
         try:
-            MinesweeperEnv(initial_board_size=(0, 4))
+            MinesweeperEnv(initial_board_size=(4, 0))
         except ValueError:
             pass
     

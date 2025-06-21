@@ -27,12 +27,17 @@ class TestMinesweeperEnv:
     def test_initialization(self):
         """Test environment initialization with default parameters."""
         env = MinesweeperEnv()
-        assert env.max_board_width == 35
-        assert env.max_board_height == 20  # Fixed: environment swaps width/height
+        assert env.max_board_size == (35, 20)  # (height, width) format
+        assert env.max_board_height == 35
+        assert env.max_board_width == 20
         assert env.max_mines == 130
-        assert env.initial_board_width == 4
-        assert env.initial_board_height == 4
+        assert env.initial_board_size == (4, 4)
         assert env.initial_mines == 2
+        assert env.mine_spacing == 1
+        assert env.early_learning_mode == False
+        assert env.early_learning_threshold == 200
+        assert env.early_learning_corner_safe == True
+        assert env.early_learning_edge_safe == True
 
         # Check parameters are set correctly
         assert self.env.max_board_width == 10
@@ -87,11 +92,11 @@ class TestMinesweeperEnv:
             ('expert', 18, 24, 115),
             ('chaotic', 20, 35, 130)
         ]
-        for name, width, height, mines in difficulty_configs:
+        for name, height, width, mines in difficulty_configs:
             env = MinesweeperEnv(
-                max_board_size=(width, height),
+                max_board_size=(height, width),  # (height, width) format
                 max_mines=mines,
-                initial_board_size=(width, height),
+                initial_board_size=(height, width),  # (height, width) format
                 initial_mines=mines,
                 mine_spacing=0  # Disable mine spacing for testing
             )
@@ -110,11 +115,11 @@ class TestMinesweeperEnv:
 
     def test_rectangular_board_actions(self):
         """Test actions on rectangular boards using public API only."""
-        width, height, mines = 16, 30, 99
+        height, width, mines = 16, 30, 99  # (height, width) format
         env = MinesweeperEnv(
-            max_board_size=(width, height),
+            max_board_size=(height, width),  # (height, width) format
             max_mines=mines,
-            initial_board_size=(width, height),
+            initial_board_size=(height, width),  # (height, width) format
             initial_mines=mines,
             mine_spacing=0
         )
@@ -146,7 +151,7 @@ class TestMinesweeperEnv:
         """Test curriculum learning progression through difficulty levels."""
         # Start with beginner level
         env = MinesweeperEnv(
-            max_board_size=(20, 35),
+            max_board_size=(35, 20),
             max_mines=130,
             initial_board_size=(4, 4),
             initial_mines=2
@@ -194,7 +199,7 @@ class TestMinesweeperEnv:
 
     def test_win_condition_rectangular(self):
         """Test win condition on rectangular boards."""
-        env = MinesweeperEnv(initial_board_size=(3, 5), initial_mines=3)
+        env = MinesweeperEnv(initial_board_size=(5, 3), initial_mines=3)
         env.reset(seed=42)
         
         # Try to reveal all cells
