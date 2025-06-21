@@ -1,6 +1,7 @@
 import pytest
 import os
 import subprocess
+import platform
 from pathlib import Path
 
 @pytest.fixture
@@ -20,17 +21,30 @@ def test_script_permissions(script_path):
 
 def test_script_syntax(script_path):
     """Test that the script has valid PowerShell syntax."""
-    try:
-        # Use PowerShell to check syntax without execution
-        result = subprocess.run(
-            ["powershell", "-Command", f"Get-Content {script_path} | Out-String | Test-ScriptBlock"],
-            capture_output=True,
-            text=True
-        )
-        # PowerShell syntax check might not be available, so we'll just check if the command runs
-        assert result.returncode in [0, 1], f"Script syntax check failed: {result.stderr}"
-    except subprocess.CalledProcessError as e:
-        pytest.fail(f"Script syntax error: {e.stderr}")
+    system = platform.system().lower()
+    
+    if system == "windows":
+        try:
+            # Use PowerShell to check syntax without execution
+            result = subprocess.run(
+                ["powershell", "-Command", f"Get-Content {script_path} | Out-String | Test-ScriptBlock"],
+                capture_output=True,
+                text=True
+            )
+            # PowerShell syntax check might not be available, so we'll just check if the command runs
+            assert result.returncode in [0, 1], f"Script syntax check failed: {result.stderr}"
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            pytest.fail(f"Script syntax error: {e}")
+    else:
+        # On non-Windows platforms, just check if the file is readable and has PowerShell content
+        with open(script_path, 'r') as f:
+            content = f.read()
+        assert content.strip(), "Script is empty"
+        # Check for PowerShell indicators
+        assert ("write-host" in content.lower() or 
+                "get-date" in content.lower() or
+                "start-process" in content.lower() or
+                "$" in content)
 
 def test_script_parameters(script_path):
     """Test that the script has training parameters."""
