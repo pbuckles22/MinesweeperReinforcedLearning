@@ -39,7 +39,6 @@ logs/
 latest.log
 
 # Training Artifacts
-tensorboard/
 models/
 best_model/
 debug_logs/
@@ -61,4 +60,7 @@ session_*.md
 # OS
 .DS_Store
 Thumbs.db
+
+# Training outputs
+mlruns/
 

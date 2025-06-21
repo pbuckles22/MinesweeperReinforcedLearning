@@ -112,5 +112,7 @@ Write-Host "   - Verify reward signals are appropriate" -ForegroundColor White
 Write-Host "`n🎯 Next steps:" -ForegroundColor Green
 Write-Host "   1. Run: python scripts/quick_test.ps1 (10k timesteps)" -ForegroundColor White
 Write-Host "   2. Run: python scripts/medium_test.ps1 (50k timesteps)" -ForegroundColor White
-Write-Host "   3. Check TensorBoard: tensorboard --logdir tensorboard" -ForegroundColor White
+Write-Host "   3. Check MLflow for learning curves" -ForegroundColor White
+Write-Host "      mlflow ui" -ForegroundColor White
+Write-Host "      Then open http://127.0.0.1:5000 in your browser" -ForegroundColor White
 Write-Host "   4. Monitor logs in 'logs' directory" -ForegroundColor White 

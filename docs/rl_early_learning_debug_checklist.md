@@ -20,7 +20,7 @@
 - [ ] **Verify difficulty progression:** Make sure the curriculum is working correctly.
 
 ## 4. Monitoring & Visualization
-- [ ] **Use TensorBoard:** Visualize reward, loss, and win rate curves to spot learning trends.
+- [ ] **Use MLflow:** Visualize reward, loss, and win rate curves to spot learning trends.
 - [ ] **Check logs:** Review logs for signs of improvement or stagnation.
 
 ## 5. Model & Algorithm

@@ -70,7 +70,7 @@ if ($FullTest) {
 }
 
 # Create test directories
-$testDirs = @("logs", "tensorboard", "best_model", "experiments")
+$testDirs = @("logs", "mlruns", "best_model", "experiments")
 foreach ($dir in $testDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
@@ -120,12 +120,12 @@ try {
         }
     }
     
-    # Check TensorBoard logs
-    $tbLogs = Get-ChildItem "tensorboard" -Recurse -Filter "*.tfevents*" -ErrorAction SilentlyContinue
-    if ($tbLogs.Count -gt 0) {
-        Write-Host "   ✅ TensorBoard logs: $($tbLogs.Count) files found" -ForegroundColor Green
+    # Check MLflow logs
+    $mlflowLogs = Get-ChildItem "mlruns" -Recurse -Filter "*.yaml" -ErrorAction SilentlyContinue
+    if ($mlflowLogs.Count -gt 0) {
+        Write-Host "   ✅ MLflow logs: $($mlflowLogs.Count) files found" -ForegroundColor Green
     } else {
-        Write-Host "   ⚠️  TensorBoard logs: No files found" -ForegroundColor Yellow
+        Write-Host "   ⚠️  MLflow logs: No files found" -ForegroundColor Yellow
     }
     
     Write-Host "`n🎉 M1 GPU training test PASSED!" -ForegroundColor Green
@@ -139,6 +139,7 @@ try {
 
 Write-Host "`n📚 Next steps:" -ForegroundColor Cyan
 Write-Host "   1. Run full training: python -m src.core.train_agent --total_timesteps 1000000" -ForegroundColor White
-Write-Host "   2. Monitor with TensorBoard: tensorboard --logdir tensorboard" -ForegroundColor White
-Write-Host "   3. Check logs in the 'logs' directory" -ForegroundColor White
-Write-Host "   4. Find best model in 'best_model' directory" -ForegroundColor White 
+Write-Host "   2. Monitor with MLflow: mlflow ui" -ForegroundColor White
+Write-Host "   3. Open http://127.0.0.1:5000 in your browser" -ForegroundColor White
+Write-Host "   4. Check logs in the 'logs' directory" -ForegroundColor White
+Write-Host "   5. Find best model in 'best_model' directory" -ForegroundColor White 

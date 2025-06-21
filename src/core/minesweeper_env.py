@@ -420,6 +420,12 @@ class MinesweeperEnv(gym.Env):
         if self.terminated or self.truncated:
             return self.state, self.invalid_action_penalty, True, False, info
 
+        # Terminate if no valid actions left
+        if not np.any(self.action_masks):
+            self.terminated = True
+            info['won'] = self._check_win()
+            return self.state, 0.0, True, False, info
+
         # Check if action is within bounds first
         if action < 0 or action >= self.action_space.n:
             return self.state, self.invalid_action_penalty, False, False, info

@@ -49,9 +49,12 @@ if (Test-Path "logs\eval_log.txt") {
 
 Write-Host "`n🎯 If win rate is still low, try these steps:" -ForegroundColor Green
 Write-Host "   1. Run with even smaller boards: 4x4 with 2 mines" -ForegroundColor White
-Write-Host "   2. Increase training time: 200k-500k timesteps" -ForegroundColor White
-Write-Host "   3. Check TensorBoard for learning curves" -ForegroundColor White
-Write-Host "   4. Verify early learning mode is working" -ForegroundColor White
+Write-Host "   2. Monitor training progress with MLflow" -ForegroundColor White
+Write-Host "      mlflow ui" -ForegroundColor White
+Write-Host "      Then open http://127.0.0.1:5000 in your browser" -ForegroundColor White
+Write-Host "   3. Verify early learning mode is working" -ForegroundColor White
+Write-Host "   4. Check for any error messages in the console" -ForegroundColor White
 
 Write-Host "`n📈 To monitor training progress:" -ForegroundColor Cyan
-Write-Host "   tensorboard --logdir tensorboard" -ForegroundColor White 
+Write-Host "   mlflow ui" -ForegroundColor White
+Write-Host "   Then open http://127.0.0.1:5000 in your browser" -ForegroundColor White 

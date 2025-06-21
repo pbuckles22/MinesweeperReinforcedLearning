@@ -44,7 +44,6 @@ For convenience, use these pre-configured scripts:
 |--------|---------|-------------|
 | `--model_save_freq` | 50000 | How often to save the model (in timesteps) |
 | `--best_model_save_freq` | 10000 | How often to save the best model (in timesteps) |
-| `--tensorboard_log` | "./tensorboard/" | Directory for TensorBoard logs |
 
 ## Advanced Options
 
@@ -72,7 +71,7 @@ For convenience, use these pre-configured scripts:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--target_kl` | null | Target KL divergence for early stopping |
+| `--target_kl` | None | Limit the KL divergence between updates |
 | `--early_stopping` | false | Whether to stop training early if target_kl is reached |
 | `--reset_num_timesteps` | true | Whether to reset the number of timesteps |
 
@@ -99,9 +98,10 @@ For convenience, use these pre-configured scripts:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--device` | "auto" | Device to use (auto, cpu, cuda) |
-| `--seed` | null | Random seed for reproducibility |
+| `--device` | "auto" | Device to use for training (auto/cpu/cuda) |
+| `--seed` | None | Random seed |
 | `--deterministic` | false | Use deterministic algorithms |
+| `--init_setup_model` | True | Whether to initialize the model |
 
 ## Example Commands
 
@@ -150,19 +150,20 @@ python src/core/train_agent.py \
 Training generates several output files:
 
 - `best_model/` - Directory containing the best trained model
-- `tensorboard/` - TensorBoard logs for training visualization
-- `logs/` - Training logs and metrics
-- `experiments/` - Experiment configurations and results
+- `logs/` - Training logs and checkpoints
+- `mlruns/` - MLflow experiment tracking data
+- `experiments/` - Experiment results and metrics
 
 ## Monitoring Training
 
-Use TensorBoard to monitor training progress:
+Use MLflow to monitor training progress:
+
 ```bash
-tensorboard --logdir ./tensorboard/
+mlflow ui
 ```
 
-The training script will display:
-- Episode rewards and win rates
-- Learning progress through different phases
-- Evaluation metrics
-- Model save confirmations 
+Then open http://127.0.0.1:5000 in your browser to view:
+- Training metrics (win rate, rewards, episode length)
+- Model performance over time
+- Experiment comparisons
+- Hyperparameter tracking 

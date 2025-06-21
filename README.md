@@ -343,8 +343,9 @@ python -c "from src.core.train_agent import make_env; env = make_env()(); print(
 # Run complete training
 python src/core/train_agent.py
 
-# Monitor training progress
-python scripts/monitor_training.ps1
+# Monitor training progress with MLflow
+mlflow ui
+# Then open http://127.0.0.1:5000 in your browser
 ```
 
 ## 📊 Performance

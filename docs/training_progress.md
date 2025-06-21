@@ -111,7 +111,7 @@ python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_e
 - **Custom Eval Debugging**: `debug_custom_eval.ps1`
 
 ### Monitoring
-- **TensorBoard**: Training progress visualization
+- **MLflow**: Training progress visualization
 - **Logging**: Comprehensive training logs
 - **Metrics**: Real-time performance tracking
 

@@ -272,7 +272,6 @@ class TestParseArgs:
         mock_args.use_sde = False
         mock_args.sde_sample_freq = -1
         mock_args.target_kl = None
-        mock_args.tensorboard_log = "./tensorboard/"
         mock_args.policy = "MlpPolicy"
         mock_args.verbose = 1
         mock_args.seed = None
@@ -381,7 +380,6 @@ class TestMainFunction:
         mock_args.use_sde = False
         mock_args.sde_sample_freq = -1
         mock_args.target_kl = None
-        mock_args.tensorboard_log = "./tensorboard/"
         mock_args.policy = "MlpPolicy"
         mock_args.verbose = 1
         mock_args.seed = None

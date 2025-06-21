@@ -12,7 +12,7 @@
 ### 2. **Training Verification** (High Priority)
 - [ ] Run quick training session to verify everything works
 - [ ] Check if training produces expected results
-- [ ] Verify TensorBoard logging functionality
+- [ ] Verify MLflow logging functionality
 - [ ] Test curriculum learning progression
 - [ ] Validate model evaluation pipeline
 

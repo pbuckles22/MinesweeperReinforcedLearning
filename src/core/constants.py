@@ -16,7 +16,7 @@ REWARD_FIRST_CASCADE_HIT_MINE = 0  # First cascade hit mine (just luck)
 REWARD_SAFE_REVEAL = 5        # Regular safe reveal (progress)
 REWARD_WIN = 100             # Win the game (achievement)
 REWARD_HIT_MINE = -50        # Hit a mine (failure) - significant penalty to encourage caution
-REWARD_INVALID_ACTION = -10   # Invalid action penalty
+REWARD_INVALID_ACTION = -1   # Invalid action penalty (reduced from -10 to -1)
 
 # Difficulty level constants
 DIFFICULTY_LEVELS = {

@@ -13,6 +13,8 @@ import argparse
 import torch
 from scipy import stats
 from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
+import mlflow
+import mlflow.pytorch
 
 def detect_optimal_device():
     """
@@ -434,6 +436,19 @@ class IterationCallback(BaseCallback):
                 # Update learning phase
                 self._update_learning_phase(avg_reward, win_rate)
                 
+                # Log to MLflow
+                try:
+                    mlflow.log_metric("win_rate", win_rate, step=self.iterations)
+                    mlflow.log_metric("avg_episode_length", avg_length, step=self.iterations)
+                    mlflow.log_metric("avg_reward", avg_reward, step=self.iterations)
+                    mlflow.log_metric("best_win_rate", self.best_win_rate, step=self.iterations)
+                    mlflow.log_metric("best_reward", self.best_reward, step=self.iterations)
+                    mlflow.log_metric("curriculum_stage", self.curriculum_stage, step=self.iterations)
+                    mlflow.log_metric("stage_win_rate", (self.stage_wins/self.stage_games*100) if self.stage_games > 0 else 0, step=self.iterations)
+                except Exception as e:
+                    # MLflow not initialized, skip logging
+                    pass
+                
                 # Log progress
                 self.log(f"\nIteration {self.iterations}")
                 self.log(f"Time: {total_time:.1f}s (Iteration: {iteration_time:.1f}s)")
@@ -520,8 +535,6 @@ def parse_args():
                       help='Sample a new noise matrix every n steps')
     parser.add_argument('--target_kl', type=float, default=None,
                       help='Limit the KL divergence between updates')
-    parser.add_argument('--tensorboard_log', type=str, default="./tensorboard/",
-                      help='Tensorboard log directory')
     parser.add_argument('--policy', type=str, default="MlpPolicy",
                       help='Policy architecture')
     parser.add_argument('--verbose', type=int, default=1,
@@ -540,9 +553,28 @@ def main():
     print("🚀 Starting Minesweeper RL Training")
     print("=" * 50)
     
-    # Detect optimal device and test performance
-    device_info = detect_optimal_device()
-    test_device_performance(device_info)
+    # Set up MLflow experiment
+    mlflow.set_experiment("minesweeper_rl")
+    with mlflow.start_run():
+        # Log hyperparameters
+        mlflow.log_params({
+            "total_timesteps": args.total_timesteps,
+            "learning_rate": args.learning_rate,
+            "batch_size": args.batch_size,
+            "n_steps": args.n_steps,
+            "n_epochs": args.n_epochs,
+            "gamma": args.gamma,
+            "gae_lambda": args.gae_lambda,
+            "clip_range": args.clip_range,
+            "ent_coef": args.ent_coef,
+            "vf_coef": args.vf_coef,
+            "max_grad_norm": args.max_grad_norm,
+            "device": args.device
+        })
+        
+        # Detect optimal device and test performance
+        device_info = detect_optimal_device()
+        test_device_performance(device_info)
     
     # Get optimal hyperparameters for the detected device
     optimal_params = get_optimal_hyperparameters(device_info)
@@ -671,7 +703,6 @@ def main():
         use_sde=args.use_sde,
         sde_sample_freq=args.sde_sample_freq,
         target_kl=args.target_kl,
-        tensorboard_log=args.tensorboard_log,
         verbose=args.verbose,
         seed=args.seed,
         device=args.device,
@@ -790,6 +821,15 @@ def main():
     
     # Save final model
     model.save("models/final_model")
+    
+    # Log final model to MLflow
+    mlflow.pytorch.log_model(model, "final_model")
+    
+    # Log final metrics
+    mlflow.log_metric("final_win_rate", win_rate)
+    mlflow.log_metric("final_mean_reward", mean_reward)
+    mlflow.log_metric("final_reward_std", reward_std)
+    
     print("\nTraining completed!")
     print("\nFinal Stage Progression:")
     for stage in range(len(curriculum_stages)):
@@ -798,6 +838,10 @@ def main():
         print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
         print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['std_reward']:.2f}")
         print(f"Completed at: {stage_info['completed_at']}")
+    
+    print(f"\n📊 MLflow experiment tracking enabled!")
+    print(f"   Run 'mlflow ui' to view training progress")
+    print(f"   Then open http://localhost:5000 in your browser")
 
 def evaluate_model(model, env, n_episodes=100):
     """Evaluate model with proper statistical analysis, supporting both vectorized and non-vectorized environments."""
