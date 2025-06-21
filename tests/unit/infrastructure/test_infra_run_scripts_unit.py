@@ -59,7 +59,7 @@ def test_script_output_handling(script_path):
     with open(script_path, 'r') as f:
         content = f.read()
     
-    # Check for output handling
+    # Check for output handling - the script uses Write-Host and Write-ToLog
     assert "write-host" in content.lower()
     assert "write-tolog" in content.lower()
 
@@ -69,6 +69,6 @@ def test_script_error_handling(script_path):
     with open(script_path, 'r') as f:
         content = f.read()
     
-    # Check for error handling
+    # Check for error handling - the script has a default case in switch and exit
     assert "default" in content.lower()  # Switch default case
     assert "exit" in content.lower()     # Exit on error
