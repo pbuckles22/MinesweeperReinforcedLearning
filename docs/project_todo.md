@@ -2,7 +2,24 @@
 
 ## 🎯 **IMMEDIATE PRIORITIES** (Current Sprint)
 
-### 1. **Graphical Visualization & UX** (High Priority)
+### 1. **Cross-Platform Model Visualization** (High Priority)
+- [ ] **Web-Based Model Play Interface**
+  - [ ] Create a web API/server that can load and run trained models
+  - [ ] Build a web interface to watch models play Minesweeper in real-time
+  - [ ] Support both Mac and Windows clients connecting to the same visualization
+  - [ ] Implement real-time game streaming with WebSocket or Server-Sent Events
+  - [ ] Add controls for play/pause, speed adjustment, and step-by-step viewing
+  - [ ] Display agent confidence scores and decision probabilities
+  - [ ] Show game statistics and performance metrics
+  - [ ] Support multiple board sizes and difficulty levels
+  - [ ] Add model comparison mode (watch multiple agents play simultaneously)
+  - [ ] Implement game replay functionality
+  - [ ] Add export capabilities for interesting games (JSON, video, screenshots)
+  - [ ] Create demo mode for showcasing agent performance
+  - [ ] Add authentication for private model access
+  - [ ] Implement model versioning and A/B testing capabilities
+
+### 2. **Graphical Visualization & UX** (High Priority)
 - [ ] Enhance the environment's `render()` method to support graphical output (e.g., using Matplotlib, Pygame, or Tkinter)
 - [ ] Create a visualization script (`visualize_agent.py`) to display the agent's actions in real-time
 - [ ] Add controls for manual play or step-by-step execution
@@ -21,7 +38,7 @@
   - [ ] Create demo mode for showcasing agent performance
   - [ ] Add comparison mode to watch multiple agents play simultaneously
 
-### 2. **Advanced Training Features** (Medium Priority)
+### 3. **Advanced Training Features** (Medium Priority)
 - [ ] Add support for different RL algorithms (DQN, A2C, SAC)
 - [ ] Implement hyperparameter optimization (Optuna, Ray Tune)
 - [ ] Add distributed training support for large-scale experiments
