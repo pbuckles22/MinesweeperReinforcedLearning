@@ -154,6 +154,20 @@ class MinesweeperEnv(gym.Env):
         self.current_game_was_pre_cascade = False
         self.current_game_ended_pre_cascade = False
         
+        # Move counting for current game
+        self.move_count = 0
+        self.total_moves_across_games = 0
+        self.games_with_move_counts = []
+        
+        # Repeated actions and revealed cell clicks
+        self.repeated_actions = set()
+        self.repeated_action_count = 0
+        self.revealed_cell_click_count = 0
+        self._actions_taken_this_game = set()
+        
+        # Reset invalid action and guaranteed mine click counters
+        self.invalid_action_count = 0
+        
         # Action space and observation space
         self.action_space = gym.spaces.Discrete(self.current_board_width * self.current_board_height)
         self.observation_space = gym.spaces.Box(
@@ -268,6 +282,15 @@ class MinesweeperEnv(gym.Env):
         self.is_first_cascade = True
         self.first_cascade_done = False
         self.in_cascade = False  # Track if we're currently in a cascade
+        
+        # Reset move counting for new game
+        self.move_count = 0
+        
+        # Reset repeated action and revealed cell click counters
+        self.repeated_actions = set()
+        self.repeated_action_count = 0
+        self.revealed_cell_click_count = 0
+        self._actions_taken_this_game = set()
         
         # Place mines immediately (before first move)
         self._place_mines()
@@ -406,6 +429,10 @@ class MinesweeperEnv(gym.Env):
         # Initialize info dict with 'won' key
         info = {'won': self._check_win()}
 
+        # Convert action to integer if it's a numpy array
+        if hasattr(action, 'item'):
+            action = action.item()
+
         # If game is over, all actions are invalid and return negative reward
         if self.terminated or self.truncated:
             return self.state, self.invalid_action_penalty, True, False, info
@@ -418,11 +445,28 @@ class MinesweeperEnv(gym.Env):
 
         # Check if action is within bounds first
         if action < 0 or action >= self.action_space.n:
+            self.invalid_action_count += 1
             return self.state, self.invalid_action_penalty, False, False, info
+
+        # Track repeated actions
+        if action in self._actions_taken_this_game:
+            self.repeated_action_count += 1
+            self.repeated_actions.add(action)
+        else:
+            self._actions_taken_this_game.add(action)
 
         # Check if action is valid using action masks
         if not self.action_masks[action]:
+            self.invalid_action_count += 1
+            # If the cell is already revealed, increment revealed_cell_click_count
+            col = action % self.current_board_width
+            row = action // self.current_board_width
+            if self.revealed[row, col]:
+                self.revealed_cell_click_count += 1
             return self.state, self.invalid_action_penalty, False, False, info
+
+        # Increment move count for valid actions
+        self.move_count += 1
 
         # Convert action to (x, y) coordinates
         col = action % self.current_board_width
@@ -501,74 +545,12 @@ class MinesweeperEnv(gym.Env):
                     masks[reveal_idx] = False
                     continue
                 
-                # Smart masking: avoid cells that are guaranteed to be mines
-                if self._is_guaranteed_mine(i, j):
-                    masks[reveal_idx] = False
-                    continue
-                
                 # Smart masking: prefer cells that are guaranteed to be safe
                 # (This is optional - we could prioritize safe cells but still allow others)
                 # For now, we'll just avoid guaranteed mines
                 
         return masks
     
-    def _is_guaranteed_mine(self, row: int, col: int) -> bool:
-        """Check if a cell is guaranteed to be a mine based on revealed cell information."""
-        # Check all adjacent revealed cells
-        for di in [-1, 0, 1]:
-            for dj in [-1, 0, 1]:
-                if di == 0 and dj == 0:
-                    continue
-                ni, nj = row + di, col + dj
-                if (0 <= ni < self.current_board_height and 
-                    0 <= nj < self.current_board_width and 
-                    self.revealed[ni, nj] and 
-                    not self.mines[ni, nj]):
-                    
-                    # Get the number of adjacent mines for this revealed cell
-                    cell_value = self.board[ni, nj]
-                    
-                    # Count how many adjacent cells are already revealed as mines
-                    revealed_mines = 0
-                    for ddi in [-1, 0, 1]:
-                        for ddj in [-1, 0, 1]:
-                            if ddi == 0 and ddj == 0:
-                                continue
-                            nni, nnj = ni + ddi, nj + ddj
-                            if (0 <= nni < self.current_board_height and 
-                                0 <= nnj < self.current_board_width and 
-                                self.revealed[nni, nnj] and 
-                                self.mines[nni, nnj]):
-                                revealed_mines += 1
-                    
-                    # Count how many adjacent cells are flagged as mines (we don't have flags, so skip)
-                    # For now, we'll use a simpler heuristic
-                    
-                    # If this revealed cell has X mines adjacent and we've already found X mines,
-                    # then any remaining adjacent unrevealed cells must be safe
-                    # If this revealed cell has X mines adjacent and we've found X-1 mines,
-                    # then any remaining adjacent unrevealed cells must be mines
-                    
-                    # Count unrevealed adjacent cells
-                    unrevealed_adjacent = 0
-                    for ddi in [-1, 0, 1]:
-                        for ddj in [-1, 0, 1]:
-                            if ddi == 0 and ddj == 0:
-                                continue
-                            nni, nnj = ni + ddi, nj + ddj
-                            if (0 <= nni < self.current_board_height and 
-                                0 <= nnj < self.current_board_width and 
-                                not self.revealed[nni, nnj]):
-                                unrevealed_adjacent += 1
-                    
-                    # If we have exactly the right number of unrevealed cells to match the mine count
-                    # and we've found all the mines we need, then this cell must be a mine
-                    remaining_mines_needed = cell_value - revealed_mines
-                    if unrevealed_adjacent == remaining_mines_needed and remaining_mines_needed > 0:
-                        return True
-        
-        return False
-
     def render(self):
         """Render the environment."""
         if self.render_mode != "human":
@@ -766,6 +748,37 @@ class MinesweeperEnv(gym.Env):
                 self.rl_games_won += 1
             else:
                 self.rl_games_lost += 1
+        
+        # Record move count for this game
+        self._record_game_moves()
+
+    def get_move_statistics(self):
+        """Get statistics about moves made in the current game and across all games.
+        
+        Returns:
+            dict: Dictionary containing move statistics
+        """
+        average_moves = self.total_moves_across_games / len(self.games_with_move_counts) if self.games_with_move_counts else 0
+        min_moves = min(self.games_with_move_counts) if self.games_with_move_counts else 0
+        max_moves = max(self.games_with_move_counts) if self.games_with_move_counts else 0
+        return {
+            'current_game_moves': self.move_count,
+            'total_moves_across_games': self.total_moves_across_games,
+            'games_with_move_counts': self.games_with_move_counts.copy(),
+            'average_moves_per_game': average_moves,
+            'min_moves_in_game': min_moves,
+            'max_moves_in_game': max_moves,
+            'repeated_action_count': self.repeated_action_count,
+            'repeated_actions': list(self.repeated_actions),
+            'revealed_cell_click_count': self.revealed_cell_click_count,
+            'invalid_action_count': self.invalid_action_count
+        }
+    
+    def _record_game_moves(self):
+        """Record the move count for the current game when it ends."""
+        if self.move_count > 0:  # Only record if moves were made
+            self.games_with_move_counts.append(self.move_count)
+            self.total_moves_across_games += self.move_count
 
 def main():
     # Create and test the environment
