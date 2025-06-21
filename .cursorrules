@@ -6,7 +6,7 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 ## Key Design Decisions
 - **Immediate Rewards**: Every safe reveal gets +15, every mine hit gets -20, wins get +500 (simplified from confusing first-move logic)
 - **Board Sizes**: All use (height, width) format throughout codebase
-- **Environment**: 2-channel state representation with action masking
+- **Environment**: 4-channel state representation with action masking
 - **M1 GPU Support**: Optimized for Apple Silicon with Metal Performance Shaders (MPS)
 - **Cross-Platform Scripts**: Platform-specific scripts in `scripts/windows/`, `scripts/linux/`, `scripts/mac/`
 

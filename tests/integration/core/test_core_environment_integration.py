@@ -38,7 +38,7 @@ def test_environment_creation():
     env = MinesweeperEnv(max_board_size=4, max_mines=2, mine_spacing=2)
     obs, info = env.reset()
     assert isinstance(obs, np.ndarray)
-    assert obs.shape == (2, 4, 4)  # 2-channel state
+    assert obs.shape == (4, 4, 4)  # 4-channel state
     assert isinstance(info, dict)
     print("✓ Environment created and reset successfully")
     print(f"✓ State shape: {obs.shape}")
@@ -51,8 +51,8 @@ def test_basic_actions():
     env.reset()
     obs, reward, terminated, truncated, info = env.step(0)  # Reveal first cell
     assert isinstance(obs, np.ndarray)
-    assert obs.shape == (2, 4, 4)  # 2-channel state
-    assert isinstance(reward, (float, np.floating, int))
+    assert obs.shape == (4, 4, 4)  # 4-channel state
+    assert isinstance(reward, (int, float))
     assert isinstance(terminated, bool)
     assert isinstance(truncated, bool)
     assert isinstance(info, dict)
@@ -159,16 +159,17 @@ class TestMinesweeperEnv:
         """Test that reset returns the correct observation and info"""
         obs, info = env.reset()
         assert isinstance(obs, np.ndarray)
-        assert obs.shape == (2, 4, 4)  # 2-channel state
+        assert obs.shape == (4, 4, 4)  # 4-channel state
         assert isinstance(info, dict)
+        assert 'won' in info
 
     def test_step(self, env):
-        """Test that step returns the correct observation, reward, terminated, truncated, and info"""
+        """Test that step returns the correct observation and info"""
         env.reset()
-        obs, reward, terminated, truncated, info = env.step(0)  # Reveal first cell
+        obs, reward, terminated, truncated, info = env.step(0)
         assert isinstance(obs, np.ndarray)
-        assert obs.shape == (2, 4, 4)  # 2-channel state
-        assert isinstance(reward, (float, np.floating, int))
+        assert obs.shape == (4, 4, 4)  # 4-channel state
+        assert isinstance(reward, (int, float))
         assert isinstance(terminated, bool)
         assert isinstance(truncated, bool)
         assert isinstance(info, dict)
@@ -187,7 +188,7 @@ def test_initialization(env):
     assert env.board.shape == (3, 3)
     # Check that the state is properly initialized
     state, info = env.reset()
-    assert state.shape == (2, 3, 3)  # 2-channel state
+    assert state.shape == (4, 3, 3)  # 4-channel state
     assert np.all(state[0] == CELL_UNREVEALED)  # Game state should be all unrevealed
 
 def test_reset(env):
@@ -205,7 +206,7 @@ def test_reset(env):
     assert env.is_first_cascade
     assert env.mines.shape == (3, 3)
     assert env.board.shape == (3, 3)
-    assert state.shape == (2, 3, 3)  # 2-channel state
+    assert state.shape == (4, 3, 3)  # 4-channel state
     assert np.all(state[0] == CELL_UNREVEALED)  # Game state should be all unrevealed
 
 def test_board_size_initialization():
@@ -324,7 +325,7 @@ def test_rectangular_board_actions(env):
     env.reset()
     
     state, reward, terminated, truncated, info = env.step(0)  # Reveal first cell
-    assert state.shape == (2, 3, 4)  # 2-channel state with rectangular dimensions
+    assert state.shape == (4, 3, 4)  # 4-channel state with rectangular dimensions
     assert state[0, 0, 0] != CELL_UNREVEALED, "Cell should be revealed"
     assert isinstance(reward, (int, float)), "Reward should be numeric"
 
@@ -387,7 +388,7 @@ class TestEnvironmentIntegration:
         state, info = env.reset(seed=42)
         
         # Verify initial state
-        assert state.shape == (2, 5, 5), "Initial state should have correct shape"
+        assert state.shape == (4, 5, 5), "Initial state should have correct shape"
         assert np.all(state[0] == CELL_UNREVEALED), "Initial game state should be all unrevealed"
         assert np.all(state[1] >= -1), "Safety hints should be >= -1"
         assert np.all(state[1] <= 8), "Safety hints should be <= 8"
@@ -410,7 +411,7 @@ class TestEnvironmentIntegration:
             moves_made += 1
             
             # Verify state consistency
-            assert state.shape == (2, 5, 5), "State shape should remain consistent"
+            assert state.shape == (4, 5, 5), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             assert isinstance(terminated, bool), "Terminated should be boolean"
             assert isinstance(info, dict), "Info should be dictionary"
@@ -445,7 +446,7 @@ class TestEnvironmentIntegration:
             state, info = env.reset(seed=42 + level)
             
             # Verify environment setup
-            assert env.state.shape == (2, height, width), f"State should match level {level} dimensions"
+            assert env.state.shape == (4, height, width), f"State should match level {level} dimensions"
             assert env.action_space.n == width * height, f"Action space should match level {level} dimensions"
             assert env.current_mines == mines, f"Mine count should match level {level}"
             
@@ -454,7 +455,7 @@ class TestEnvironmentIntegration:
                 state, reward, terminated, truncated, info = env.step(action)
                 
                 # Verify state consistency
-                assert state.shape == (2, height, width), f"State shape should remain consistent at level {level}"
+                assert state.shape == (4, height, width), f"State shape should remain consistent at level {level}"
                 assert isinstance(reward, (int, float)), f"Reward should be numeric at level {level}"
                 
                 if terminated:
@@ -475,7 +476,7 @@ class TestEnvironmentIntegration:
             state, info = env.reset(seed=42 + game)
             
             # Verify early learning setup
-            assert state.shape == (2, 4, 4), "State should have correct shape"
+            assert state.shape == (4, 4, 4), "State should have correct shape"
             assert env.early_learning_mode, "Early learning mode should be enabled"
             
             # Test corner safety
@@ -506,7 +507,7 @@ class TestEnvironmentIntegration:
             state_history.append(state.copy())
             
             # Verify state consistency
-            assert state.shape == (2, 6, 6), "State shape should remain consistent"
+            assert state.shape == (4, 6, 6), "State shape should remain consistent"
             assert np.all(state[1] >= -1), "Safety hints should be >= -1"
             assert np.all(state[1] <= 8), "Safety hints should be <= 8"
             
@@ -522,7 +523,7 @@ class TestEnvironmentIntegration:
         # Verify state history consistency
         assert len(state_history) > 1, "Should have multiple states in history"
         for i, state in enumerate(state_history):
-            assert state.shape == (2, 6, 6), f"All states should have consistent shape, state {i}"
+            assert state.shape == (4, 6, 6), f"All states should have consistent shape, state {i}"
     
     def test_environment_action_masking_integration(self):
         """Test action masking integration throughout gameplay."""
@@ -637,7 +638,7 @@ class TestEnvironmentIntegration:
         # Verify rectangular setup
         assert env.current_board_width == 6, "Should have correct width"
         assert env.current_board_height == 4, "Should have correct height"
-        assert state.shape == (2, 4, 6), "State should match rectangular dimensions"
+        assert state.shape == (4, 4, 6), "State should match rectangular dimensions"
         assert env.action_space.n == 24, "Action space should match rectangular dimensions"
         
         # Play a complete game
@@ -657,7 +658,7 @@ class TestEnvironmentIntegration:
             moves_made += 1
             
             # Verify state consistency
-            assert state.shape == (2, 4, 6), "State shape should remain consistent"
+            assert state.shape == (4, 4, 6), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             
             if terminated:
@@ -675,7 +676,7 @@ class TestEnvironmentIntegration:
         # Verify large board setup
         assert env.current_board_width == 12, "Should have correct width"
         assert env.current_board_height == 12, "Should have correct height"
-        assert state.shape == (2, 12, 12), "State should match large dimensions"
+        assert state.shape == (4, 12, 12), "State should match large dimensions"
         assert env.action_space.n == 144, "Action space should match large dimensions"
         
         # Play several moves
@@ -689,7 +690,7 @@ class TestEnvironmentIntegration:
             moves_made += 1
             
             # Verify state consistency
-            assert state.shape == (2, 12, 12), "State shape should remain consistent"
+            assert state.shape == (4, 12, 12), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             
             if terminated:
@@ -725,7 +726,7 @@ class TestEnvironmentIntegration:
             moves_made += 1
             
             # Verify state consistency
-            assert state.shape == (2, 8, 8), "State shape should remain consistent"
+            assert state.shape == (4, 8, 8), "State shape should remain consistent"
             assert isinstance(reward, (int, float)), "Reward should be numeric"
             
             if terminated:

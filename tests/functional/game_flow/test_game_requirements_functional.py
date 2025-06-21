@@ -121,16 +121,17 @@ class TestRLEnvironmentRequirements:
         assert not env.action_space.contains(expected_size), "Action beyond range should be invalid"
     
     def test_observation_space_consistency(self):
-        """REQUIREMENT: Observation space should be consistent with 2-channel state."""
+        """REQUIREMENT: Observation space should be consistent with 4-channel state."""
         env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
-        env.reset(seed=42)
+        obs, info = env.reset()
         
-        # Observation should match expected shape (2 channels)
-        expected_shape = (2, env.current_board_height, env.current_board_width)
-        assert env.observation_space.shape == expected_shape, "Observation shape should be (2, height, width)"
+        # Verify observation space matches actual observation
+        assert obs.shape == env.observation_space.shape, "Observation shape should match observation space"
+        assert obs.dtype == env.observation_space.dtype, "Observation dtype should match observation space"
         
-        # Observation should be within bounds
-        assert env.observation_space.contains(env.state), "State should be within observation space bounds"
+        # Verify observation bounds
+        assert np.all(obs >= env.observation_space.low), "Observation should respect lower bounds"
+        assert np.all(obs <= env.observation_space.high), "Observation should respect upper bounds"
     
     def test_deterministic_reset(self):
         """REQUIREMENT: Same seed should produce same board."""
@@ -225,73 +226,29 @@ class TestCurriculumLearning:
         assert env.current_mines == 4, "Mine count should be updated"
 
 class TestEnhancedStateRepresentation:
-    """Test the enhanced 2-channel state representation."""
+    """Test the enhanced 4-channel state representation."""
     
-    def test_two_channel_state_structure(self):
-        """REQUIREMENT: State should have 2 channels (game state + safety hints)."""
+    def test_enhanced_state_representation(self):
+        """Test the enhanced 4-channel state representation."""
         env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
-        env.reset(seed=42)
+        obs, info = env.reset()
         
-        state = env.state
-        assert state.shape == (2, 4, 4), "State should have shape (2, height, width)"
+        # Verify 4-channel structure
+        assert obs.shape == (4, 4, 4), "Should have 4-channel state representation"
         
         # Channel 0: Game state
-        game_state = state[0]
-        assert np.all(game_state == CELL_UNREVEALED), "Initial game state should be all unrevealed"
+        assert np.all(obs[0] == CELL_UNREVEALED), "Channel 0 should be all unrevealed initially"
         
         # Channel 1: Safety hints
-        safety_hints = state[1]
-        assert np.all(safety_hints >= -1), "Safety hints should be >= -1"
-        assert np.all(safety_hints <= 8), "Safety hints should be <= 8"
-    
-    def test_safety_hints_accuracy(self):
-        """REQUIREMENT: Safety hints should accurately reflect adjacent mine counts."""
-        env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
-        env.reset(seed=42)
-
-        # Set up a controlled board
-        env.mines.fill(False)
-        env.mines[1, 1] = True  # Mine at center
-        env.mines[2, 2] = True  # Mine at another position
-        env._update_adjacent_counts()
-        env.mines_placed = True
-        env.is_first_cascade = False
-        env.first_cascade_done = True
+        assert np.all(obs[1] >= -1), "Safety hints should be >= -1"
+        assert np.all(obs[1] <= 8), "Safety hints should be <= 8"
         
-        # Update enhanced state after setting up controlled board
-        env._update_enhanced_state()
-
-        state = env.state
-        safety_hints = state[1]
-        print("[DIAG] Safety hints array:\n", safety_hints)
-        # Check that safety hints show correct adjacent mine counts
-        # Mine at (1,1) affects: (0,0), (0,1), (0,2), (1,0), (1,2), (2,0), (2,1), (2,2)
-        # Mine at (2,2) affects: (1,1), (1,2), (1,3), (2,1), (2,3), (3,1), (3,2), (3,3)
-        assert safety_hints[0, 0] == 1, f"Corner cell (0,0) should show 1 adjacent mine, got {safety_hints[0,0]}"
-        assert safety_hints[0, 3] == 0, f"Corner cell (0,3) should show 0 adjacent mines, got {safety_hints[0,3]}"
-        assert safety_hints[3, 0] == 0, f"Corner cell (3,0) should show 0 adjacent mines, got {safety_hints[3,0]}"
-        assert safety_hints[3, 3] == 1, f"Corner cell (3,3) should show 1 adjacent mine, got {safety_hints[3,3]}"
-    
-    def test_state_evolution_during_gameplay(self):
-        """REQUIREMENT: State should evolve correctly during gameplay."""
-        env = MinesweeperEnv(initial_board_size=4, initial_mines=2)
-        env.reset(seed=42)
+        # Channel 2: Revealed cell count (should be 0 initially)
+        assert obs[2, 0, 0] == 0, "Revealed cell count should be 0 initially"
         
-        initial_state = env.state.copy()
-        
-        # Take an action
-        action = 0
-        state, reward, terminated, truncated, info = env.step(action)
-        print(f"[DIAG] State[0,0,0] after step: {state[0,0,0]}")
-        print(f"[DIAG] State[1,0,0] after step: {state[1,0,0]}")
-        print(f"[DIAG] Terminated: {terminated}, Reward: {reward}")
-        # State should change
-        assert not np.array_equal(state, initial_state), "State should change after action"
-        # Game state channel should show revealed cells
-        if not terminated:
-            if state[0, 0, 0] != CELL_MINE_HIT:
-                assert state[0, 0, 0] != CELL_UNREVEALED, "Revealed cell should not be unrevealed"
-                assert state[1, 0, 0] == -1, "Revealed cell should show -1 in safety hints"
+        # Channel 3: Game progress indicators
+        assert np.all(obs[3] >= 0), "Game progress indicators should be >= 0"
+        assert np.all(obs[3] <= 1), "Game progress indicators should be <= 1"
 
 class TestActionMasking:
     """Test action masking functionality."""

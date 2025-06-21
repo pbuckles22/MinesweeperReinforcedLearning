@@ -31,7 +31,7 @@
 ### Test Updates Made
 1. **Unit Tests**: Updated 4 failing tests to expect correct behavior
 2. **Functional Tests**: Fixed 2 failing tests with proper setup
-3. **Integration Tests**: Updated for 2-channel state format
+3. **Integration Tests**: Updated for 4-channel state format
 4. **Removed**: All flagging-related test code
 
 ---

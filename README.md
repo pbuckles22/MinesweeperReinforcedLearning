@@ -4,11 +4,11 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 
 ## 🎯 Current Status
 
-✅ **Environment**: Fully functional 2-channel Minesweeper RL environment  
+✅ **Environment**: Fully functional 4-channel Minesweeper RL environment  
 ✅ **Test Coverage**: 504 tests passing (100% success rate)  
 ✅ **Training System**: Complete RL training pipeline with curriculum learning  
 ✅ **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.  
-✅ **State Representation**: Enhanced 2-channel state with safety hints  
+✅ **State Representation**: Enhanced 4-channel state (game state, safety hints, revealed cell count, game progress indicators)  
 ✅ **Action Masking**: Intelligent action masking for revealed cells  
 ✅ **Reward System**: Comprehensive reward system for RL training  
 ✅ **Experiment Tracking**: Full experiment tracking and metrics collection  
@@ -52,14 +52,14 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 
 ### Environment Modernization (2024-12-18)
 - **Removed**: All flagging logic for RL-appropriate reveal-only gameplay
-- **Updated**: 2-channel state representation with safety hints
+- **Updated**: 4-channel state representation (game state, safety hints, revealed cell count, game progress indicators)
 - **Enhanced**: Comprehensive test suites for RL scenarios
 - **Improved**: Functional and integration test coverage
 
 ## 🏗️ Architecture
 
 ### Environment Features
-- **2-Channel State**: Game state + safety hints for enhanced learning
+- **4-Channel State**: Game state, safety hints, revealed cell count, and game progress indicators for enhanced learning
 - **First-Move Safety**: (Removed) The first move can be a mine; there is no mine relocation. The environment is intentionally simple for RL.
 - **Cascade Revelation**: Automatic neighbor revelation for empty cells
 - **Action Masking**: Intelligent masking of revealed cells
