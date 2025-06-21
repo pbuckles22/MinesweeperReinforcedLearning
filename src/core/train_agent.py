@@ -2,6 +2,8 @@ import os
 import numpy as np
 import time
 import json
+import signal
+import sys
 from datetime import datetime
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CheckpointCallback, CallbackList
@@ -14,6 +16,22 @@ import torch
 from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
 import mlflow
 import mlflow.pytorch
+
+# Global variables for graceful shutdown
+training_model = None
+training_env = None
+eval_env = None
+shutdown_requested = False
+
+def signal_handler(signum, frame):
+    """Handle Ctrl+C gracefully"""
+    global shutdown_requested
+    print(f"\n🛑 Received signal {signum}. Initiating graceful shutdown...")
+    shutdown_requested = True
+    
+    # Give a second chance to force quit
+    print("Press Ctrl+C again to force quit, or wait for graceful shutdown...")
+    signal.signal(signal.SIGINT, signal.SIG_DFL)  # Reset to default handler for second Ctrl+C
 
 def detect_optimal_device():
     """
@@ -397,6 +415,12 @@ class IterationCallback(BaseCallback):
         return getattr(env, attr, None)
 
     def _on_step(self):
+        # Check for shutdown request
+        global shutdown_requested
+        if shutdown_requested:
+            self.log("🛑 Shutdown requested in callback. Stopping training...", level=0)
+            return False  # Return False to stop training
+        
         # Track step timing
         current_time = time.time()
         step_time = current_time - self.last_step_time
@@ -532,7 +556,8 @@ def make_env(max_board_size, max_mines):
             safe_reveal_base=REWARD_SAFE_REVEAL,
             win_reward=REWARD_WIN
         )
-        env = Monitor(env)
+        # Configure Monitor to track the 'won' field from environment info
+        env = Monitor(env, info_keywords=("won",))
         return env
     return _init
 
@@ -587,10 +612,18 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    global training_model, training_env, eval_env, shutdown_requested
+    
+    # Set up signal handling for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     args = parse_args()
     
     print("🚀 Starting Minesweeper RL Training")
     print("=" * 50)
+    print("💡 Press Ctrl+C to stop training gracefully")
+    print("")
     
     # Set up MLflow experiment
     mlflow.set_experiment("minesweeper_rl")
@@ -739,157 +772,204 @@ def main():
     print(f"\n🎯 Starting training with {device_info['description']}...")
     print(f"   Expected performance: {device_info['performance_notes']}")
     
-    for stage in range(len(curriculum_stages)):
-        current_stage_info = curriculum_stages[stage]
-        print(f"\n{'='*50}")
-        print(f"Starting Stage {stage + 1}/{len(curriculum_stages)}: {current_stage_info['name']}")
-        print(f"Board: {current_stage_info['size'] if isinstance(current_stage_info['size'], int) else f'{current_stage_info['size'][0]}x{current_stage_info['size'][1]}'}")
-        print(f"Mines: {current_stage_info['mines']}")
-        print(f"Target Win Rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
-        print(f"Description: {current_stage_info['description']}")
-        print(f"{'='*50}\n")
-        
-        # Create new environment for current stage
-        env = DummyVecEnv([make_env(
-            max_board_size=current_stage_info['size'],
-            max_mines=current_stage_info['mines']
-        )])
-        
-        # Create new model for current stage (observation space changes between stages)
-        print(f"🏗️  Creating new PPO model for Stage {stage + 1}...")
-        model = PPO(
-            policy=args.policy,
-            env=env,
-            learning_rate=args.learning_rate,
-            n_steps=args.n_steps,
-            batch_size=args.batch_size,
-            n_epochs=args.n_epochs,
-            gamma=args.gamma,
-            gae_lambda=args.gae_lambda,
-            clip_range=args.clip_range,
-            clip_range_vf=args.clip_range_vf,
-            ent_coef=args.ent_coef,
-            vf_coef=args.vf_coef,
-            max_grad_norm=args.max_grad_norm,
-            use_sde=args.use_sde,
-            sde_sample_freq=args.sde_sample_freq,
-            target_kl=args.target_kl,
-            verbose=args.verbose,
-            seed=args.seed,
-            device=args.device,
-            _init_setup_model=args._init_setup_model
-        )
-        print("✅ New model created successfully!")
-        
-        # Create evaluation environment for current stage
-        eval_env = DummyVecEnv([make_env(
-            max_board_size=current_stage_info['size'],
-            max_mines=current_stage_info['mines']
-        )])
-        
-        # Create evaluation callback
-        eval_callback = CustomEvalCallback(
-            eval_env,
-            eval_freq=args.eval_freq,
-            n_eval_episodes=args.n_eval_episodes,
-            verbose=args.verbose,
-            best_model_save_path=f"./best_model/stage_{stage + 1}",
-            log_path="./logs/"
-        )
-        
-        # Create iteration callback
-        iteration_callback = IterationCallback(
-            verbose=args.verbose,
-            debug_level=2,
-            experiment_tracker=experiment_tracker
-        )
-        
-        # Train for this stage
-        model.learn(
-            total_timesteps=stage_timesteps[stage],
-            callback=[eval_callback, iteration_callback],
-            progress_bar=True
-        )
-        
-        # Evaluate current stage
-        evaluation_results = evaluate_model(model, env, n_episodes=args.n_eval_episodes)
-        win_rate = evaluation_results["win_rate"] / 100  # Convert percentage to decimal
-        mean_reward = evaluation_results["avg_reward"]
-        reward_std = evaluation_results["reward_ci"]
-        
-        print(f"\nStage {stage + 1} Results:")
-        print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
-        print(f"Win rate: {win_rate:.2%}")
-        print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
-        
-        # Save stage results
-        experiment_tracker.add_validation_metric(
-            f"stage_{stage + 1}_mean_reward",
-            mean_reward,
-            confidence_interval=reward_std
-        )
-        experiment_tracker.add_validation_metric(
-            f"stage_{stage + 1}_win_rate",
-            win_rate
-        )
-        
-        # Save model for this stage
-        model.save(f"models/stage_{stage + 1}")
-        
-        # Add stage completion to metrics
-        experiment_tracker.metrics["completed_stages"] = experiment_tracker.metrics.get("completed_stages", [])
-        experiment_tracker.metrics["completed_stages"].append({
-            "stage": stage + 1,
-            "name": current_stage_info['name'],
-            "win_rate": win_rate,
-            "mean_reward": mean_reward,
-            "target_win_rate": current_stage_info['win_rate_threshold']
-        })
-        experiment_tracker._save_metrics()
-        
-        # Check if we should continue to next stage
-        if win_rate >= current_stage_info['win_rate_threshold']:
-            print(f"✅ Stage {stage + 1} target achieved! Win rate: {win_rate:.2%} >= {current_stage_info['win_rate_threshold']:.2%}")
-        else:
-            print(f"⚠️  Stage {stage + 1} target not achieved. Win rate: {win_rate:.2%} < {current_stage_info['win_rate_threshold']:.2%}")
-            print("Continuing to next stage anyway for curriculum progression...")
-        
-        print(f"Stage {stage + 1} completed. Moving to next stage...\n")
-    
-    # Save final model
-    model.save("models/final_model")
-    
-    # Log final model to MLflow (SB3 models need to be logged as artifacts)
     try:
-        # Ensure models directory exists
-        os.makedirs("models", exist_ok=True)
+        for stage in range(len(curriculum_stages)):
+            # Check for shutdown request
+            if shutdown_requested:
+                print("\n🛑 Shutdown requested. Stopping training gracefully...")
+                break
+                
+            current_stage_info = curriculum_stages[stage]
+            print(f"\n{'='*50}")
+            print(f"Starting Stage {stage + 1}/{len(curriculum_stages)}: {current_stage_info['name']}")
+            print(f"Board: {current_stage_info['size'] if isinstance(current_stage_info['size'], int) else f'{current_stage_info['size'][0]}x{current_stage_info['size'][1]}'}")
+            print(f"Mines: {current_stage_info['mines']}")
+            print(f"Target Win Rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+            print(f"Description: {current_stage_info['description']}")
+            print(f"{'='*50}\n")
+            
+            # Create new environment for current stage
+            training_env = DummyVecEnv([make_env(
+                max_board_size=current_stage_info['size'],
+                max_mines=current_stage_info['mines']
+            )])
+            
+            # Create new model for current stage (observation space changes between stages)
+            print(f"🏗️  Creating new PPO model for Stage {stage + 1}...")
+            training_model = PPO(
+                policy=args.policy,
+                env=training_env,
+                learning_rate=args.learning_rate,
+                n_steps=args.n_steps,
+                batch_size=args.batch_size,
+                n_epochs=args.n_epochs,
+                gamma=args.gamma,
+                gae_lambda=args.gae_lambda,
+                clip_range=args.clip_range,
+                clip_range_vf=args.clip_range_vf,
+                ent_coef=args.ent_coef,
+                vf_coef=args.vf_coef,
+                max_grad_norm=args.max_grad_norm,
+                use_sde=args.use_sde,
+                sde_sample_freq=args.sde_sample_freq,
+                target_kl=args.target_kl,
+                verbose=args.verbose,
+                seed=args.seed,
+                device=args.device,
+                _init_setup_model=args._init_setup_model
+            )
+            print("✅ New model created successfully!")
+            
+            # Create evaluation environment for current stage
+            eval_env = DummyVecEnv([make_env(
+                max_board_size=current_stage_info['size'],
+                max_mines=current_stage_info['mines']
+            )])
+            
+            # Create evaluation callback
+            eval_callback = CustomEvalCallback(
+                eval_env,
+                eval_freq=args.eval_freq,
+                n_eval_episodes=args.n_eval_episodes,
+                verbose=args.verbose,
+                best_model_save_path=f"./best_model/stage_{stage + 1}",
+                log_path="./logs/"
+            )
+            
+            # Create iteration callback
+            iteration_callback = IterationCallback(
+                verbose=args.verbose,
+                debug_level=2,
+                experiment_tracker=experiment_tracker
+            )
+            
+            # Train for this stage
+            print(f"🚀 Starting training for Stage {stage + 1}...")
+            training_model.learn(
+                total_timesteps=stage_timesteps[stage],
+                callback=[eval_callback, iteration_callback],
+                progress_bar=True
+            )
+            
+            # Check for shutdown request after training
+            if shutdown_requested:
+                print("\n🛑 Shutdown requested. Stopping training gracefully...")
+                break
+            
+            # Evaluate current stage
+            evaluation_results = evaluate_model(training_model, training_env, n_episodes=args.n_eval_episodes)
+            win_rate = evaluation_results["win_rate"] / 100  # Convert percentage to decimal
+            mean_reward = evaluation_results["avg_reward"]
+            reward_std = evaluation_results["reward_ci"]
+            
+            print(f"\nStage {stage + 1} Results:")
+            print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
+            print(f"Win rate: {win_rate:.2%}")
+            print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+            
+            # Save stage results
+            experiment_tracker.add_validation_metric(
+                f"stage_{stage + 1}_mean_reward",
+                mean_reward,
+                confidence_interval=reward_std
+            )
+            experiment_tracker.add_validation_metric(
+                f"stage_{stage + 1}_win_rate",
+                win_rate
+            )
+            
+            # Save model for this stage
+            training_model.save(f"models/stage_{stage + 1}")
+            
+            # Add stage completion to metrics
+            experiment_tracker.metrics["completed_stages"] = experiment_tracker.metrics.get("completed_stages", [])
+            experiment_tracker.metrics["completed_stages"].append({
+                "stage": stage + 1,
+                "name": current_stage_info['name'],
+                "win_rate": win_rate,
+                "mean_reward": mean_reward,
+                "target_win_rate": current_stage_info['win_rate_threshold']
+            })
+            experiment_tracker._save_metrics()
+            
+            # Check if we should continue to next stage
+            if win_rate >= current_stage_info['win_rate_threshold']:
+                print(f"✅ Stage {stage + 1} target achieved! Win rate: {win_rate:.2%} >= {current_stage_info['win_rate_threshold']:.2%}")
+            else:
+                print(f"⚠️  Stage {stage + 1} target not achieved. Win rate: {win_rate:.2%} < {current_stage_info['win_rate_threshold']:.2%}")
+                print("Continuing to next stage anyway for curriculum progression...")
+            
+            print(f"Stage {stage + 1} completed. Moving to next stage...\n")
         
-        # Check if the model file exists before logging
-        model_path = "models/final_model.zip"
-        if os.path.exists(model_path):
-            mlflow.log_artifact(model_path, "final_model")
-            print("   ✅ Final model logged to MLflow successfully")
+        # Save final model if training completed normally
+        if not shutdown_requested and training_model is not None:
+            training_model.save("models/final_model")
+            
+            # Log final model to MLflow (SB3 models need to be logged as artifacts)
+            try:
+                # Ensure models directory exists
+                os.makedirs("models", exist_ok=True)
+                
+                # Check if the model file exists before logging
+                model_path = "models/final_model.zip"
+                if os.path.exists(model_path):
+                    mlflow.log_artifact(model_path, "final_model")
+                    print("   ✅ Final model logged to MLflow successfully")
+                else:
+                    print(f"   ⚠️  Model file not found at {model_path}")
+            except Exception as e:
+                print(f"   ⚠️  Model logging failed: {e}")
+            
+            # Log final metrics
+            mlflow.log_metric("final_win_rate", win_rate)
+            mlflow.log_metric("final_mean_reward", mean_reward)
+            mlflow.log_metric("final_reward_std", reward_std)
+            
+            print("\n✅ Training completed successfully!")
+            print("\nFinal Stage Progression:")
+            for stage in range(len(curriculum_stages)):
+                if stage < len(experiment_tracker.metrics.get("completed_stages", [])):
+                    stage_info = experiment_tracker.metrics["completed_stages"][stage]
+                    print(f"\nStage {stage + 1}: {stage_info['name']}")
+                    print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
+                    print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['target_win_rate']*100:.2f}%")
+            
+            print(f"\n📊 MLflow experiment tracking enabled!")
+            print(f"   Run 'mlflow ui' to view training progress")
+            print(f"   Then open http://localhost:5000 in your browser")
         else:
-            print(f"   ⚠️  Model file not found at {model_path}")
+            print("\n🛑 Training stopped by user request.")
+            if training_model is not None:
+                # Save the current model as a checkpoint
+                checkpoint_path = f"models/checkpoint_stage_{stage + 1}_interrupted"
+                training_model.save(checkpoint_path)
+                print(f"💾 Checkpoint saved to: {checkpoint_path}")
+    
+    except KeyboardInterrupt:
+        print("\n🛑 Training interrupted by user (Ctrl+C)")
+        if training_model is not None:
+            # Save the current model as a checkpoint
+            checkpoint_path = "models/checkpoint_interrupted"
+            training_model.save(checkpoint_path)
+            print(f"💾 Checkpoint saved to: {checkpoint_path}")
+    
     except Exception as e:
-        print(f"   ⚠️  Model logging failed: {e}")
+        print(f"\n❌ Training failed with error: {e}")
+        if training_model is not None:
+            # Save the current model as a checkpoint
+            checkpoint_path = "models/checkpoint_error"
+            training_model.save(checkpoint_path)
+            print(f"💾 Checkpoint saved to: {checkpoint_path}")
+        raise
     
-    # Log final metrics
-    mlflow.log_metric("final_win_rate", win_rate)
-    mlflow.log_metric("final_mean_reward", mean_reward)
-    mlflow.log_metric("final_reward_std", reward_std)
-    
-    print("\nTraining completed!")
-    print("\nFinal Stage Progression:")
-    for stage in range(len(curriculum_stages)):
-        stage_info = experiment_tracker.metrics["completed_stages"][stage]
-        print(f"\nStage {stage + 1}: {stage_info['name']}")
-        print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
-        print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['target_win_rate']*100:.2f}%")
-    
-    print(f"\n📊 MLflow experiment tracking enabled!")
-    print(f"   Run 'mlflow ui' to view training progress")
-    print(f"   Then open http://localhost:5000 in your browser")
+    finally:
+        # Clean up resources
+        print("\n🧹 Cleaning up resources...")
+        if training_env is not None:
+            training_env.close()
+        if eval_env is not None:
+            eval_env.close()
+        print("✅ Cleanup completed")
 
 def evaluate_model(model, env, n_episodes=100):
     """Evaluate model with proper statistical analysis, supporting both vectorized and non-vectorized environments."""

@@ -23,14 +23,25 @@ source venv/bin/activate
 # Set PYTHONPATH
 export PYTHONPATH="src:$PYTHONPATH"
 
-# Run full training session
-echo "🚀 Starting Full Training Session (1M timesteps, ~4-8 hours)"
-echo "Expected: Complete curriculum progression through all stages"
+# Run debug training with better early learning parameters
+echo "🔧 Debug Training with Enhanced Early Learning"
+echo "=============================================="
+echo "This uses parameters optimized for early learning and exploration"
 echo "💡 Press Ctrl+C to stop training gracefully"
 echo ""
 
 # Start training in background and capture PID
-python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --learning_rate 0.0003 --verbose 1 &
+python src/core/train_agent.py \
+    --total_timesteps 20000 \
+    --eval_freq 1000 \
+    --n_eval_episodes 50 \
+    --learning_rate 0.001 \
+    --ent_coef 0.1 \
+    --batch_size 64 \
+    --n_steps 1024 \
+    --n_epochs 8 \
+    --verbose 1 \
+    --device mps &
 TRAINING_PID=$!
 
 echo "Training started with PID: $TRAINING_PID"

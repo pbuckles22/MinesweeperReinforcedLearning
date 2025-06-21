@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Signal handling for graceful shutdown
+cleanup() {
+    echo ""
+    echo "🛑 Stopping monitoring..."
+    echo "✅ Monitoring stopped"
+    exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
 # Quick Training Monitor - One-liner style
 # Usage: ./scripts/quick_monitor.sh
 

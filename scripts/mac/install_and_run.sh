@@ -32,9 +32,30 @@ if [ ! -d "venv" ]; then
     python -m venv venv
 fi
 
+# Fix permissions for virtual environment executables
+echo "Fixing virtual environment permissions..."
+chmod +x venv/bin/activate venv/bin/activate.csh venv/bin/activate.fish 2>/dev/null || true
+chmod +x venv/bin/python* 2>/dev/null || true
+chmod +x venv/bin/pip* 2>/dev/null || true
+chmod +x venv/bin/* 2>/dev/null || true
+echo "✅ Virtual environment permissions fixed!"
+
 # Activate virtual environment
 echo "Activating virtual environment..."
 source venv/bin/activate
+echo "✅ Virtual environment activated! (You should see (venv) in your prompt)"
+
+# Verify we're using the right Python
+echo "🔍 Verifying virtual environment..."
+VENV_PYTHON=$(which python)
+echo "   Using Python: $VENV_PYTHON"
+if [[ "$VENV_PYTHON" == *"venv/bin/python"* ]]; then
+    echo "   ✅ Correct virtual environment Python detected"
+else
+    echo "   ❌ Warning: Not using virtual environment Python"
+    echo "   Expected: */venv/bin/python"
+    echo "   Found: $VENV_PYTHON"
+fi
 
 # Upgrade pip to latest version
 echo "Upgrading pip to latest version..."
@@ -120,5 +141,19 @@ else
     echo "The training will show progress including win rates and learning phases."
 fi
 
+echo ""
+echo "============================================================"
+echo "Installation and setup completed! 🎉"
+echo "============================================================"
+echo ""
+echo "📝 Important: The virtual environment will be deactivated when this script ends."
+echo "To use the project, you need to reactivate it:"
+echo ""
+echo "   source venv/bin/activate"
+echo ""
+echo "You should then see (venv) in your prompt, indicating the virtual environment is active."
+echo ""
+
 # Deactivate virtual environment
-deactivate 
+deactivate
+echo "Virtual environment deactivated." 
