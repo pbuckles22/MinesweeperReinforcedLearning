@@ -38,9 +38,9 @@ def test_script_parameters(script_path):
     with open(script_path, 'r') as f:
         content = f.read()
     
-    # Check for training parameters
-    assert "boardsize" in content.lower()
-    assert "maxmines" in content.lower()
+    # Check for training parameters (using actual parameter names from script)
+    assert "board-size" in content.lower() or "boardsize" in content.lower()
+    assert "max-mines" in content.lower() or "maxmines" in content.lower()
     assert "timesteps" in content.lower()
 
 def test_script_environment_check(script_path):

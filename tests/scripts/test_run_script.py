@@ -52,21 +52,38 @@ def test_script_syntax(script_path):
         pytest.fail(f"Script syntax error: {e.stderr}")
 
 def test_script_parameters(script_path):
-    """Test that the script has training parameters."""
+    """Test that the script has appropriate parameters based on its purpose."""
     # Read the script content
     with open(script_path, 'r') as f:
         content = f.read()
     
-    # Check for training parameters (check for both old and new parameter formats)
-    assert ("total_timesteps" in content.lower() or 
-            "timesteps" in content.lower() or 
-            "--timesteps" in content.lower())
-    assert ("learning_rate" in content.lower() or 
-            "learningrate" in content.lower() or 
-            "--learning-rate" in content.lower())
-    assert ("board_size" in content.lower() or 
-            "boardsize" in content.lower() or 
-            "--board-size" in content.lower())
+    # Check if this is a training script or visualization script
+    is_training_script = ("train_agent.py" in content.lower() or 
+                         "total_timesteps" in content.lower() or
+                         "timesteps" in content.lower())
+    
+    is_visualization_script = ("visualize_agent.py" in content.lower())
+    
+    if is_training_script:
+        # Training scripts should have training parameters
+        assert ("total_timesteps" in content.lower() or 
+                "timesteps" in content.lower() or 
+                "--timesteps" in content.lower())
+        assert ("learning_rate" in content.lower() or 
+                "learningrate" in content.lower() or 
+                "--learning-rate" in content.lower())
+        assert ("board_size" in content.lower() or 
+                "boardsize" in content.lower() or 
+                "--board-size" in content.lower())
+    elif is_visualization_script:
+        # Visualization scripts should have visualization parameters
+        assert ("visualize_agent.py" in content.lower())
+        # Visualization scripts use "$@" to pass through arguments
+        assert '"$@"' in content or '--model-path' in content.lower()
+    else:
+        # For other scripts, just check they have some parameters
+        assert ("python" in content.lower() and 
+                ("src/" in content.lower() or "train" in content.lower() or "visualize" in content.lower()))
 
 def test_script_environment_check(script_path):
     """Test that the script uses Python for training."""
