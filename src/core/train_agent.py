@@ -300,12 +300,13 @@ class CustomEvalCallback(BaseCallback):
 
 class IterationCallback(BaseCallback):
     """Custom callback for logging iteration information"""
-    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None):
+    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None, stats_file="training_stats.txt"):
         super().__init__(verbose)
         self.start_time = time.time()
         self.last_iteration_time = self.start_time
         self.iterations = 0
         self.debug_level = debug_level
+        self.stats_file = stats_file
         
         # Track metrics for improvement calculation
         self.last_avg_reward = 0
@@ -326,6 +327,11 @@ class IterationCallback(BaseCallback):
         self.stage_wins = 0
         self.stage_games = 0
         
+        # Progress monitoring for early termination
+        self.no_improvement_count = 0
+        self.last_improvement_iteration = 0
+        self.stage_start_time = time.time()
+        
         # Debug information
         self.last_step_time = time.time()
         self.step_times = []
@@ -343,6 +349,10 @@ class IterationCallback(BaseCallback):
         }
         
         self.experiment_tracker = experiment_tracker
+        
+        # Initialize stats file
+        with open(self.stats_file, 'w') as f:
+            f.write("timestamp,iteration,timesteps,win_rate,avg_reward,avg_length,stage,phase,stage_time,no_improvement\n")
 
     def log(self, message, level=2, force=False):
         """Log message if debug level is high enough"""
@@ -468,6 +478,36 @@ class IterationCallback(BaseCallback):
                     self.experiment_tracker.add_training_metric("win_rate", win_rate, self.iterations)
                     self.experiment_tracker.add_training_metric("avg_reward", avg_reward, self.iterations)
                     self.experiment_tracker.add_training_metric("avg_length", avg_length, self.iterations)
+                
+                # Write progress to stats file for monitoring
+                stage_time = time.time() - self.stage_start_time
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                # Check for improvement
+                improvement = False
+                if win_rate > self.best_win_rate or avg_reward > self.best_reward:
+                    improvement = True
+                    self.last_improvement_iteration = self.iterations
+                    self.no_improvement_count = 0
+                else:
+                    self.no_improvement_count += 1
+                
+                # Write one-line stats
+                stats_line = f"{timestamp},{self.iterations},{self.num_timesteps},{win_rate:.1f},{avg_reward:.2f},{avg_length:.1f},{self.curriculum_stage},{self.learning_phase},{stage_time:.0f},{self.no_improvement_count}\n"
+                with open(self.stats_file, 'a') as f:
+                    f.write(stats_line)
+                
+                # Early termination check (every 50 iterations = ~5000 timesteps)
+                if self.iterations % 50 == 0 and self.iterations > 100:
+                    # Check if we're stuck for too long
+                    if self.no_improvement_count > 20:  # No improvement for 20 iterations
+                        self.log(f"⚠️  WARNING: No improvement for {self.no_improvement_count} iterations", level=1)
+                        if self.no_improvement_count > 50:  # No improvement for 50 iterations
+                            self.log(f"🚨 CRITICAL: No improvement for {self.no_improvement_count} iterations - Consider stopping training", level=0)
+                    
+                    # Check if win rate is too low for too long
+                    if win_rate < 5 and self.iterations > 200:  # Less than 5% win rate after 200 iterations
+                        self.log(f"🚨 CRITICAL: Win rate too low ({win_rate:.1f}%) after {self.iterations} iterations - Consider stopping training", level=0)
             
             self.last_iteration_time = current_time
             
@@ -617,17 +657,10 @@ def main():
     # Define curriculum stages with realistic win rate thresholds
     curriculum_stages = [
         {
-            'name': 'Tiny',
-            'size': 2,
-            'mines': 1,
-            'win_rate_threshold': 0.25,  # 25% - Very achievable for 2x2 with 1 mine
-            'description': '2x2 board with 1 mine - Simplest possible learning environment'
-        },
-        {
             'name': 'Beginner',
             'size': 4,
             'mines': 2,
-            'win_rate_threshold': 0.15,  # 15% - Much more realistic for learning
+            'win_rate_threshold': 0.15,  # 15% - Realistic for 4x4 with 2 mines
             'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
         },
         {
@@ -688,11 +721,9 @@ def main():
     # Adjust timesteps for different stages - give more time to simpler stages
     stage_timesteps = []
     for stage_idx, stage_info in enumerate(curriculum_stages):
-        if stage_idx == 0:  # Tiny stage (2x2)
-            stage_timesteps.append(timesteps_per_stage * 2)  # Double time for simplest stage
-        elif stage_idx == 1:  # Beginner stage (4x4)
+        if stage_idx == 0:  # Beginner stage (4x4)
             stage_timesteps.append(timesteps_per_stage * 1.5)  # 1.5x time for learning basics
-        elif stage_idx < 4:  # Intermediate and Easy stages
+        elif stage_idx < 3:  # Intermediate and Easy stages
             stage_timesteps.append(timesteps_per_stage * 1.2)  # 1.2x time for medium complexity
         else:  # Normal, Hard, Expert, Chaotic stages
             stage_timesteps.append(timesteps_per_stage)  # Standard time for complex stages

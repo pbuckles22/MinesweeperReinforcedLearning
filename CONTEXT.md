@@ -38,9 +38,9 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - **Purpose**: Prevents obviously bad moves and guides agent toward better decisions
 
 ### **Curriculum Learning** ⚡ **UPDATED**
-- **8 Stages**: Tiny (2x2) → Beginner (4x4) → Intermediate (6x6) → Easy (9x9) → Normal (16x16) → Hard (16x30) → Expert (18x24) → Chaotic (20x35)
-- **Realistic Thresholds**: 25%, 15%, 12%, 10%, 8%, 5%, 3%, 2% win rates
-- **Adaptive Training**: More time for simpler stages (2x, 1.5x, 1.2x multipliers)
+- **7 Stages**: Beginner (4x4) → Intermediate (6x6) → Easy (9x9) → Normal (16x16) → Hard (16x30) → Expert (18x24) → Chaotic (20x35)
+- **Realistic Thresholds**: 15%, 12%, 10%, 8%, 5%, 3%, 2% win rates
+- **Adaptive Training**: More time for simpler stages (1.5x, 1.2x multipliers)
 - **Purpose**: Progressive difficulty with appropriate learning time allocation
 
 ### **Board Size Convention**
@@ -59,7 +59,7 @@ REWARD_INVALID_ACTION = -10       # Invalid action penalty
 ### **Environment Features**
 - **4-channel state representation**: Game state + safety hints + revealed count + progress indicators
 - **Smart action masking**: Prevents obviously bad moves
-- **Curriculum learning**: 8 stages with adaptive training times
+- **Curriculum learning**: 7 stages with adaptive training times
 - **MLflow integration**: Experiment tracking and model logging
 - **M1 GPU Support**: Optimized for Apple Silicon with Metal Performance Shaders (MPS)
 
@@ -92,7 +92,7 @@ pytest
 - ✅ Test suite comprehensive (516 tests)
 - ✅ Board size standardization complete
 - ✅ **Simplified reward system implemented**
-- ✅ **Realistic curriculum thresholds (25%, 15%, 12%, 10%, 8%, 5%, 3%, 2%)**
+- ✅ **Realistic curriculum thresholds (15%, 12%, 10%, 8%, 5%, 3%, 2%)**
 - ✅ **Cross-platform scripts organized**
 - ✅ **M1 GPU support implemented**
 - ✅ **Enhanced state representation (4 channels)**
@@ -201,7 +201,7 @@ python -m pytest tests/ -v
 ./scripts/linux/medium_test.sh
 ```
 **Purpose**: Test curriculum learning progression through multiple stages
-**Expected**: Agent should progress through Tiny (2x2) → Beginner (4x4) → Intermediate (6x6) stages
+**Expected**: Agent should progress through Beginner (4x4) → Intermediate (6x6) → Easy (9x9) stages
 
 #### **3. Full Training Run (1-2 hours)**
 ```bash
@@ -214,7 +214,7 @@ python -m pytest tests/ -v
 # On Linux
 ./scripts/linux/full_training.sh
 ```
-**Purpose**: Complete curriculum learning through all 8 stages
+**Purpose**: Complete curriculum learning through all 7 stages
 **Expected**: Agent should progress through all stages with realistic win rate thresholds
 
 ### **Training Command Reference**
@@ -250,7 +250,6 @@ python src/core/train_agent.py \
 
 | Stage | Board Size | Mines | Win Rate Target | Expected Time |
 |-------|------------|-------|-----------------|---------------|
-| **Tiny** | 2x2 | 1 | 25% | 2-5 minutes |
 | **Beginner** | 4x4 | 2 | 15% | 5-10 minutes |
 | **Intermediate** | 6x6 | 4 | 12% | 10-15 minutes |
 | **Easy** | 9x9 | 10 | 10% | 15-25 minutes |
@@ -277,7 +276,7 @@ mlflow ui
 
 #### **Success Indicators**
 - ✅ Agent achieves positive rewards consistently
-- ✅ Win rates meet stage thresholds (25%, 15%, 12%, etc.)
+- ✅ Win rates meet stage thresholds (15%, 12%, 10%, etc.)
 - ✅ Smooth progression through curriculum stages
 - ✅ No training crashes or hanging issues
 
