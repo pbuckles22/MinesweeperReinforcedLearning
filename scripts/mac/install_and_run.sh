@@ -11,12 +11,20 @@ if ! command_exists python; then
     exit 1
 fi
 
-# Check Python version
+# Check Python version with multiple methods
 python_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-if (( $(echo "$python_version < 3.8" | bc -l) )); then
+echo "Detected Python version: $python_version"
+
+# Method 1: Direct version comparison (most reliable)
+python_major=$(python -c 'import sys; print(sys.version_info[0])')
+python_minor=$(python -c 'import sys; print(sys.version_info[1])')
+
+if [ "$python_major" -lt 3 ] || ([ "$python_major" -eq 3 ] && [ "$python_minor" -lt 8 ]); then
     echo "Python version $python_version is not supported. Please install Python 3.8 or higher."
     exit 1
 fi
+
+echo "✅ Python version $python_version is supported!"
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
