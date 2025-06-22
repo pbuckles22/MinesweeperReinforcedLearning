@@ -21,7 +21,7 @@ python src/core/train_agent.py `
     --total_timesteps 10000 `
     --eval_freq 2000 `
     --n_eval_episodes 20 `
-    --verbose 1
+    --verbose 0
 
 Write-Host ""
 Write-Host "Quick test completed!" -ForegroundColor Green 

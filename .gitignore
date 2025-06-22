@@ -64,3 +64,46 @@ Thumbs.db
 # Training outputs
 mlruns/
 
+# Development and Testing Files (not needed for production)
+test_game_logic.py
+test_clean_requirements.ps1
+test_clean_env/
+update_cursor_settings.sh
+.cursorrules
+
+# Training Statistics (generated during training)
+training_stats.txt
+training_stats_*.txt
+
+# Pytest cache
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# IDE specific files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/workspace.xml
+.idea/modules.xml
+
+# OS generated files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary directories
+tmp/
+temp/
+

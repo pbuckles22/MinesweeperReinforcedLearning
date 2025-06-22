@@ -30,7 +30,7 @@ echo "💡 Press Ctrl+C to stop training gracefully"
 echo ""
 
 # Start training in background and capture PID
-python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --learning_rate 0.0003 --verbose 1 &
+python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --learning_rate 0.0003 --verbose 0 &
 TRAINING_PID=$!
 
 echo "Training started with PID: $TRAINING_PID"

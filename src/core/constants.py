@@ -1,5 +1,17 @@
 """
 Constants for the Minesweeper environment.
+
+Recent Updates (2024-12-19):
+- Simplified reward system: Immediate rewards for all actions (no first-move special cases)
+- Enhanced state representation: 4-channel state for better pattern recognition
+- Cross-platform compatibility: Platform-specific requirements and test adaptations
+- M1 GPU optimization: Automatic device detection and performance benchmarking
+
+Key Changes:
+- Removed confusing first-move neutral rewards
+- Implemented immediate positive/negative feedback for all actions
+- Added 4-channel state representation (game state, safety hints, revealed count, progress)
+- Enhanced action masking for better learning guidance
 """
 
 # Cell states

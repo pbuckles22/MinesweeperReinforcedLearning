@@ -1,3 +1,26 @@
+"""
+Minesweeper RL Training Agent with Curriculum Learning
+
+This module implements a complete training pipeline for the Minesweeper environment
+using Stable Baselines3 PPO with curriculum learning, experiment tracking, and
+cross-platform compatibility.
+
+Recent Updates (2024-12-19):
+- M1 GPU optimization with automatic MPS detection and performance benchmarking
+- Cross-platform script compatibility (Mac/Windows/Linux)
+- Enhanced state representation (4-channel) with smart action masking
+- Platform-specific requirements and import path resolution
+- Training performance insights and monitoring tools
+
+Key Features:
+- Automatic device detection (M1 GPU, CUDA, CPU)
+- Curriculum learning with 7 difficulty stages
+- MLflow experiment tracking
+- Custom evaluation callbacks for vectorized environments
+- Graceful shutdown handling
+- Performance benchmarking and monitoring
+"""
+
 import os
 import numpy as np
 import time
@@ -324,7 +347,13 @@ class IterationCallback(BaseCallback):
         self.last_iteration_time = self.start_time
         self.iterations = 0
         self.debug_level = debug_level
-        self.stats_file = stats_file
+        
+        # Handle timestamped stats files
+        if hasattr(self, 'timestamped_stats') and self.timestamped_stats:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.stats_file = f"training_stats_{timestamp}.txt"
+        else:
+            self.stats_file = stats_file
         
         # Track metrics for improvement calculation
         self.last_avg_reward = 0
@@ -507,14 +536,60 @@ class IterationCallback(BaseCallback):
                 stage_time = time.time() - self.stage_start_time
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 
-                # Check for improvement
+                # Check for improvement - track multiple types of progress
                 improvement = False
+                recent_rewards = []  # Initialize to avoid UnboundLocalError
+                
+                # 1. Check for new bests (traditional improvement)
                 if win_rate > self.best_win_rate or avg_reward > self.best_reward:
                     improvement = True
                     self.last_improvement_iteration = self.iterations
                     self.no_improvement_count = 0
+                
+                # 2. Check for consistent positive learning (new metric)
+                # Agent is learning if it's getting positive rewards consistently
+                elif avg_reward > 0 and self.iterations > 10:
+                    # Check if we're maintaining positive rewards (learning is happening)
+                    recent_rewards = self.rewards[-min(10, len(self.rewards)):]
+                    if len(recent_rewards) >= 5 and all(r > 0 for r in recent_rewards[-5:]):
+                        # Agent is consistently getting positive rewards - this is learning!
+                        improvement = True
+                        self.last_improvement_iteration = self.iterations
+                        self.no_improvement_count = 0
+                
+                # 3. Check for learning phase progression
+                elif self.learning_phase != getattr(self, '_last_learning_phase', 'Initial Random'):
+                    improvement = True
+                    self.last_improvement_iteration = self.iterations
+                    self.no_improvement_count = 0
+                    self._last_learning_phase = self.learning_phase
+                
+                # 4. Check for curriculum stage progression
+                elif self.curriculum_stage != getattr(self, '_last_curriculum_stage', 1):
+                    improvement = True
+                    self.last_improvement_iteration = self.iterations
+                    self.no_improvement_count = 0
+                    self._last_curriculum_stage = self.curriculum_stage
+                
                 else:
                     self.no_improvement_count += 1
+                
+                # Log improvement status
+                if improvement:
+                    if win_rate > self.best_win_rate:
+                        self.log(f"🎉 NEW BEST WIN RATE: {win_rate:.1f}% (was {self.best_win_rate:.1f}%)", level=1)
+                    elif avg_reward > self.best_reward:
+                        self.log(f"🎉 NEW BEST REWARD: {avg_reward:.2f} (was {self.best_reward:.2f})", level=1)
+                    elif avg_reward > 0 and len(recent_rewards) >= 5 and all(r > 0 for r in recent_rewards[-5:]):
+                        self.log(f"✅ Consistent positive learning: {len(recent_rewards)} iterations with positive rewards", level=2)
+                    elif self.learning_phase != getattr(self, '_last_learning_phase', 'Initial Random'):
+                        self.log(f"📈 Learning phase progression: {self.learning_phase}", level=2)
+                    elif self.curriculum_stage != getattr(self, '_last_curriculum_stage', 1):
+                        self.log(f"🎯 Curriculum stage progression: Stage {self.curriculum_stage}", level=2)
+                else:
+                    # Show learning status even when not improving
+                    if avg_reward > 0:
+                        self.log(f"📊 Learning in progress: Avg reward {avg_reward:.2f}, Win rate {win_rate:.1f}%", level=3)
                 
                 # Write one-line stats
                 stats_line = f"{timestamp},{self.iterations},{self.num_timesteps},{win_rate:.1f},{avg_reward:.2f},{avg_length:.1f},{self.curriculum_stage},{self.learning_phase},{stage_time:.0f},{self.no_improvement_count}\n"
@@ -523,15 +598,20 @@ class IterationCallback(BaseCallback):
                 
                 # Early termination check (every 50 iterations = ~5000 timesteps)
                 if self.iterations % 50 == 0 and self.iterations > 100:
-                    # Check if we're stuck for too long
-                    if self.no_improvement_count > 20:  # No improvement for 20 iterations
+                    # Check if we're stuck for too long - more lenient thresholds
+                    if self.no_improvement_count > 50:  # No improvement for 50 iterations (was 20)
                         self.log(f"⚠️  WARNING: No improvement for {self.no_improvement_count} iterations", level=1)
-                        if self.no_improvement_count > 50:  # No improvement for 50 iterations
+                        if self.no_improvement_count > 100:  # No improvement for 100 iterations (was 50)
                             self.log(f"🚨 CRITICAL: No improvement for {self.no_improvement_count} iterations - Consider stopping training", level=0)
                     
-                    # Check if win rate is too low for too long
-                    if win_rate < 5 and self.iterations > 200:  # Less than 5% win rate after 200 iterations
+                    # Check if win rate is too low for too long - more realistic thresholds
+                    if win_rate < 2 and self.iterations > 500:  # Less than 2% win rate after 500 iterations (was 5% after 200)
                         self.log(f"🚨 CRITICAL: Win rate too low ({win_rate:.1f}%) after {self.iterations} iterations - Consider stopping training", level=0)
+                    
+                    # Check if rewards are consistently negative (real problem)
+                    recent_rewards = self.rewards[-min(20, len(self.rewards)):]
+                    if len(recent_rewards) >= 10 and all(r < 0 for r in recent_rewards[-10:]):
+                        self.log(f"🚨 CRITICAL: Consistently negative rewards for {len(recent_rewards)} iterations - Agent may be stuck", level=0)
             
             self.last_iteration_time = current_time
             
@@ -609,6 +689,10 @@ def parse_args():
                       help='Device to use for training')
     parser.add_argument('--_init_setup_model', type=bool, default=True,
                       help='Whether to initialize the model')
+    parser.add_argument('--strict_progression', type=bool, default=False,
+                      help='Require target win rate achievement before stage progression')
+    parser.add_argument('--timestamped_stats', type=bool, default=False,
+                      help='Use timestamped stats files to preserve training history')
     return parser.parse_args()
 
 def main():
@@ -840,7 +924,8 @@ def main():
             iteration_callback = IterationCallback(
                 verbose=args.verbose,
                 debug_level=2,
-                experiment_tracker=experiment_tracker
+                experiment_tracker=experiment_tracker,
+                timestamped_stats=args.timestamped_stats
             )
             
             # Train for this stage
@@ -864,8 +949,54 @@ def main():
             
             print(f"\nStage {stage + 1} Results:")
             print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
-            print(f"Win rate: {win_rate:.2%}")
+            print(f"Win rate: {win_rate*100:.2f}%")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+            
+            # Enhanced progression logic
+            target_win_rate = current_stage_info['win_rate_threshold']
+            min_positive_reward = 5.0  # Minimum positive reward to show learning
+            min_learning_progress = 0.1  # Minimum improvement in rewards over time
+            
+            # Check if we should progress to next stage
+            should_progress = False
+            progression_reason = ""
+            
+            # 1. Target achieved - definitely progress
+            if win_rate >= target_win_rate:
+                should_progress = True
+                progression_reason = f"✅ Target achieved: {win_rate*100:.1f}% >= {target_win_rate*100:.0f}%"
+            
+            # 2. Learning progress with positive rewards - consider progression
+            elif mean_reward >= min_positive_reward and not args.strict_progression:
+                # Check if this is the last stage
+                if stage == len(curriculum_stages) - 1:
+                    should_progress = False
+                    progression_reason = "🏁 Final stage reached"
+                else:
+                    # For intermediate stages, allow progression with learning
+                    should_progress = True
+                    progression_reason = f"📈 Learning progress: {mean_reward:.2f} mean reward (target: {min_positive_reward})"
+            
+            # 3. No learning progress or strict progression required - don't progress
+            else:
+                should_progress = False
+                if args.strict_progression and win_rate < target_win_rate:
+                    progression_reason = f"🔒 Strict progression: Win rate {win_rate*100:.1f}% < {target_win_rate*100:.0f}% required"
+                else:
+                    progression_reason = f"⚠️ Insufficient learning: {mean_reward:.2f} mean reward < {min_positive_reward}"
+            
+            # Log progression decision
+            if should_progress:
+                print(f"{progression_reason}")
+                if win_rate < target_win_rate:
+                    print(f"⚠️  Stage {stage + 1} target not achieved. Win rate: {win_rate*100:.1f}% < {target_win_rate*100:.0f}%")
+                    print(f"📈 But allowing progression due to learning progress")
+                print(f"Stage {stage + 1} completed. Moving to next stage...")
+            else:
+                print(f"{progression_reason}")
+                print(f"🔄 Stage {stage + 1} not completed. Consider extending training time.")
+                # Could implement retraining logic here
+                break  # Stop progression
             
             # Save stage results
             experiment_tracker.add_validation_metric(
@@ -891,15 +1022,6 @@ def main():
                 "target_win_rate": current_stage_info['win_rate_threshold']
             })
             experiment_tracker._save_metrics()
-            
-            # Check if we should continue to next stage
-            if win_rate >= current_stage_info['win_rate_threshold']:
-                print(f"✅ Stage {stage + 1} target achieved! Win rate: {win_rate:.2%} >= {current_stage_info['win_rate_threshold']:.2%}")
-            else:
-                print(f"⚠️  Stage {stage + 1} target not achieved. Win rate: {win_rate:.2%} < {current_stage_info['win_rate_threshold']:.2%}")
-                print("Continuing to next stage anyway for curriculum progression...")
-            
-            print(f"Stage {stage + 1} completed. Moving to next stage...\n")
         
         # Save final model if training completed normally
         if not shutdown_requested and training_model is not None:

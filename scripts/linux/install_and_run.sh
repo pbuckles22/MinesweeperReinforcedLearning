@@ -106,7 +106,7 @@ if [[ $run_rl_test =~ ^[Yy]$ ]] || [[ $run_rl_test =~ ^[Yy][Ee][Ss]$ ]]; then
         --eval_freq 2000 \
         --n_eval_episodes 20 \
         --learning_rate 0.0003 \
-        --verbose 1
+        --verbose 0
     
     echo ""
     echo "============================================================"
@@ -122,13 +122,13 @@ else
     echo "   source venv/bin/activate"
     echo ""
     echo "2. Run a quick test (10k timesteps, ~1-2 minutes):"
-    echo "   python src/core/train_agent.py --total_timesteps 10000 --eval_freq 2000 --n_eval_episodes 20 --verbose 1"
+    echo "   python src/core/train_agent.py --total_timesteps 10000 --eval_freq 2000 --n_eval_episodes 20 --verbose 0"
     echo ""
     echo "3. Or run a longer test (50k timesteps, ~5-10 minutes):"
-    echo "   python src/core/train_agent.py --total_timesteps 50000 --eval_freq 5000 --n_eval_episodes 50 --verbose 1"
+    echo "   python src/core/train_agent.py --total_timesteps 50000 --eval_freq 5000 --n_eval_episodes 50 --verbose 0"
     echo ""
     echo "4. Or run the full training (1M timesteps, ~1-2 hours):"
-    echo "   python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --verbose 1"
+    echo "   python src/core/train_agent.py --total_timesteps 1000000 --eval_freq 10000 --n_eval_episodes 100 --verbose 0"
     echo ""
     echo "The training will show progress including win rates and learning phases."
 fi

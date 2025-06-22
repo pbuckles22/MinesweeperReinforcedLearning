@@ -40,7 +40,7 @@ python src/core/train_agent.py \
     --batch_size 64 \
     --n_steps 1024 \
     --n_epochs 8 \
-    --verbose 1 \
+    --verbose 0 \
     --device mps &
 TRAINING_PID=$!
 

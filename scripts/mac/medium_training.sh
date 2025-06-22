@@ -34,7 +34,7 @@ python src/core/train_agent.py \
     --total_timesteps 500000 \
     --eval_freq 10000 \
     --n_eval_episodes 100 \
-    --verbose 1 &
+    --verbose 0 &
 TRAINING_PID=$!
 
 echo "Training started with PID: $TRAINING_PID"

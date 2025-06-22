@@ -22,7 +22,7 @@ python src/core/train_agent.py `
     --total_timesteps 1000000 `
     --eval_freq 10000 `
     --n_eval_episodes 100 `
-    --verbose 1
+    --verbose 0
 
 Write-Host ""
 Write-Host "Full training completed!" -ForegroundColor Green
