@@ -39,9 +39,14 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 
 ### **Curriculum Learning** ⚡ **UPDATED**
 - **7 Stages**: Beginner (4x4) → Intermediate (6x6) → Easy (9x9) → Normal (16x16) → Hard (16x30) → Expert (18x24) → Chaotic (20x35)
+- **Dual Progression Modes**:
+  - **Learning-Based** (Default): Allows progression with learning indicators for early stages
+  - **Realistic** (Strict): Requires actual win rate achievement for all stages
 - **Realistic Thresholds**: 15%, 12%, 10%, 8%, 5%, 3%, 2% win rates
+- **Minimum Wins Required**: 1-3 wins per stage depending on difficulty
 - **Adaptive Training**: More time for simpler stages (1.5x, 1.2x multipliers)
-- **Purpose**: Progressive difficulty with appropriate learning time allocation
+- **Backward Compatibility**: Old curriculum fully backed up
+- **Purpose**: Progressive difficulty with flexible or strict progression options
 
 ### **Board Size Convention**
 - **All board sizes use (height, width) format** throughout the codebase
@@ -105,6 +110,9 @@ pytest
 - ✅ **Performance optimization (10-20% faster with --verbose 0)**
 - ✅ **Stage 7 achievement (Chaotic: 20x35, 130 mines)**
 - ✅ **Training history preservation with timestamped stats**
+- ✅ **Dual curriculum system implemented (learning-based + realistic)**
+- ✅ **Old curriculum backed up for backward compatibility**
+- ✅ **Minimum wins requirements for realistic progression**
 
 ## 🔧 **Cross-Platform Test Compatibility** ⚡ **NEW**
 
@@ -171,6 +179,8 @@ python -m pytest tests/ -v
 - **Monitoring Accuracy**: Enhanced monitoring correctly identifies learning progress vs real problems
 - **Flexible Progression**: Learning-based progression works better than strict mastery requirements
 - **Stage 7 Achievement**: Agent can reach Chaotic stage (20x35, 130 mines) with positive learning
+- **Curriculum Flexibility**: Dual system allows both fast learning and realistic mastery
+- **Progression Realism**: Strict progression ensures actual wins before advancing
 
 ## 🎯 **Next Priorities** ⚡ **UPDATED**
 1. **Test Enhanced Features**: Run training with new 4-channel state and smart masking
@@ -227,9 +237,15 @@ python -m pytest tests/ -v
 
 ### **Enhanced Training Options**
 
-#### **Strict Progression Training**
+#### **Learning-Based Progression (Default)**
 ```bash
-# Require win rate targets before stage progression
+# Fast progression with learning indicators (default)
+python src/core/train_agent.py --total_timesteps 50000 --verbose 0
+```
+
+#### **Strict Realistic Progression**
+```bash
+# Require actual win rate targets before stage progression
 python src/core/train_agent.py --total_timesteps 50000 --strict_progression True --verbose 0
 ```
 
@@ -239,10 +255,10 @@ python src/core/train_agent.py --total_timesteps 50000 --strict_progression True
 python src/core/train_agent.py --total_timesteps 50000 --timestamped_stats True --verbose 0
 ```
 
-#### **Optimized Performance Training**
+#### **Production Training**
 ```bash
-# Fastest training with minimal output
-python src/core/train_agent.py --total_timesteps 50000 --verbose 0
+# Complete training with strict progression and history
+python src/core/train_agent.py --total_timesteps 1000000 --strict_progression True --timestamped_stats True --verbose 0
 ```
 
 ## 📈 **Recent Achievements (2024-12-21)**
@@ -257,6 +273,9 @@ python src/core/train_agent.py --total_timesteps 50000 --verbose 0
 - ✅ **Configurable Progression**: `--strict_progression` flag for mastery-based vs learning-based
 - ✅ **Hybrid Logic**: Combines win rate targets with learning progress detection
 - ✅ **Better Problem Detection**: Identifies consistently negative rewards as real problems
+- ✅ **Dual Curriculum System**: Learning-based and realistic progression modes
+- ✅ **Minimum Wins Requirements**: Ensures actual wins before progression in strict mode
+- ✅ **Backward Compatibility**: Old curriculum fully backed up
 
 ### **Performance Optimization**
 - ✅ **Script Optimization**: All training scripts use `--verbose 0` for 10-20% faster training
@@ -274,6 +293,12 @@ python src/core/train_agent.py --total_timesteps 50000 --verbose 0
 - `--strict_progression`: Require target win rate achievement before stage progression
 - `--timestamped_stats`: Use timestamped stats files to preserve training history
 - `--verbose 0`: Optimized performance with minimal output (default)
+
+### **Curriculum Progression Modes**
+- **Learning-Based (Default)**: Fast progression with learning indicators for early stages
+- **Realistic (Strict)**: Requires actual win rate achievement for all stages
+- **Minimum Wins**: 1-3 wins required per stage depending on difficulty
+- **Stage-Specific Rules**: Early stages allow learning-based progression, later stages require wins
 
 ### **Enhanced Monitoring Output**
 ```

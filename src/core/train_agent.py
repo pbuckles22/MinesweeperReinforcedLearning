@@ -341,15 +341,16 @@ class CustomEvalCallback(BaseCallback):
 
 class IterationCallback(BaseCallback):
     """Custom callback for logging iteration information"""
-    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None, stats_file="training_stats.txt"):
+    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None, stats_file="training_stats.txt", timestamped_stats=False):
         super().__init__(verbose)
         self.start_time = time.time()
         self.last_iteration_time = self.start_time
         self.iterations = 0
         self.debug_level = debug_level
+        self.timestamped_stats = timestamped_stats
         
         # Handle timestamped stats files
-        if hasattr(self, 'timestamped_stats') and self.timestamped_stats:
+        if self.timestamped_stats:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.stats_file = f"training_stats_{timestamp}.txt"
         else:
@@ -772,7 +773,8 @@ def main():
     }
     
     # Define curriculum stages with realistic win rate thresholds
-    curriculum_stages = [
+    # OLD CURRICULUM (BACKED UP) - Learning-based progression
+    old_curriculum_stages = [
         {
             'name': 'Beginner',
             'size': 4,
@@ -824,11 +826,90 @@ def main():
         }
     ]
     
+    # NEW REALISTIC CURRICULUM - Requires actual wins for progression
+    realistic_curriculum_stages = [
+        {
+            'name': 'Beginner',
+            'size': 4,
+            'mines': 2,
+            'win_rate_threshold': 0.15,  # 15% - Must achieve to progress
+            'min_wins_required': 1,  # Must win at least 1 game
+            'learning_based_progression': True,  # Allow learning-based progression
+            'description': '4x4 board with 2 mines - Must win 15% of games or show consistent learning'
+        },
+        {
+            'name': 'Intermediate',
+            'size': 6,
+            'mines': 4,
+            'win_rate_threshold': 0.12,  # 12% - Must achieve to progress
+            'min_wins_required': 1,  # Must win at least 1 game
+            'learning_based_progression': True,  # Allow learning-based progression
+            'description': '6x6 board with 4 mines - Must win 12% of games or show consistent learning'
+        },
+        {
+            'name': 'Easy',
+            'size': 9,
+            'mines': 10,
+            'win_rate_threshold': 0.10,  # 10% - Must achieve to progress
+            'min_wins_required': 2,  # Must win at least 2 games
+            'learning_based_progression': True,  # Allow learning-based progression
+            'description': '9x9 board with 10 mines - Must win 10% of games or show consistent learning'
+        },
+        {
+            'name': 'Normal',
+            'size': 16,
+            'mines': 40,
+            'win_rate_threshold': 0.08,  # 8% - Must achieve to progress
+            'min_wins_required': 3,  # Must win at least 3 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '16x16 board with 40 mines - Must win 8% of games (no learning-based progression)'
+        },
+        {
+            'name': 'Hard',
+            'size': (16, 30),
+            'mines': 99,
+            'win_rate_threshold': 0.05,  # 5% - Must achieve to progress
+            'min_wins_required': 3,  # Must win at least 3 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '16x30 board with 99 mines - Must win 5% of games (no learning-based progression)'
+        },
+        {
+            'name': 'Expert',
+            'size': (18, 24),
+            'mines': 115,
+            'win_rate_threshold': 0.03,  # 3% - Must achieve to progress
+            'min_wins_required': 2,  # Must win at least 2 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '18x24 board with 115 mines - Must win 3% of games (no learning-based progression)'
+        },
+        {
+            'name': 'Chaotic',
+            'size': (20, 35),
+            'mines': 130,
+            'win_rate_threshold': 0.02,  # 2% - Must achieve to progress
+            'min_wins_required': 1,  # Must win at least 1 game
+            'learning_based_progression': False,  # Require actual wins
+            'description': '20x35 board with 130 mines - Must win 2% of games (no learning-based progression)'
+        }
+    ]
+    
+    # Choose curriculum based on command line argument
+    if args.strict_progression:
+        curriculum_stages = realistic_curriculum_stages
+        curriculum_type = "Realistic (Requires Wins)"
+        print("🎯 Using REALISTIC curriculum - requires actual wins for progression")
+    else:
+        curriculum_stages = old_curriculum_stages
+        curriculum_type = "Learning-Based (Flexible)"
+        print("🎯 Using LEARNING-BASED curriculum - allows progression with learning")
+    
     # Save curriculum information
     experiment_tracker.metrics["curriculum"] = {
+        "type": curriculum_type,
         "stages": curriculum_stages,
         "total_stages": len(curriculum_stages),
-        "expected_progression": "Beginner -> Intermediate -> Easy -> Normal -> Hard -> Expert -> Chaotic"
+        "expected_progression": "Beginner -> Intermediate -> Easy -> Normal -> Hard -> Expert -> Chaotic",
+        "old_curriculum_backed_up": True
     }
     experiment_tracker._save_metrics()
     
@@ -925,6 +1006,7 @@ def main():
                 verbose=args.verbose,
                 debug_level=2,
                 experiment_tracker=experiment_tracker,
+                stats_file="training_stats.txt",
                 timestamped_stats=args.timestamped_stats
             )
             
@@ -952,22 +1034,29 @@ def main():
             print(f"Win rate: {win_rate*100:.2f}%")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
             
-            # Enhanced progression logic
+            # Enhanced progression logic for realistic curriculum
             target_win_rate = current_stage_info['win_rate_threshold']
+            min_wins_required = current_stage_info.get('min_wins_required', 1)
+            learning_based_progression = current_stage_info.get('learning_based_progression', True)
             min_positive_reward = 5.0  # Minimum positive reward to show learning
             min_learning_progress = 0.1  # Minimum improvement in rewards over time
+            
+            # Calculate actual wins from evaluation
+            actual_wins = int(win_rate * args.n_eval_episodes)
             
             # Check if we should progress to next stage
             should_progress = False
             progression_reason = ""
             
             # 1. Target achieved - definitely progress
-            if win_rate >= target_win_rate:
+            if win_rate >= target_win_rate and actual_wins >= min_wins_required:
                 should_progress = True
-                progression_reason = f"✅ Target achieved: {win_rate*100:.1f}% >= {target_win_rate*100:.0f}%"
+                progression_reason = f"✅ Target achieved: {win_rate*100:.1f}% >= {target_win_rate*100:.0f}% with {actual_wins} wins (required: {min_wins_required})"
             
-            # 2. Learning progress with positive rewards - consider progression
-            elif mean_reward >= min_positive_reward and not args.strict_progression:
+            # 2. Learning progress with positive rewards - consider progression (only if allowed)
+            elif (mean_reward >= min_positive_reward and 
+                  learning_based_progression and 
+                  not args.strict_progression):
                 # Check if this is the last stage
                 if stage == len(curriculum_stages) - 1:
                     should_progress = False
@@ -975,13 +1064,17 @@ def main():
                 else:
                     # For intermediate stages, allow progression with learning
                     should_progress = True
-                    progression_reason = f"📈 Learning progress: {mean_reward:.2f} mean reward (target: {min_positive_reward})"
+                    progression_reason = f"📈 Learning progress: {mean_reward:.2f} mean reward (target: {min_positive_reward}) - Learning-based progression allowed"
             
             # 3. No learning progress or strict progression required - don't progress
             else:
                 should_progress = False
                 if args.strict_progression and win_rate < target_win_rate:
                     progression_reason = f"🔒 Strict progression: Win rate {win_rate*100:.1f}% < {target_win_rate*100:.0f}% required"
+                elif actual_wins < min_wins_required:
+                    progression_reason = f"🔒 Minimum wins not met: {actual_wins} wins < {min_wins_required} required"
+                elif not learning_based_progression and win_rate < target_win_rate:
+                    progression_reason = f"🔒 Stage requires actual wins: {win_rate*100:.1f}% < {target_win_rate*100:.0f}% (no learning-based progression)"
                 else:
                     progression_reason = f"⚠️ Insufficient learning: {mean_reward:.2f} mean reward < {min_positive_reward}"
             
