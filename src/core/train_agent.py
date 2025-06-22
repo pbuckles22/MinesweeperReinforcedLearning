@@ -772,9 +772,90 @@ def main():
         "hyperparameters": optimal_params
     }
     
-    # Define curriculum stages with realistic win rate thresholds
-    # OLD CURRICULUM (BACKED UP) - Learning-based progression
-    old_curriculum_stages = [
+    # Define curriculum stages with human performance targets
+    # ENHANCED CURRICULUM - Human Performance Focus
+    curriculum_stages = [
+        {
+            'name': 'Beginner',
+            'size': 4,
+            'mines': 2,
+            'win_rate_threshold': 0.80,  # 80% - Human expert level
+            'min_wins_required': 8,  # 8 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '4x4 board with 2 mines - Achieve human expert level (80%)',
+            'training_multiplier': 3.0,  # 3x extended training
+            'eval_episodes': 20  # More evaluation episodes
+        },
+        {
+            'name': 'Intermediate',
+            'size': 6,
+            'mines': 4,
+            'win_rate_threshold': 0.70,  # 70% - Human expert level
+            'min_wins_required': 7,  # 7 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '6x6 board with 4 mines - Achieve human expert level (70%)',
+            'training_multiplier': 3.0,  # 3x extended training
+            'eval_episodes': 20
+        },
+        {
+            'name': 'Easy',
+            'size': 9,
+            'mines': 10,
+            'win_rate_threshold': 0.60,  # 60% - Human expert level
+            'min_wins_required': 6,  # 6 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '9x9 board with 10 mines - Achieve human expert level (60%)',
+            'training_multiplier': 3.0,  # 3x extended training
+            'eval_episodes': 20
+        },
+        {
+            'name': 'Normal',
+            'size': 16,
+            'mines': 40,
+            'win_rate_threshold': 0.50,  # 50% - Human expert level
+            'min_wins_required': 5,  # 5 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '16x16 board with 40 mines - Achieve human expert level (50%)',
+            'training_multiplier': 4.0,  # 4x extended training
+            'eval_episodes': 25
+        },
+        {
+            'name': 'Hard',
+            'size': 30,
+            'mines': 99,
+            'win_rate_threshold': 0.40,  # 40% - Human expert level
+            'min_wins_required': 4,  # 4 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '16x30 board with 99 mines - Achieve human expert level (40%)',
+            'training_multiplier': 4.0,  # 4x extended training
+            'eval_episodes': 25
+        },
+        {
+            'name': 'Expert',
+            'size': 24,
+            'mines': 115,
+            'win_rate_threshold': 0.30,  # 30% - Human expert level
+            'min_wins_required': 3,  # 3 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '18x24 board with 115 mines - Achieve human expert level (30%)',
+            'training_multiplier': 5.0,  # 5x extended training
+            'eval_episodes': 30
+        },
+        {
+            'name': 'Chaotic',
+            'size': 35,
+            'mines': 130,
+            'win_rate_threshold': 0.20,  # 20% - Human expert level
+            'min_wins_required': 2,  # 2 out of 10 games
+            'learning_based_progression': False,  # Require actual wins
+            'description': '20x35 board with 130 mines - Achieve human expert level (20%)',
+            'training_multiplier': 5.0,  # 5x extended training
+            'eval_episodes': 30
+        }
+    ]
+    
+    # BACKUP: Original curriculum stages (preserved for reference)
+    original_curriculum_stages = [
         {
             'name': 'Beginner',
             'size': 4,
@@ -793,123 +874,46 @@ def main():
             'name': 'Easy',
             'size': 9,
             'mines': 10,
-            'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty target
+            'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty
             'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
         },
         {
             'name': 'Normal',
             'size': 16,
             'mines': 40,
-            'win_rate_threshold': 0.08,  # 8% - Realistic for normal difficulty
+            'win_rate_threshold': 0.08,  # 8% - Standard normal difficulty
             'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
         },
         {
             'name': 'Hard',
-            'size': (16, 30),
+            'size': 30,
             'mines': 99,
-            'win_rate_threshold': 0.05,  # 5% - Challenging but achievable
+            'win_rate_threshold': 0.05,  # 5% - Standard hard difficulty
             'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
         },
         {
             'name': 'Expert',
-            'size': (18, 24),
+            'size': 24,
             'mines': 115,
-            'win_rate_threshold': 0.03,  # 3% - Expert level, very challenging
+            'win_rate_threshold': 0.03,  # 3% - Expert level
             'description': '18x24 board with 115 mines - Expert level, handling high mine density'
         },
         {
             'name': 'Chaotic',
-            'size': (20, 35),
+            'size': 35,
             'mines': 130,
-            'win_rate_threshold': 0.02,  # 2% - Ultimate challenge, maximum complexity
+            'win_rate_threshold': 0.02,  # 2% - Ultimate challenge
             'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
         }
     ]
     
-    # NEW REALISTIC CURRICULUM - Requires actual wins for progression
-    realistic_curriculum_stages = [
-        {
-            'name': 'Beginner',
-            'size': 4,
-            'mines': 2,
-            'win_rate_threshold': 0.15,  # 15% - Must achieve to progress
-            'min_wins_required': 1,  # Must win at least 1 game
-            'learning_based_progression': True,  # Allow learning-based progression
-            'description': '4x4 board with 2 mines - Must win 15% of games or show consistent learning'
-        },
-        {
-            'name': 'Intermediate',
-            'size': 6,
-            'mines': 4,
-            'win_rate_threshold': 0.12,  # 12% - Must achieve to progress
-            'min_wins_required': 1,  # Must win at least 1 game
-            'learning_based_progression': True,  # Allow learning-based progression
-            'description': '6x6 board with 4 mines - Must win 12% of games or show consistent learning'
-        },
-        {
-            'name': 'Easy',
-            'size': 9,
-            'mines': 10,
-            'win_rate_threshold': 0.10,  # 10% - Must achieve to progress
-            'min_wins_required': 2,  # Must win at least 2 games
-            'learning_based_progression': True,  # Allow learning-based progression
-            'description': '9x9 board with 10 mines - Must win 10% of games or show consistent learning'
-        },
-        {
-            'name': 'Normal',
-            'size': 16,
-            'mines': 40,
-            'win_rate_threshold': 0.08,  # 8% - Must achieve to progress
-            'min_wins_required': 3,  # Must win at least 3 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '16x16 board with 40 mines - Must win 8% of games (no learning-based progression)'
-        },
-        {
-            'name': 'Hard',
-            'size': (16, 30),
-            'mines': 99,
-            'win_rate_threshold': 0.05,  # 5% - Must achieve to progress
-            'min_wins_required': 3,  # Must win at least 3 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '16x30 board with 99 mines - Must win 5% of games (no learning-based progression)'
-        },
-        {
-            'name': 'Expert',
-            'size': (18, 24),
-            'mines': 115,
-            'win_rate_threshold': 0.03,  # 3% - Must achieve to progress
-            'min_wins_required': 2,  # Must win at least 2 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '18x24 board with 115 mines - Must win 3% of games (no learning-based progression)'
-        },
-        {
-            'name': 'Chaotic',
-            'size': (20, 35),
-            'mines': 130,
-            'win_rate_threshold': 0.02,  # 2% - Must achieve to progress
-            'min_wins_required': 1,  # Must win at least 1 game
-            'learning_based_progression': False,  # Require actual wins
-            'description': '20x35 board with 130 mines - Must win 2% of games (no learning-based progression)'
-        }
-    ]
-    
-    # Choose curriculum based on command line argument
-    if args.strict_progression:
-        curriculum_stages = realistic_curriculum_stages
-        curriculum_type = "Realistic (Requires Wins)"
-        print("🎯 Using REALISTIC curriculum - requires actual wins for progression")
-    else:
-        curriculum_stages = old_curriculum_stages
-        curriculum_type = "Learning-Based (Flexible)"
-        print("🎯 Using LEARNING-BASED curriculum - allows progression with learning")
-    
     # Save curriculum information
     experiment_tracker.metrics["curriculum"] = {
-        "type": curriculum_type,
+        "type": "Enhanced Curriculum - Human Performance Focus",
         "stages": curriculum_stages,
         "total_stages": len(curriculum_stages),
         "expected_progression": "Beginner -> Intermediate -> Easy -> Normal -> Hard -> Expert -> Chaotic",
-        "old_curriculum_backed_up": True
+        "old_curriculum_backed_up": False
     }
     experiment_tracker._save_metrics()
     
@@ -938,25 +942,33 @@ def main():
     print(f"   Expected performance: {device_info['performance_notes']}")
     
     try:
+        # Curriculum learning loop
         for stage in range(len(curriculum_stages)):
-            # Check for shutdown request
             if shutdown_requested:
                 print("\n🛑 Shutdown requested. Stopping training gracefully...")
                 break
                 
+            # Get current stage information
             current_stage_info = curriculum_stages[stage]
-            print(f"\n{'='*50}")
-            print(f"Starting Stage {stage + 1}/{len(curriculum_stages)}: {current_stage_info['name']}")
-            print(f"Board: {current_stage_info['size'] if isinstance(current_stage_info['size'], int) else f'{current_stage_info['size'][0]}x{current_stage_info['size'][1]}'}")
-            print(f"Mines: {current_stage_info['mines']}")
-            print(f"Target Win Rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
-            print(f"Description: {current_stage_info['description']}")
-            print(f"{'='*50}\n")
+            current_stage_name = current_stage_info['name']
+            current_stage_size = current_stage_info['size']
+            current_stage_mines = current_stage_info['mines']
+            
+            # Enhanced curriculum parameters
+            training_multiplier = current_stage_info.get('training_multiplier', 1.0)
+            eval_episodes = current_stage_info.get('eval_episodes', args.n_eval_episodes)
+            
+            print(f"\n🎯 Stage {stage + 1}: {current_stage_name}")
+            print(f"Board: {current_stage_size}x{current_stage_size} with {current_stage_mines} mines")
+            print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+            print(f"Min wins required: {current_stage_info['min_wins_required']} out of {eval_episodes} games")
+            print(f"Training multiplier: {training_multiplier}x (extended training)")
+            print(f"Evaluation episodes: {eval_episodes}")
             
             # Create new environment for current stage
             training_env = DummyVecEnv([make_env(
-                max_board_size=current_stage_info['size'],
-                max_mines=current_stage_info['mines']
+                max_board_size=current_stage_size,
+                max_mines=current_stage_mines
             )])
             
             # Create new model for current stage (observation space changes between stages)
@@ -987,15 +999,21 @@ def main():
             
             # Create evaluation environment for current stage
             eval_env = DummyVecEnv([make_env(
-                max_board_size=current_stage_info['size'],
-                max_mines=current_stage_info['mines']
+                max_board_size=current_stage_size,
+                max_mines=current_stage_mines
             )])
             
-            # Create evaluation callback
+            # Calculate enhanced training timesteps
+            base_timesteps = stage_timesteps[stage]
+            enhanced_timesteps = int(base_timesteps * training_multiplier)
+            
+            print(f"⏱️  Training timesteps: {base_timesteps} -> {enhanced_timesteps} ({training_multiplier}x extended)")
+            
+            # Create evaluation callback with enhanced parameters
             eval_callback = CustomEvalCallback(
                 eval_env,
                 eval_freq=args.eval_freq,
-                n_eval_episodes=args.n_eval_episodes,
+                n_eval_episodes=eval_episodes,
                 verbose=args.verbose,
                 best_model_save_path=f"./best_model/stage_{stage + 1}",
                 log_path="./logs/"
@@ -1010,10 +1028,10 @@ def main():
                 timestamped_stats=args.timestamped_stats
             )
             
-            # Train for this stage
-            print(f"🚀 Starting training for Stage {stage + 1}...")
+            # Train for this stage with enhanced timesteps
+            print(f"🚀 Starting enhanced training for Stage {stage + 1}...")
             training_model.learn(
-                total_timesteps=stage_timesteps[stage],
+                total_timesteps=enhanced_timesteps,
                 callback=[eval_callback, iteration_callback],
                 progress_bar=True
             )
@@ -1023,8 +1041,8 @@ def main():
                 print("\n🛑 Shutdown requested. Stopping training gracefully...")
                 break
             
-            # Evaluate current stage
-            evaluation_results = evaluate_model(training_model, training_env, n_episodes=args.n_eval_episodes)
+            # Evaluate current stage with enhanced episodes
+            evaluation_results = evaluate_model(training_model, training_env, n_episodes=eval_episodes)
             win_rate = evaluation_results["win_rate"] / 100  # Convert percentage to decimal
             mean_reward = evaluation_results["avg_reward"]
             reward_std = evaluation_results["reward_ci"]
@@ -1033,27 +1051,28 @@ def main():
             print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
             print(f"Win rate: {win_rate*100:.2f}%")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
+            print(f"Min wins required: {current_stage_info['min_wins_required']} out of {eval_episodes} games")
             
-            # Enhanced progression logic for realistic curriculum
+            # Enhanced progression logic for curriculum
             target_win_rate = current_stage_info['win_rate_threshold']
-            min_wins_required = current_stage_info.get('min_wins_required', 1)
-            learning_based_progression = current_stage_info.get('learning_based_progression', True)
+            min_wins_required = current_stage_info['min_wins_required']
+            learning_based_progression = current_stage_info['learning_based_progression']
             min_positive_reward = 5.0  # Minimum positive reward to show learning
             min_learning_progress = 0.1  # Minimum improvement in rewards over time
             
             # Calculate actual wins from evaluation
-            actual_wins = int(win_rate * args.n_eval_episodes)
+            actual_wins = int(win_rate * eval_episodes)
             
             # Check if we should progress to next stage
             should_progress = False
             progression_reason = ""
             
-            # 1. Target achieved - definitely progress
+            # 1. Target achieved - always progress
             if win_rate >= target_win_rate and actual_wins >= min_wins_required:
                 should_progress = True
-                progression_reason = f"✅ Target achieved: {win_rate*100:.1f}% >= {target_win_rate*100:.0f}% with {actual_wins} wins (required: {min_wins_required})"
+                progression_reason = f"🎯 Target achieved: {win_rate*100:.1f}% >= {target_win_rate*100:.0f}% with {actual_wins} wins"
             
-            # 2. Learning progress with positive rewards - consider progression (only if allowed)
+            # 2. Learning-based progression (if allowed)
             elif (mean_reward >= min_positive_reward and 
                   learning_based_progression and 
                   not args.strict_progression):
@@ -1112,7 +1131,11 @@ def main():
                 "name": current_stage_info['name'],
                 "win_rate": win_rate,
                 "mean_reward": mean_reward,
-                "target_win_rate": current_stage_info['win_rate_threshold']
+                "target_win_rate": current_stage_info['win_rate_threshold'],
+                "actual_wins": actual_wins,
+                "min_wins_required": min_wins_required,
+                "training_multiplier": training_multiplier,
+                "eval_episodes": eval_episodes
             })
             experiment_tracker._save_metrics()
         
