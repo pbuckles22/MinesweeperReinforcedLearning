@@ -998,10 +998,15 @@ def main():
             print("✅ New model created successfully!")
             
             # Create evaluation environment for current stage
+            # Use IDENTICAL configuration as training environment for consistency
             eval_env = DummyVecEnv([make_env(
                 max_board_size=current_stage_size,
                 max_mines=current_stage_mines
             )])
+            
+            # Ensure evaluation environment is identical to training environment
+            # This follows best practices: separate but identical environments
+            print(f"🔧 Ensuring evaluation environment matches training environment...")
             
             # Calculate enhanced training timesteps
             base_timesteps = stage_timesteps[stage]
@@ -1042,14 +1047,83 @@ def main():
                 break
             
             # Evaluate current stage with enhanced episodes
-            evaluation_results = evaluate_model(training_model, training_env, n_episodes=eval_episodes)
-            win_rate = evaluation_results["win_rate"] / 100  # Convert percentage to decimal
-            mean_reward = evaluation_results["avg_reward"]
-            reward_std = evaluation_results["reward_ci"]
+            # Use the EVALUATION environment (following best practices)
+            print(f"🔍 Running final evaluation with {eval_episodes} episodes...")
+            
+            # Use the EVALUATION environment for final assessment (best practice)
+            # This ensures unbiased evaluation while maintaining consistency
+            rewards = []
+            wins = 0
+            
+            for episode in range(eval_episodes):
+                obs = eval_env.reset()
+                done = False
+                episode_reward = 0
+                episode_won = False
+                
+                while not done:
+                    action = training_model.predict(obs, deterministic=True)[0]
+                    step_result = eval_env.step(action)
+                    
+                    # Handle both old gym API (4 values) and new gymnasium API (5 values)
+                    if len(step_result) == 4:
+                        obs, reward, terminated, truncated = step_result
+                        info = {}
+                    else:
+                        obs, reward, terminated, truncated, info = step_result
+                    
+                    done = terminated or truncated
+                    episode_reward += reward[0] if isinstance(reward, np.ndarray) else reward
+                    
+                    # Check if the episode was won from the info dictionary
+                    if info and isinstance(info, list) and len(info) > 0:
+                        if info[0].get('won', False):
+                            episode_won = True
+                    elif info and isinstance(info, dict):
+                        if info.get('won', False):
+                            episode_won = True
+                
+                rewards.append(episode_reward)
+                if episode_won:
+                    wins += 1
+            
+            # Calculate metrics (same as CustomEvalCallback)
+            mean_reward = np.mean(rewards)
+            win_rate = (wins / eval_episodes) * 100
+            reward_std = np.std(rewards) / np.sqrt(len(rewards)) if len(rewards) > 1 else 0.0
+            
+            print(f"Final evaluation results:")
+            print(f"  Episodes: {eval_episodes}")
+            print(f"  Wins: {wins}")
+            print(f"  Win rate: {win_rate:.1f}%")
+            print(f"  Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
+            
+            # Convert win rate to decimal for consistency
+            win_rate = win_rate / 100
+            
+            # Compare with training buffer metrics for debugging
+            if len(training_model.ep_info_buffer) > 0:
+                buffer_episodes = training_model.ep_info_buffer
+                buffer_wins = sum(1 for ep_info in buffer_episodes if ep_info.get("won", False))
+                buffer_total = len(buffer_episodes)
+                buffer_win_rate = (buffer_wins / buffer_total) * 100 if buffer_total > 0 else 0
+                buffer_avg_reward = np.mean([ep_info["r"] for ep_info in buffer_episodes])
+                
+                print(f"\n📊 Training Buffer vs Final Evaluation Comparison:")
+                print(f"  Training Buffer: {buffer_win_rate:.1f}% ({buffer_wins}/{buffer_total} wins)")
+                print(f"  Final Evaluation: {win_rate*100:.1f}% ({wins}/{eval_episodes} wins)")
+                print(f"  Buffer Avg Reward: {buffer_avg_reward:.2f}")
+                print(f"  Final Avg Reward: {mean_reward:.2f}")
+                
+                if abs(buffer_win_rate - win_rate*100) > 10:
+                    print(f"  ⚠️  Large discrepancy detected: {abs(buffer_win_rate - win_rate*100):.1f}% difference")
+                    print(f"  💡 This suggests evaluation environment differences")
+                    print(f"  🔧 Best practice: Separate but identical environments for unbiased evaluation")
+                else:
+                    print(f"  ✅ Evaluation consistency: {abs(buffer_win_rate - win_rate*100):.1f}% difference")
+                    print(f"  ✅ Best practice followed: Separate environments with consistent results")
             
             print(f"\nStage {stage + 1} Results:")
-            print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
-            print(f"Win rate: {win_rate*100:.2f}%")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
             print(f"Min wins required: {current_stage_info['min_wins_required']} out of {eval_episodes} games")
             
