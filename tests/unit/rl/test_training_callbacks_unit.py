@@ -318,7 +318,7 @@ class TestIterationCallback:
         
         assert callback.enable_file_logging is False
         # Should not create any files
-        assert not hasattr(callback, 'stats_file') or callback.stats_file == "training_stats.txt"
+        assert not hasattr(callback, 'stats_file') or callback.stats_file == "training_stats/training_stats.txt"
         print("DEBUG: file logging disabled test completed")
 
 

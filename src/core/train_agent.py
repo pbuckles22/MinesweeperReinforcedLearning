@@ -27,7 +27,7 @@ import time
 import json
 import signal
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, CheckpointCallback, CallbackList
 from stable_baselines3.common.monitor import Monitor
@@ -39,12 +39,149 @@ import torch
 from src.core.constants import REWARD_INVALID_ACTION, REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN
 import mlflow
 import mlflow.pytorch
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Any
+import tempfile
+import shutil
 
 # Global variables for graceful shutdown
 training_model = None
 training_env = None
 eval_env = None
 shutdown_requested = False
+
+class TrainingStatsManager:
+    """Manages training stats history with automatic cleanup and organization."""
+    
+    def __init__(self, history_dir="training_stats/history", max_age_days=14, max_files=10):
+        """
+        Initialize the training stats manager.
+        
+        Args:
+            history_dir: Directory to store training stats history
+            max_age_days: Maximum age of files to keep (default: 14 days)
+            max_files: Minimum number of files to keep (default: 10)
+        """
+        self.history_dir = Path(history_dir)
+        self.max_age_days = max_age_days
+        self.max_files = max_files
+        
+        # Create history directory if it doesn't exist
+        self.history_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Clean up old files on initialization
+        self.cleanup_old_files()
+    
+    def get_stats_file_path(self, filename: str) -> Path:
+        """Get the full path for a stats file, moving it to history if it's timestamped."""
+        file_path = Path(filename)
+        
+        # If it's a timestamped file, put it directly in history
+        if file_path.name.startswith("training_stats_") and file_path.name != "training_stats.txt":
+            return self.history_dir / file_path.name
+        else:
+            # For non-timestamped files, use the main training_stats directory
+            return Path("training_stats") / file_path.name
+    
+    def move_to_history(self, file_path: str) -> Optional[Path]:
+        """Move a completed training stats file to the history directory."""
+        source_path = Path(file_path)
+        
+        if not source_path.exists():
+            return None
+        
+        # Don't move the current training_stats.txt file
+        if source_path.name == "training_stats.txt":
+            return source_path
+        
+        # Move timestamped files to history
+        if source_path.name.startswith("training_stats_"):
+            dest_path = self.history_dir / source_path.name
+            try:
+                source_path.rename(dest_path)
+                return dest_path
+            except Exception as e:
+                print(f"Warning: Could not move {source_path} to history: {e}")
+                return source_path
+        
+        return source_path
+    
+    def cleanup_old_files(self):
+        """Remove old training stats files based on age and count limits."""
+        if not self.history_dir.exists():
+            return
+        
+        # Get all training stats files in history
+        stats_files = list(self.history_dir.glob("training_stats_*.txt"))
+        
+        if not stats_files:
+            return
+        
+        # Sort by modification time (newest first)
+        stats_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+        
+        # Calculate cutoff time
+        cutoff_time = time.time() - (self.max_age_days * 24 * 60 * 60)
+        
+        # Files to remove
+        files_to_remove = []
+        
+        # Remove files older than max_age_days
+        for file_path in stats_files:
+            if file_path.stat().st_mtime < cutoff_time:
+                files_to_remove.append(file_path)
+        
+        # If we have more files than max_files, remove the oldest ones
+        if len(stats_files) > self.max_files:
+            files_to_remove.extend(stats_files[self.max_files:])
+        
+        # Remove duplicate files to remove
+        files_to_remove = list(set(files_to_remove))
+        
+        # Remove the files
+        for file_path in files_to_remove:
+            try:
+                file_path.unlink()
+                print(f"Cleaned up old training stats: {file_path.name}")
+            except Exception as e:
+                print(f"Warning: Could not remove {file_path}: {e}")
+    
+    def get_recent_stats(self, count: int = 5) -> List[Path]:
+        """Get the most recent training stats files."""
+        if not self.history_dir.exists():
+            return []
+        
+        stats_files = list(self.history_dir.glob("training_stats_*.txt"))
+        stats_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+        
+        return stats_files[:count]
+    
+    def get_stats_summary(self) -> Dict[str, Any]:
+        """Get a summary of training stats history."""
+        if not self.history_dir.exists():
+            return {"total_files": 0, "recent_files": []}
+        
+        stats_files = list(self.history_dir.glob("training_stats_*.txt"))
+        
+        # Get recent files with basic info
+        recent_files = []
+        for file_path in sorted(stats_files, key=lambda f: f.stat().st_mtime, reverse=True)[:5]:
+            try:
+                stat = file_path.stat()
+                recent_files.append({
+                    "name": file_path.name,
+                    "size": stat.st_size,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "age_days": (time.time() - stat.st_mtime) / (24 * 60 * 60)
+                })
+            except Exception:
+                continue
+        
+        return {
+            "total_files": len(stats_files),
+            "history_dir": str(self.history_dir),
+            "recent_files": recent_files
+        }
 
 def signal_handler(signum, frame):
     """Handle Ctrl+C gracefully"""
@@ -379,7 +516,7 @@ class CustomEvalCallback(BaseCallback):
 
 class IterationCallback(BaseCallback):
     """Custom callback for logging iteration information"""
-    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None, stats_file="training_stats.txt", timestamped_stats=False, enable_file_logging=True):
+    def __init__(self, verbose=0, debug_level=2, experiment_tracker=None, stats_file="training_stats/training_stats.txt", timestamped_stats=False, enable_file_logging=True, stats_manager=None):
         super().__init__(verbose)
         self.start_time = time.time()
         self.last_iteration_time = self.start_time
@@ -388,12 +525,23 @@ class IterationCallback(BaseCallback):
         self.timestamped_stats = timestamped_stats
         self.enable_file_logging = enable_file_logging
         
+        # Initialize stats manager if not provided
+        if stats_manager is None:
+            self.stats_manager = TrainingStatsManager()
+        else:
+            self.stats_manager = stats_manager
+        
         # Handle timestamped stats files
         if self.timestamped_stats:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            self.stats_file = f"training_stats_{timestamp}.txt"
-        else:
+            filename = f"training_stats_{timestamp}.txt"
+            self.stats_file = str(self.stats_manager.get_stats_file_path(filename))
+        elif stats_file != "training_stats/training_stats.txt":
+            # Use the custom stats_file if provided
             self.stats_file = stats_file
+        else:
+            # Use default stats file
+            self.stats_file = "training_stats/training_stats.txt"
         
         # Track metrics for improvement calculation
         self.last_avg_reward = 0
@@ -437,22 +585,60 @@ class IterationCallback(BaseCallback):
         
         self.experiment_tracker = experiment_tracker
         
-        # Initialize stats file only if file logging is enabled
-        if self.enable_file_logging:
-            try:
-                with open(self.stats_file, 'w') as f:
-                    f.write("timestamp,iteration,timesteps,win_rate,avg_reward,avg_length,stage,phase,stage_time,no_improvement\n")
-            except (IOError, OSError) as e:
-                # If file creation fails, disable file logging
-                self.enable_file_logging = False
-                if self.verbose > 0:
-                    print(f"Warning: Could not create stats file {self.stats_file}: {e}")
-                    print("File logging disabled for this callback.")
+        # Track if we've written any data to the file
+        self.file_initialized = False
+        self.has_written_data = False
 
     def log(self, message, level=2, force=False):
         """Log message if debug level is high enough"""
         if force or level <= self.debug_level:
             print(f"[{self.debug_levels[level]}] {message}")
+
+    def _initialize_stats_file(self):
+        """Initialize the stats file with headers only when we're about to write data"""
+        if not self.enable_file_logging or self.file_initialized:
+            return
+            
+        try:
+            # Ensure directory exists for timestamped files
+            file_path = Path(self.stats_file)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(self.stats_file, 'w') as f:
+                f.write("timestamp,iteration,timesteps,win_rate,avg_reward,avg_length,stage,phase,stage_time,no_improvement\n")
+            self.file_initialized = True
+        except (IOError, OSError) as e:
+            # If file creation fails, disable file logging
+            self.enable_file_logging = False
+            if self.verbose > 0:
+                print(f"Warning: Could not create stats file {self.stats_file}: {e}")
+                print("File logging disabled for this callback.")
+
+    def _cleanup_empty_file(self):
+        """Remove the stats file if it's empty (no data written)"""
+        if self.enable_file_logging and self.file_initialized and not self.has_written_data:
+            try:
+                import os
+                if os.path.exists(self.stats_file):
+                    os.remove(self.stats_file)
+                    if self.verbose > 0:
+                        print(f"Cleaned up empty stats file: {self.stats_file}")
+            except (IOError, OSError) as e:
+                if self.verbose > 0:
+                    print(f"Warning: Could not remove empty stats file {self.stats_file}: {e}")
+
+    def on_training_end(self):
+        """Called when training ends - move completed files to history and cleanup empty files"""
+        if self.has_written_data and self.timestamped_stats:
+            # Move completed timestamped files to history
+            self.stats_manager.move_to_history(self.stats_file)
+        else:
+            # Clean up empty files
+            self._cleanup_empty_file()
+
+    def on_training_error(self):
+        """Called when training errors - cleanup empty files"""
+        self._cleanup_empty_file()
 
     def _update_learning_phase(self, avg_reward, win_rate):
         """Update the current learning phase based on performance"""
@@ -645,9 +831,15 @@ class IterationCallback(BaseCallback):
                 # Write one-line stats only if file logging is enabled
                 if self.enable_file_logging:
                     try:
+                        # Initialize file with headers on first write
+                        self._initialize_stats_file()
+                        
                         stats_line = f"{timestamp},{self.iterations},{self.num_timesteps},{win_rate:.1f},{avg_reward:.2f},{avg_length:.1f},{self.curriculum_stage},{self.learning_phase},{stage_time:.0f},{self.no_improvement_count}\n"
                         with open(self.stats_file, 'a') as f:
                             f.write(stats_line)
+                        
+                        # Mark that we've written data
+                        self.has_written_data = True
                     except (IOError, OSError) as e:
                         # If file writing fails, disable file logging
                         self.enable_file_logging = False
@@ -745,13 +937,12 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=None,
                       help='Random seed')
     parser.add_argument('--device', type=str, default="auto",
-                      help='Device to use for training')
-    parser.add_argument('--_init_setup_model', type=bool, default=True,
-                      help='Whether to initialize the model')
-    parser.add_argument('--strict_progression', type=bool, default=False,
-                      help='Require target win rate achievement before stage progression')
-    parser.add_argument('--timestamped_stats', type=bool, default=False,
-                      help='Use timestamped stats files to preserve training history')
+                      help='Device to use for training, e.g. "cpu", "cuda", "mps"')
+    parser.add_argument('--_init_setup_model', type=bool, default=True, help='Whether to build the model or not')
+    parser.add_argument('--strict_progression', action="store_true", help="Enable strict win rate progression")
+    parser.add_argument('--timestamped_stats', action="store_true", help="Enable timestamped stats file")
+    
+    # Advanced PPO options
     return parser.parse_args()
 
 def main():
@@ -837,6 +1028,13 @@ def main():
         
         # Create experiment tracker
         experiment_tracker = ExperimentTracker()
+        
+        # Create training stats manager for history management
+        stats_manager = TrainingStatsManager(
+            history_dir="training_stats/history",
+            max_age_days=14,  # Keep files for 2 weeks
+            max_files=10      # Keep at least 10 files
+        )
         
         # Save device and performance information
         experiment_tracker.metrics["device_info"] = {
@@ -1085,8 +1283,9 @@ def main():
                 verbose=args.verbose,
                 debug_level=2,
                 experiment_tracker=experiment_tracker,
-                stats_file="training_stats.txt",
-                timestamped_stats=args.timestamped_stats
+                stats_file="training_stats/training_stats.txt",
+                timestamped_stats=args.timestamped_stats,
+                stats_manager=stats_manager
             )
             
             # Train for this stage with enhanced timesteps
