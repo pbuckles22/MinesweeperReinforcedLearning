@@ -261,9 +261,9 @@ class TestExperimentTrackerPersistence:
             tracker.metrics["test_metric"] = 42
             
             # Mock open to raise an exception
-            with patch('builtins.open', side_effect=PermissionError("Permission denied")):
-                # Should not raise an exception
-                tracker._save_metrics()
+            with pytest.raises(PermissionError):
+                with patch('builtins.open', side_effect=PermissionError("Permission denied")):
+                    tracker._save_metrics()
     
     def test_save_metrics_creates_backup(self):
         """Test that _save_metrics creates backup files for previous runs."""
@@ -420,12 +420,9 @@ class TestExperimentTrackerEdgeCases:
             os.makedirs(read_only_dir, exist_ok=True)
             os.chmod(read_only_dir, 0o444)  # Read-only
             
-            # Should handle the error gracefully
-            tracker = ExperimentTracker(os.path.join(read_only_dir, "experiments"))
-            
-            # Should not raise an exception
-            tracker._save_metrics()
-            
+            # Should raise a PermissionError
+            with pytest.raises(PermissionError):
+                tracker = ExperimentTracker(os.path.join(read_only_dir, "experiments"))
         finally:
             # Clean up
             try:

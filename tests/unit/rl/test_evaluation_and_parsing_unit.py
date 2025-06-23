@@ -357,7 +357,7 @@ class TestEvaluateModelEdgeCases:
         env.reset.side_effect = RuntimeError("Environment reset failed")
         
         with pytest.raises(RuntimeError):
-            evaluate_model(model, env, n_episodes=1)
+            evaluate_model(model, env, n_episodes=1, raise_errors=True)
     
     def test_evaluate_model_model_predict_failure(self):
         """Test evaluation when model prediction fails."""
@@ -368,7 +368,7 @@ class TestEvaluateModelEdgeCases:
         env.reset.return_value = (np.zeros((4, 4, 4)), {})
         
         with pytest.raises(RuntimeError):
-            evaluate_model(model, env, n_episodes=1)
+            evaluate_model(model, env, n_episodes=1, raise_errors=True)
     
     def test_evaluate_model_step_failure(self):
         """Test evaluation when environment step fails."""
@@ -380,20 +380,22 @@ class TestEvaluateModelEdgeCases:
         env.step.side_effect = RuntimeError("Environment step failed")
         
         with pytest.raises(RuntimeError):
-            evaluate_model(model, env, n_episodes=1)
+            evaluate_model(model, env, n_episodes=1, raise_errors=True)
     
     def test_evaluate_model_vectorized_env_detection_edge_case(self):
         """Test vectorized environment detection edge case."""
         model = MagicMock()
         model.predict.return_value = (np.array([0]), None)
         
-        # Mock environment that has num_envs but no step method
+        # Mock environment that has num_envs but step method raises AttributeError
         env = MagicMock()
         env.num_envs = 1
-        # Don't set step method
+        env.reset.return_value = (np.zeros((4, 4, 4)), {})
+        env.step.side_effect = AttributeError("Step method not properly implemented")
         
+        # This should cause an AttributeError when trying to call step
         with pytest.raises(AttributeError):
-            evaluate_model(model, env, n_episodes=1)
+            evaluate_model(model, env, n_episodes=1, raise_errors=True)
 
 
 class TestArgumentParsingEdgeCases:

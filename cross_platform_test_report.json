@@ -1,0 +1,92 @@
+{
+  "timestamp": "Sun Jun 22 16:22:14 PDT 2025",
+  "platform_info": {
+    "system": "Darwin",
+    "release": "24.5.0",
+    "version": "Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:49 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T6000",
+    "machine": "arm64",
+    "processor": "arm",
+    "python_version": "3.13.5",
+    "python_implementation": "CPython"
+  },
+  "test_scripts": {
+    "mac": [
+      "scripts/mac/quick_test.sh",
+      "scripts/mac/medium_test.sh"
+    ],
+    "linux": [
+      "scripts/linux/quick_test.sh",
+      "scripts/linux/medium_test.sh"
+    ],
+    "windows": [
+      "scripts/windows/quick_test.ps1",
+      "scripts/windows/medium_test.ps1"
+    ]
+  },
+  "script_validation": {
+    "mac": {
+      "quick_test.sh": {
+        "path": "scripts/mac/quick_test.sh",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      },
+      "medium_test.sh": {
+        "path": "scripts/mac/medium_test.sh",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      }
+    },
+    "linux": {
+      "quick_test.sh": {
+        "path": "scripts/linux/quick_test.sh",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      },
+      "medium_test.sh": {
+        "path": "scripts/linux/medium_test.sh",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      }
+    },
+    "windows": {
+      "quick_test.ps1": {
+        "path": "scripts/windows/quick_test.ps1",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      },
+      "medium_test.ps1": {
+        "path": "scripts/windows/medium_test.ps1",
+        "exists": true,
+        "executable": true,
+        "content_valid": true,
+        "issues": []
+      }
+    }
+  },
+  "quick_test_result": {
+    "success": true,
+    "output": "============================= test session starts ==============================\nplatform darwin -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0 -- /Users/chaos/dev/MinesweeperReinforcedLearning/venv/bin/python\ncachedir: .pytest_cache\nrootdir: /Users/chaos/dev/MinesweeperReinforcedLearning\nplugins: anyio-4.9.0, timeout-2.4.0, cov-6.2.1\ncollecting ... collected 1 item\n\ntests/unit/core/test_core_initialization_unit.py::test_invalid_board_size PASSED [100%]\n\n========================= 1 passed, 1 warning in 0.01s =========================\n",
+    "error": "",
+    "duration": 0
+  },
+  "summary": {
+    "total_scripts": 6,
+    "valid_scripts": 6,
+    "issues_found": 0,
+    "platforms_covered": [
+      "mac",
+      "linux",
+      "windows"
+    ]
+  }
+}

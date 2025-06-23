@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 from src.core.train_agent import (
     detect_optimal_device,
     get_optimal_hyperparameters,
-    test_device_performance
+    benchmark_device_performance
 )
 
 
@@ -157,7 +157,7 @@ class TestDevicePerformance:
         }
         
         # Should not raise any exceptions
-        result = test_device_performance(device_info)
+        result = benchmark_device_performance(device_info)
         
         assert result == 0.1  # (1.0 - 0.0) / 10
         assert mock_device.called
@@ -179,7 +179,7 @@ class TestDevicePerformance:
         
         # Should handle the exception gracefully
         with pytest.raises(RuntimeError):
-            test_device_performance(device_info)
+            benchmark_device_performance(device_info)
     
     @patch('torch.device')
     @patch('torch.randn')
@@ -200,7 +200,7 @@ class TestDevicePerformance:
             'performance_notes': '2-4x faster than CPU'
         }
         
-        result = test_device_performance(device_info)
+        result = benchmark_device_performance(device_info)
         assert result == 0.05
     
     @patch('torch.device')
@@ -222,7 +222,7 @@ class TestDevicePerformance:
             'performance_notes': 'Fastest option'
         }
         
-        result = test_device_performance(device_info)
+        result = benchmark_device_performance(device_info)
         assert result == 0.08
 
 
@@ -309,4 +309,4 @@ class TestEdgeCases:
         }
         
         with pytest.raises(RuntimeError):
-            test_device_performance(device_info) 
+            benchmark_device_performance(device_info) 
