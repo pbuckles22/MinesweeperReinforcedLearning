@@ -102,6 +102,44 @@ A modern, RL-optimized Minesweeper environment with comprehensive test coverage 
 6. **Expert**: 18x24 board, 115 mines (3% win rate target)
 7. **Chaotic**: 20x35 board, 130 mines (2% win rate target)
 
+### Curriculum Modes
+The system now supports **three distinct curriculum modes** for different training objectives:
+
+#### 1. **"current" - Original Learning Curriculum**
+- **Purpose**: Basic learning and experimentation
+- **Targets**: Low win rates (15% → 12% → 10% → 8% → 5% → 3% → 2%)
+- **Training**: Standard 1.0x multiplier, 10 evaluation episodes
+- **Progression**: Learning-based (allows progression without meeting targets)
+- **Use Case**: Development, debugging, quick testing
+
+#### 2. **"human_performance" - Human-Level Targets** (Default)
+- **Purpose**: Achieve human expert-level performance
+- **Targets**: High win rates (80% → 70% → 60% → 50% → 40% → 30% → 20%)
+- **Training**: Extended 3.0x multiplier, 20 evaluation episodes
+- **Progression**: Strict (must meet targets to advance)
+- **Use Case**: Research, benchmarking, human-level AI
+
+#### 3. **"superhuman" - Surpass Human Benchmarks**
+- **Purpose**: Exceed human expert performance
+- **Targets**: Superhuman win rates (95% → 85% → 75% → 65% → 55% → 45% → 35%)
+- **Training**: Maximum 5.0x multiplier, 30 evaluation episodes
+- **Progression**: Strict (must meet targets to advance)
+- **Use Case**: Advanced research, superhuman AI development
+
+**Usage**:
+```bash
+# Use original learning curriculum
+python -m src.core.train_agent --curriculum_mode current
+
+# Use human performance targets (default)
+python -m src.core.train_agent --curriculum_mode human_performance
+
+# Use superhuman targets
+python -m src.core.train_agent --curriculum_mode superhuman
+```
+
+**📖 For detailed information**: See [Curriculum Modes Documentation](docs/curriculum_modes.md)
+
 ## 🚀 M1 GPU Performance
 
 ### M1 MacBook Optimization
@@ -421,5 +459,5 @@ tail -f training_stats.txt
 4. **Novel Architectures**: Transformer-based models
 
 ---
-**Last Updated**: 2024-12-19  
-**Status**: Production ready with M1 GPU optimization and cross-platform compatibility 
+**Last Updated**: 2024-12-21  
+**Status**: Production ready with dual curriculum system and M1 GPU optimization
