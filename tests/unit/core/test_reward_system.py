@@ -16,6 +16,7 @@ from src.core.constants import (
     REWARD_INVALID_ACTION,
     REWARD_FIRST_CASCADE_SAFE,
     REWARD_FIRST_CASCADE_HIT_MINE,
+    REWARD_REPEATED_CLICK
 )
 
 @pytest.fixture
@@ -88,7 +89,7 @@ def test_invalid_action_reward(env):
     
     # Try to reveal the same cell again
     state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_INVALID_ACTION
+    assert reward == REWARD_REPEATED_CLICK
 
 def test_game_over_invalid_action_reward(env):
     """Test reward for actions after game over."""

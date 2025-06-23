@@ -451,6 +451,25 @@ class ExperimentTracker:
         if all((not v if isinstance(v, list) else v == {} for k, v in self.metrics.items())):
             metrics_to_save = {}
         
+        # Convert numpy types to native Python types for JSON serialization
+        def convert_numpy_types(obj):
+            """Recursively convert numpy types to native Python types for JSON serialization."""
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {key: convert_numpy_types(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_types(item) for item in obj]
+            else:
+                return obj
+        
+        # Convert metrics to JSON-serializable format
+        metrics_to_save = convert_numpy_types(metrics_to_save)
+        
         # Save to primary location
         with open(metrics_file, "w") as f:
             json.dump(metrics_to_save, f, indent=2)
@@ -510,6 +529,9 @@ class CustomEvalCallback(BaseCallback):
                     # Check if the episode was won from the info dictionary
                     if info and isinstance(info, list) and len(info) > 0:
                         if info[0].get('won', False):
+                            episode_won = True
+                    elif info and isinstance(info, dict):
+                        if info.get('won', False):
                             episode_won = True
                 
                 rewards.append(episode_reward)

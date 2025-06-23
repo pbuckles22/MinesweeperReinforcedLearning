@@ -21,6 +21,7 @@ from src.core.constants import (
     REWARD_WIN,
     REWARD_HIT_MINE,
     REWARD_INVALID_ACTION,
+    REWARD_REPEATED_CLICK,
     DIFFICULTY_LEVELS
 )
 
@@ -35,7 +36,8 @@ class MinesweeperEnv(gym.Env):
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
                  safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN,
-                 first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE):
+                 first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE,
+                 repeated_click_penalty=REWARD_REPEATED_CLICK):
         """Initialize the Minesweeper environment.
         
         Args:
@@ -55,6 +57,7 @@ class MinesweeperEnv(gym.Env):
             win_reward: Reward for winning
             first_cascade_safe_reward: Reward for first cascade safe
             first_cascade_hit_mine_reward: Reward for first cascade hit mine
+            repeated_click_penalty: Penalty for repeated click
         """
         super().__init__()
         
@@ -126,6 +129,7 @@ class MinesweeperEnv(gym.Env):
         self.first_cascade_safe_reward = first_cascade_safe_reward
         self.first_cascade_hit_mine_reward = first_cascade_hit_mine_reward
         self.reward_invalid_action = invalid_action_penalty
+        self.repeated_click_penalty = repeated_click_penalty
         
         # Game state
         self.board = None
@@ -463,7 +467,7 @@ class MinesweeperEnv(gym.Env):
             row = action // self.current_board_width
             if self.revealed[row, col]:
                 self.revealed_cell_click_count += 1
-            return self.state, self.invalid_action_penalty, False, False, info
+            return self.state, self.repeated_click_penalty, False, False, info
 
         # Increment move count for valid actions
         self.move_count += 1

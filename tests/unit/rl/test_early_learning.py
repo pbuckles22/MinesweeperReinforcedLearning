@@ -16,7 +16,8 @@ from src.core.constants import (
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
-    REWARD_INVALID_ACTION
+    REWARD_INVALID_ACTION,
+    REWARD_REPEATED_CLICK
 )
 
 @pytest.fixture
@@ -415,7 +416,7 @@ def test_early_learning_reward_evolution(early_learning_env):
     for reward in subsequent_rewards:
         # Subsequent moves can still be in pre-cascade period, so they might get neutral rewards
         # or they could be post-cascade and get appropriate rewards
-        valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
+        valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_REPEATED_CLICK]
         assert reward in valid_rewards, "Reward should be valid for RL agent"
     
     print("✅ Early learning reward evolution test passed")

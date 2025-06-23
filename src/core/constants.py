@@ -22,13 +22,14 @@ CELL_MINE_HIT = -4
 # Enhanced state representation constants
 UNKNOWN_SAFETY = -1     # Value for unknown safety in safety channel
 
-# Reward values - Optimized for winning
+# Reward values - Optimized for consistent strategy over lucky wins
 REWARD_FIRST_CASCADE_SAFE = 0     # Pre-cascade safe reveal (neutral - no punishment for guessing)
 REWARD_FIRST_CASCADE_HIT_MINE = 0  # Pre-cascade hit mine (neutral - no punishment for bad luck)
-REWARD_SAFE_REVEAL = 15           # Regular safe reveal (after cascade - normal learning signal)
-REWARD_WIN = 500                  # Win the game (massive reward to encourage winning)
-REWARD_HIT_MINE = -20             # Hit a mine (after cascade - strategic mistake penalty)
-REWARD_INVALID_ACTION = -3        # Invalid action penalty (increased to discourage)
+REWARD_SAFE_REVEAL = 25           # Regular safe reveal (increased - reward consistent good play)
+REWARD_WIN = 100                  # Win the game (reduced - still valuable but not dominant)
+REWARD_HIT_MINE = -50             # Hit a mine (increased penalty - discourage risky moves)
+REWARD_INVALID_ACTION = -25       # Invalid action penalty (increased - discourage repeated clicks)
+REWARD_REPEATED_CLICK = -35       # Specific penalty for clicking already revealed cells (Phase 2)
 
 # Difficulty level constants
 DIFFICULTY_LEVELS = {
