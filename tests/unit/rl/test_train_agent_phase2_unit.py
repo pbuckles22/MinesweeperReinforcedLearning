@@ -175,7 +175,7 @@ class TestCommandLineArgumentParsing:
     def test_parse_args_strict_progression_flag(self):
         custom_args = [
             'train_agent.py',
-            '--strict_progression', 'True'
+            '--strict_progression'
         ]
         with patch('sys.argv', custom_args):
             args = parse_args()
@@ -184,7 +184,7 @@ class TestCommandLineArgumentParsing:
     def test_parse_args_timestamped_stats_flag(self):
         custom_args = [
             'train_agent.py',
-            '--timestamped_stats', 'True'
+            '--timestamped_stats'
         ]
         with patch('sys.argv', custom_args):
             args = parse_args()

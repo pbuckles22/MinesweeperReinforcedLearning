@@ -113,3 +113,6 @@ temp/
 =htmlcov/
 coverage_results_summary.json
 
+# Ignore all training stats files and history
+training_stats/
+

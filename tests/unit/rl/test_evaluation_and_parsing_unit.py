@@ -246,8 +246,8 @@ class TestArgumentParsing:
             '--device', 'cuda',
             '--verbose', '2',
             '--seed', '42',
-            '--strict_progression', 'True',
-            '--timestamped_stats', 'True'
+            '--strict_progression',
+            '--timestamped_stats'
         ]
         
         with patch('sys.argv', custom_args):
@@ -293,8 +293,8 @@ class TestArgumentParsing:
         custom_args = [
             'train_agent.py',
             '--use_sde', 'True',
-            '--strict_progression', 'True',
-            '--timestamped_stats', 'True'
+            '--strict_progression',
+            '--timestamped_stats'
         ]
         
         with patch('sys.argv', custom_args):
