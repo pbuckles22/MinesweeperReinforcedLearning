@@ -768,238 +768,241 @@ def main():
     print("💡 Press Ctrl+C to stop training gracefully")
     print("")
     
-    # Set up MLflow experiment
-    mlflow.set_experiment("minesweeper_rl")
-    with mlflow.start_run():
-        # Log hyperparameters
-        mlflow.log_params({
-            "total_timesteps": args.total_timesteps,
-            "learning_rate": args.learning_rate,
-            "batch_size": args.batch_size,
-            "n_steps": args.n_steps,
-            "n_epochs": args.n_epochs,
-            "gamma": args.gamma,
-            "gae_lambda": args.gae_lambda,
-            "clip_range": args.clip_range,
-            "ent_coef": args.ent_coef,
-            "vf_coef": args.vf_coef,
-            "max_grad_norm": args.max_grad_norm,
-            "device": args.device
-        })
+    # Initialize variables
+    training_model = None
+    training_env = None
+    eval_env = None
+    
+    try:
+        # Set up MLflow experiment with error handling
+        try:
+            mlflow.set_experiment("minesweeper_rl")
+            mlflow_run = mlflow.start_run()
+        except Exception as e:
+            print(f"⚠️  MLflow initialization failed: {e}")
+            print("   Continuing without MLflow tracking...")
+            mlflow_run = None
+        
+        # Log hyperparameters if MLflow is available
+        if mlflow_run is not None:
+            try:
+                mlflow.log_params({
+                    "total_timesteps": args.total_timesteps,
+                    "learning_rate": args.learning_rate,
+                    "batch_size": args.batch_size,
+                    "n_steps": args.n_steps,
+                    "n_epochs": args.n_epochs,
+                    "gamma": args.gamma,
+                    "gae_lambda": args.gae_lambda,
+                    "clip_range": args.clip_range,
+                    "ent_coef": args.ent_coef,
+                    "vf_coef": args.vf_coef,
+                    "max_grad_norm": args.max_grad_norm,
+                    "device": args.device
+                })
+            except Exception as e:
+                print(f"⚠️  MLflow parameter logging failed: {e}")
         
         # Detect optimal device and test performance
         device_info = detect_optimal_device()
         benchmark_device_performance(device_info)
     
-    # Get optimal hyperparameters for the detected device
-    optimal_params = get_optimal_hyperparameters(device_info)
-    
-    # Override args with optimal parameters if device is auto
-    if args.device == "auto":
-        args.device = device_info['device']
-        print(f"🔧 Auto-detected device: {args.device}")
-    
-    # Update hyperparameters with optimal values
-    args.batch_size = optimal_params['batch_size']
-    args.n_steps = optimal_params['n_steps']
-    args.n_epochs = optimal_params['n_epochs']
-    args.learning_rate = optimal_params['learning_rate']
-    args.gamma = optimal_params['gamma']
-    args.gae_lambda = optimal_params['gae_lambda']
-    args.clip_range = optimal_params['clip_range']
-    args.ent_coef = optimal_params['ent_coef']
-    args.vf_coef = optimal_params['vf_coef']
-    args.max_grad_norm = optimal_params['max_grad_norm']
-    
-    print(f"\n📊 Training Configuration:")
-    print(f"   Device: {args.device} ({device_info['description']})")
-    print(f"   Batch Size: {args.batch_size}")
-    print(f"   Steps per Update: {args.n_steps}")
-    print(f"   Epochs: {args.n_epochs}")
-    print(f"   Learning Rate: {args.learning_rate}")
-    print(f"   Total Timesteps: {args.total_timesteps:,}")
-    
-    # Create experiment tracker
-    experiment_tracker = ExperimentTracker()
-    
-    # Save device and performance information
-    experiment_tracker.metrics["device_info"] = {
-        "device": device_info['device'],
-        "description": device_info['description'],
-        "performance_notes": device_info['performance_notes'],
-        "hyperparameters": optimal_params
-    }
-    
-    # Define curriculum stages with human performance targets
-    # ENHANCED CURRICULUM - Human Performance Focus
-    curriculum_stages = [
-        {
-            'name': 'Beginner',
-            'size': 4,
-            'mines': 2,
-            'win_rate_threshold': 0.80,  # 80% - Human expert level
-            'min_wins_required': 8,  # 8 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '4x4 board with 2 mines - Achieve human expert level (80%)',
-            'training_multiplier': 3.0,  # 3x extended training
-            'eval_episodes': 20  # More evaluation episodes
-        },
-        {
-            'name': 'Intermediate',
-            'size': 6,
-            'mines': 4,
-            'win_rate_threshold': 0.70,  # 70% - Human expert level
-            'min_wins_required': 7,  # 7 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '6x6 board with 4 mines - Achieve human expert level (70%)',
-            'training_multiplier': 3.0,  # 3x extended training
-            'eval_episodes': 20
-        },
-        {
-            'name': 'Easy',
-            'size': 9,
-            'mines': 10,
-            'win_rate_threshold': 0.60,  # 60% - Human expert level
-            'min_wins_required': 6,  # 6 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '9x9 board with 10 mines - Achieve human expert level (60%)',
-            'training_multiplier': 3.0,  # 3x extended training
-            'eval_episodes': 20
-        },
-        {
-            'name': 'Normal',
-            'size': 16,
-            'mines': 40,
-            'win_rate_threshold': 0.50,  # 50% - Human expert level
-            'min_wins_required': 5,  # 5 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '16x16 board with 40 mines - Achieve human expert level (50%)',
-            'training_multiplier': 4.0,  # 4x extended training
-            'eval_episodes': 25
-        },
-        {
-            'name': 'Hard',
-            'size': 30,
-            'mines': 99,
-            'win_rate_threshold': 0.40,  # 40% - Human expert level
-            'min_wins_required': 4,  # 4 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '16x30 board with 99 mines - Achieve human expert level (40%)',
-            'training_multiplier': 4.0,  # 4x extended training
-            'eval_episodes': 25
-        },
-        {
-            'name': 'Expert',
-            'size': 24,
-            'mines': 115,
-            'win_rate_threshold': 0.30,  # 30% - Human expert level
-            'min_wins_required': 3,  # 3 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '18x24 board with 115 mines - Achieve human expert level (30%)',
-            'training_multiplier': 5.0,  # 5x extended training
-            'eval_episodes': 30
-        },
-        {
-            'name': 'Chaotic',
-            'size': 35,
-            'mines': 130,
-            'win_rate_threshold': 0.20,  # 20% - Human expert level
-            'min_wins_required': 2,  # 2 out of 10 games
-            'learning_based_progression': False,  # Require actual wins
-            'description': '20x35 board with 130 mines - Achieve human expert level (20%)',
-            'training_multiplier': 5.0,  # 5x extended training
-            'eval_episodes': 30
+        # Get optimal hyperparameters for the detected device
+        optimal_params = get_optimal_hyperparameters(device_info)
+        
+        # Override args with optimal parameters if device is auto
+        if args.device == "auto":
+            args.device = device_info['device']
+            print(f"🔧 Auto-detected device: {args.device}")
+        
+        # Update hyperparameters with optimal values
+        args.batch_size = optimal_params['batch_size']
+        args.n_steps = optimal_params['n_steps']
+        args.n_epochs = optimal_params['n_epochs']
+        args.learning_rate = optimal_params['learning_rate']
+        args.gamma = optimal_params['gamma']
+        args.gae_lambda = optimal_params['gae_lambda']
+        args.clip_range = optimal_params['clip_range']
+        args.ent_coef = optimal_params['ent_coef']
+        args.vf_coef = optimal_params['vf_coef']
+        args.max_grad_norm = optimal_params['max_grad_norm']
+        
+        print(f"\n📊 Training Configuration:")
+        print(f"   Device: {args.device} ({device_info['description']})")
+        print(f"   Batch Size: {args.batch_size}")
+        print(f"   Steps per Update: {args.n_steps}")
+        print(f"   Epochs: {args.n_epochs}")
+        print(f"   Learning Rate: {args.learning_rate}")
+        print(f"   Total Timesteps: {args.total_timesteps:,}")
+        
+        # Create experiment tracker
+        experiment_tracker = ExperimentTracker()
+        
+        # Save device and performance information
+        experiment_tracker.metrics["device_info"] = {
+            "device": device_info['device'],
+            "description": device_info['description'],
+            "performance_notes": device_info['performance_notes'],
+            "hyperparameters": optimal_params
         }
-    ]
-    
-    # BACKUP: Original curriculum stages (preserved for reference)
-    original_curriculum_stages = [
-        {
-            'name': 'Beginner',
-            'size': 4,
-            'mines': 2,
-            'win_rate_threshold': 0.15,  # 15% - Realistic for 4x4 with 2 mines
-            'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
-        },
-        {
-            'name': 'Intermediate',
-            'size': 6,
-            'mines': 4,
-            'win_rate_threshold': 0.12,  # 12% - Slightly harder but achievable
-            'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy'
-        },
-        {
-            'name': 'Easy',
-            'size': 9,
-            'mines': 10,
-            'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty
-            'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
-        },
-        {
-            'name': 'Normal',
-            'size': 16,
-            'mines': 40,
-            'win_rate_threshold': 0.08,  # 8% - Standard normal difficulty
-            'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
-        },
-        {
-            'name': 'Hard',
-            'size': 30,
-            'mines': 99,
-            'win_rate_threshold': 0.05,  # 5% - Standard hard difficulty
-            'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
-        },
-        {
-            'name': 'Expert',
-            'size': 24,
-            'mines': 115,
-            'win_rate_threshold': 0.03,  # 3% - Expert level
-            'description': '18x24 board with 115 mines - Expert level, handling high mine density'
-        },
-        {
-            'name': 'Chaotic',
-            'size': 35,
-            'mines': 130,
-            'win_rate_threshold': 0.02,  # 2% - Ultimate challenge
-            'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
-        }
-    ]
-    
-    # Save curriculum information
-    experiment_tracker.metrics["curriculum"] = {
-        "type": "Enhanced Curriculum - Human Performance Focus",
-        "stages": curriculum_stages,
-        "total_stages": len(curriculum_stages),
-        "expected_progression": "Beginner -> Intermediate -> Easy -> Normal -> Hard -> Expert -> Chaotic",
-        "old_curriculum_backed_up": False
-    }
-    experiment_tracker._save_metrics()
-    
-    # Calculate timesteps per stage (distribute evenly across all stages)
-    timesteps_per_stage = args.total_timesteps // len(curriculum_stages)
-    
-    # Adjust timesteps for different stages - give more time to simpler stages
-    stage_timesteps = []
-    for stage_idx, stage_info in enumerate(curriculum_stages):
-        if stage_idx == 0:  # Beginner stage (4x4)
-            stage_timesteps.append(timesteps_per_stage * 1.5)  # 1.5x time for learning basics
-        elif stage_idx < 3:  # Intermediate and Easy stages
-            stage_timesteps.append(timesteps_per_stage * 1.2)  # 1.2x time for medium complexity
-        else:  # Normal, Hard, Expert, Chaotic stages
-            stage_timesteps.append(timesteps_per_stage)  # Standard time for complex stages
-    
-    # Adjust total timesteps to account for the redistribution
-    adjusted_total_timesteps = sum(stage_timesteps)
-    print(f"📊 Adjusted training timesteps:")
-    print(f"   Original total: {args.total_timesteps:,}")
-    print(f"   Adjusted total: {adjusted_total_timesteps:,}")
-    for stage_idx, (stage_info, timesteps) in enumerate(zip(curriculum_stages, stage_timesteps)):
-        print(f"   Stage {stage_idx + 1} ({stage_info['name']}): {timesteps:,} timesteps")
-    
-    print(f"\n🎯 Starting training with {device_info['description']}...")
-    print(f"   Expected performance: {device_info['performance_notes']}")
-    
-    try:
+        
+        # Define curriculum stages with human performance targets
+        # ENHANCED CURRICULUM - Human Performance Focus
+        curriculum_stages = [
+            {
+                'name': 'Beginner',
+                'size': 4,
+                'mines': 2,
+                'win_rate_threshold': 0.80,  # 80% - Human expert level
+                'min_wins_required': 8,  # 8 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '4x4 board with 2 mines - Achieve human expert level (80%)',
+                'training_multiplier': 3.0,  # 3x extended training
+                'eval_episodes': 20  # More evaluation episodes
+            },
+            {
+                'name': 'Intermediate',
+                'size': 6,
+                'mines': 4,
+                'win_rate_threshold': 0.70,  # 70% - Human expert level
+                'min_wins_required': 7,  # 7 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '6x6 board with 4 mines - Achieve human expert level (70%)',
+                'training_multiplier': 3.0,  # 3x extended training
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Easy',
+                'size': 9,
+                'mines': 10,
+                'win_rate_threshold': 0.60,  # 60% - Human expert level
+                'min_wins_required': 6,  # 6 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '9x9 board with 10 mines - Achieve human expert level (60%)',
+                'training_multiplier': 3.0,  # 3x extended training
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Normal',
+                'size': 16,
+                'mines': 40,
+                'win_rate_threshold': 0.50,  # 50% - Human expert level
+                'min_wins_required': 5,  # 5 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '16x16 board with 40 mines - Achieve human expert level (50%)',
+                'training_multiplier': 4.0,  # 4x extended training
+                'eval_episodes': 25
+            },
+            {
+                'name': 'Hard',
+                'size': 30,
+                'mines': 99,
+                'win_rate_threshold': 0.40,  # 40% - Human expert level
+                'min_wins_required': 4,  # 4 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '16x30 board with 99 mines - Achieve human expert level (40%)',
+                'training_multiplier': 4.0,  # 4x extended training
+                'eval_episodes': 25
+            },
+            {
+                'name': 'Expert',
+                'size': 24,
+                'mines': 115,
+                'win_rate_threshold': 0.30,  # 30% - Human expert level
+                'min_wins_required': 3,  # 3 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '18x24 board with 115 mines - Achieve human expert level (30%)',
+                'training_multiplier': 5.0,  # 5x extended training
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Chaotic',
+                'size': 35,
+                'mines': 130,
+                'win_rate_threshold': 0.20,  # 20% - Human expert level
+                'min_wins_required': 2,  # 2 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '20x35 board with 130 mines - Achieve human expert level (20%)',
+                'training_multiplier': 5.0,  # 5x extended training
+                'eval_episodes': 30
+            }
+        ]
+        
+        # BACKUP: Original curriculum stages (preserved for reference)
+        original_curriculum_stages = [
+            {
+                'name': 'Beginner',
+                'size': 4,
+                'mines': 2,
+                'win_rate_threshold': 0.15,  # 15% - Realistic for 4x4 with 2 mines
+                'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
+            },
+            {
+                'name': 'Intermediate',
+                'size': 6,
+                'mines': 4,
+                'win_rate_threshold': 0.12,  # 12% - Slightly harder but achievable
+                'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy'
+            },
+            {
+                'name': 'Easy',
+                'size': 9,
+                'mines': 10,
+                'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty
+                'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
+            },
+            {
+                'name': 'Normal',
+                'size': 16,
+                'mines': 40,
+                'win_rate_threshold': 0.08,  # 8% - Standard normal difficulty
+                'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
+            },
+            {
+                'name': 'Hard',
+                'size': 30,
+                'mines': 99,
+                'win_rate_threshold': 0.05,  # 5% - Standard hard difficulty
+                'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
+            },
+            {
+                'name': 'Expert',
+                'size': 24,
+                'mines': 115,
+                'win_rate_threshold': 0.03,  # 3% - Expert level
+                'description': '18x24 board with 115 mines - Expert level, handling high mine density'
+            },
+            {
+                'name': 'Chaotic',
+                'size': 35,
+                'mines': 130,
+                'win_rate_threshold': 0.02,  # 2% - Ultimate challenge
+                'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
+            }
+        ]
+        
+        # Use enhanced curriculum by default, but allow fallback to original
+        if args.strict_progression:
+            # Use original curriculum for strict progression
+            curriculum_stages = original_curriculum_stages
+            print("📚 Using original curriculum (strict progression mode)")
+        else:
+            print("📚 Using enhanced curriculum (human performance targets)")
+        
+        # Define stage timesteps based on curriculum
+        stage_timesteps = [
+            int(args.total_timesteps * 0.15),  # 15% for beginner
+            int(args.total_timesteps * 0.15),  # 15% for intermediate
+            int(args.total_timesteps * 0.20),  # 20% for easy
+            int(args.total_timesteps * 0.20),  # 20% for normal
+            int(args.total_timesteps * 0.15),  # 15% for hard
+            int(args.total_timesteps * 0.10),  # 10% for expert
+            int(args.total_timesteps * 0.05)   # 5% for chaotic
+        ]
+        
+        print(f"📈 Curriculum Learning: {len(curriculum_stages)} stages")
+        print(f"   Expected performance: {device_info['performance_notes']}")
+        
         # Curriculum learning loop
         for stage in range(len(curriculum_stages)):
             if shutdown_requested:
@@ -1019,7 +1022,7 @@ def main():
             print(f"\n🎯 Stage {stage + 1}: {current_stage_name}")
             print(f"Board: {current_stage_size}x{current_stage_size} with {current_stage_mines} mines")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
-            print(f"Min wins required: {current_stage_info['min_wins_required']} out of {eval_episodes} games")
+            print(f"Min wins required: {current_stage_info.get('min_wins_required', 1)} out of {eval_episodes} games")
             print(f"Training multiplier: {training_multiplier}x (extended training)")
             print(f"Evaluation episodes: {eval_episodes}")
             
@@ -1109,12 +1112,12 @@ def main():
             print(f"Mean reward: {mean_reward:.2f} +/- {reward_std:.2f}")
             print(f"Win rate: {win_rate*100:.2f}%")
             print(f"Target win rate: {current_stage_info['win_rate_threshold']*100:.0f}%")
-            print(f"Min wins required: {current_stage_info['min_wins_required']} out of {eval_episodes} games")
+            print(f"Min wins required: {current_stage_info.get('min_wins_required', 1)} out of {eval_episodes} games")
             
             # Enhanced progression logic for curriculum
             target_win_rate = current_stage_info['win_rate_threshold']
-            min_wins_required = current_stage_info['min_wins_required']
-            learning_based_progression = current_stage_info['learning_based_progression']
+            min_wins_required = current_stage_info.get('min_wins_required', 1)
+            learning_based_progression = current_stage_info.get('learning_based_progression', True)
             min_positive_reward = 5.0  # Minimum positive reward to show learning
             min_learning_progress = 0.1  # Minimum improvement in rewards over time
             
@@ -1179,8 +1182,11 @@ def main():
                 win_rate
             )
             
-            # Save model for this stage
-            training_model.save(f"models/stage_{stage + 1}")
+            # Save model for this stage with error handling
+            try:
+                training_model.save(f"models/stage_{stage + 1}")
+            except Exception as e:
+                print(f"⚠️  Failed to save stage {stage + 1} model: {e}")
             
             # Add stage completion to metrics
             experiment_tracker.metrics["completed_stages"] = experiment_tracker.metrics.get("completed_stages", [])
@@ -1199,27 +1205,34 @@ def main():
         
         # Save final model if training completed normally
         if not shutdown_requested and training_model is not None:
-            training_model.save("models/final_model")
+            try:
+                training_model.save("models/final_model")
+            except Exception as e:
+                print(f"⚠️  Failed to save final model: {e}")
             
             # Log final model to MLflow (SB3 models need to be logged as artifacts)
-            try:
-                # Ensure models directory exists
-                os.makedirs("models", exist_ok=True)
+            if mlflow_run is not None:
+                try:
+                    # Ensure models directory exists
+                    os.makedirs("models", exist_ok=True)
+                    
+                    # Check if the model file exists before logging
+                    model_path = "models/final_model.zip"
+                    if os.path.exists(model_path):
+                        mlflow.log_artifact(model_path, "final_model")
+                        print("   ✅ Final model logged to MLflow successfully")
+                    else:
+                        print(f"   ⚠️  Model file not found at {model_path}")
+                except Exception as e:
+                    print(f"   ⚠️  Model logging failed: {e}")
                 
-                # Check if the model file exists before logging
-                model_path = "models/final_model.zip"
-                if os.path.exists(model_path):
-                    mlflow.log_artifact(model_path, "final_model")
-                    print("   ✅ Final model logged to MLflow successfully")
-                else:
-                    print(f"   ⚠️  Model file not found at {model_path}")
-            except Exception as e:
-                print(f"   ⚠️  Model logging failed: {e}")
-            
-            # Log final metrics
-            mlflow.log_metric("final_win_rate", win_rate)
-            mlflow.log_metric("final_mean_reward", mean_reward)
-            mlflow.log_metric("final_reward_std", reward_std)
+                # Log final metrics
+                try:
+                    mlflow.log_metric("final_win_rate", win_rate)
+                    mlflow.log_metric("final_mean_reward", mean_reward)
+                    mlflow.log_metric("final_reward_std", reward_std)
+                except Exception as e:
+                    print(f"   ⚠️  Final metrics logging failed: {e}")
             
             print("\n✅ Training completed successfully!")
             print("\nFinal Stage Progression:")
@@ -1230,41 +1243,57 @@ def main():
                     print(f"Final Win Rate: {stage_info['win_rate']:.2%}")
                     print(f"Mean Reward: {stage_info['mean_reward']:.2f} +/- {stage_info['target_win_rate']*100:.2f}%")
             
-            print(f"\n📊 MLflow experiment tracking enabled!")
-            print(f"   Run 'mlflow ui' to view training progress")
-            print(f"   Then open http://localhost:5000 in your browser")
+            if mlflow_run is not None:
+                print(f"\n📊 MLflow experiment tracking enabled!")
+                print(f"   Run 'mlflow ui' to view training progress")
+                print(f"   Then open http://localhost:5000 in your browser")
         else:
             print("\n🛑 Training stopped by user request.")
             if training_model is not None:
                 # Save the current model as a checkpoint
-                checkpoint_path = f"models/checkpoint_stage_{stage + 1}_interrupted"
-                training_model.save(checkpoint_path)
-                print(f"💾 Checkpoint saved to: {checkpoint_path}")
+                try:
+                    checkpoint_path = f"models/checkpoint_stage_{stage + 1}_interrupted"
+                    training_model.save(checkpoint_path)
+                    print(f"💾 Checkpoint saved to: {checkpoint_path}")
+                except Exception as e:
+                    print(f"⚠️  Failed to save checkpoint: {e}")
     
     except KeyboardInterrupt:
         print("\n🛑 Training interrupted by user (Ctrl+C)")
         if training_model is not None:
             # Save the current model as a checkpoint
-            checkpoint_path = "models/checkpoint_interrupted"
-            training_model.save(checkpoint_path)
-            print(f"💾 Checkpoint saved to: {checkpoint_path}")
+            try:
+                checkpoint_path = "models/checkpoint_interrupted"
+                training_model.save(checkpoint_path)
+                print(f"💾 Checkpoint saved to: {checkpoint_path}")
+            except Exception as e:
+                print(f"⚠️  Failed to save checkpoint: {e}")
     
     except Exception as e:
         print(f"\n❌ Training failed with error: {e}")
         if training_model is not None:
             # Save the current model as a checkpoint
-            checkpoint_path = "models/checkpoint_error"
-            training_model.save(checkpoint_path)
-            print(f"💾 Checkpoint saved to: {checkpoint_path}")
+            try:
+                checkpoint_path = "models/checkpoint_error"
+                training_model.save(checkpoint_path)
+                print(f"💾 Checkpoint saved to: {checkpoint_path}")
+            except Exception as save_error:
+                print(f"⚠️  Failed to save error checkpoint: {save_error}")
         raise
     
     finally:
         # Clean up resources
         print("\n🧹 Cleaning up resources...")
         if training_env is not None:
-            training_env.close()
+            try:
+                training_env.close()
+            except Exception as e:
+                print(f"⚠️  Failed to close training environment: {e}")
         if eval_env is not None:
-            eval_env.close()
+            try:
+                eval_env.close()
+            except Exception as e:
+                print(f"⚠️  Failed to close evaluation environment: {e}")
         print("✅ Cleanup completed")
 
 def evaluate_model(model, env, n_episodes=100, raise_errors=False):

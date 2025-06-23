@@ -117,6 +117,12 @@ class TestCustomEvalCallback:
 class TestIterationCallback:
     """Test IterationCallback functionality."""
     
+    @pytest.fixture(autouse=True)
+    def reset_shutdown(self):
+        import src.core.train_agent as train_agent_module
+        train_agent_module.shutdown_requested = False
+        yield
+
     def test_iteration_callback_init(self, unique_stats_file):
         """Test IterationCallback initialization."""
         print("DEBUG: Starting IterationCallback init test")

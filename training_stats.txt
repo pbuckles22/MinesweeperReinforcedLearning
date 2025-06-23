@@ -1,2 +1,1 @@
 timestamp,iteration,timesteps,win_rate,avg_reward,avg_length,stage,phase,stage_time,no_improvement
-19:12:07,1,100,50.0,2.50,4.0,1,Initial Random,0,1
