@@ -115,7 +115,7 @@ class TestExperimentTracker:
         assert len(tracker.metrics["validation"]) == 2
         assert tracker.metrics["validation"][0]["metric"] == "test_accuracy"
         assert tracker.metrics["validation"][0]["value"] == 0.85
-        assert tracker.metrics["validation"][0]["confidence_interval"] is None
+        assert "confidence_interval" not in tracker.metrics["validation"][0]
         assert tracker.metrics["validation"][1]["metric"] == "test_loss"
         assert tracker.metrics["validation"][1]["value"] == 0.3
         assert tracker.metrics["validation"][1]["confidence_interval"] == 0.05

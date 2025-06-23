@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
 
-# Medium RL Training Test
-# Runs a moderate training session to see learning progress
-# Duration: ~5-10 minutes
+# Medium Test Script for Windows
+# Runs a medium subset of tests to verify the system is working
+# Duration: ~2-3 minutes
 
-Write-Host "Starting Medium RL Training Test..." -ForegroundColor Green
-Write-Host "Duration: ~5-10 minutes" -ForegroundColor Yellow
+Write-Host "Starting Medium Test..." -ForegroundColor Green
+Write-Host "Duration: ~2-3 minutes" -ForegroundColor Yellow
 Write-Host ""
 
 # Activate virtual environment
@@ -16,12 +16,12 @@ if (Test-Path "venv\Scripts\Activate.ps1") {
     exit 1
 }
 
-# Run medium training
-python src/core/train_agent.py `
-    --total_timesteps 50000 `
-    --eval_freq 5000 `
-    --n_eval_episodes 50 `
-    --verbose 0
+# Set PYTHONPATH
+$env:PYTHONPATH = "src;$env:PYTHONPATH"
+
+# Run medium test suite (same as Mac/Linux)
+Write-Host "Running medium test suite..." -ForegroundColor Cyan
+python -m pytest tests/unit/core tests/functional tests/integration/core -v --maxfail=10 --disable-warnings
 
 Write-Host ""
 Write-Host "Medium test completed!" -ForegroundColor Green 

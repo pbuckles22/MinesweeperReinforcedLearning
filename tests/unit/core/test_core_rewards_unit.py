@@ -140,31 +140,23 @@ def test_game_over_invalid_action_reward(env):
     assert reward == REWARD_INVALID_ACTION
 
 def test_reward_consistency(env):
-    """Test that rewards are consistent for the same actions."""
-    env.reset()
+    """Test that rewards are consistent for the same actions within the same game state."""
+    env.reset(seed=42)  # Use fixed seed for deterministic behavior
     
     # Take first action
     action = 0
     state1, reward1, terminated1, truncated1, info1 = env.step(action)
     
-    # Reset and take same action
-    env.reset()
+    # Reset with same seed and take same action
+    env.reset(seed=42)
     state2, reward2, terminated2, truncated2, info2 = env.step(action)
     
-    # Rewards should be consistent (immediate rewards now)
-    # Since mine placement is randomized, we can't predict if it's a mine or safe
-    # But we can verify that the same action gives the same reward type
-    if reward1 == REWARD_HIT_MINE:
-        assert reward2 == REWARD_HIT_MINE, f"Both actions should give mine hit penalty, got {reward1} and {reward2}"
-    elif reward1 == REWARD_SAFE_REVEAL:
-        assert reward2 == REWARD_SAFE_REVEAL, f"Both actions should give safe reveal reward, got {reward1} and {reward2}"
-    elif reward1 == REWARD_WIN:
-        assert reward2 == REWARD_WIN, f"Both actions should give win reward, got {reward1} and {reward2}"
-    else:
-        assert False, f"Unexpected reward type: {reward1}"
+    # With fixed seed, rewards should be consistent
+    assert reward1 == reward2, f"Same action with same seed should give same reward, got {reward1} and {reward2}"
     
-    # Verify the actual reward values are the same
-    assert reward1 == reward2, f"Same action should give same reward, got {reward1} and {reward2}"
+    # Verify the reward types are valid
+    valid_rewards = [REWARD_HIT_MINE, REWARD_SAFE_REVEAL, REWARD_WIN]
+    assert reward1 in valid_rewards, f"Reward {reward1} should be one of {valid_rewards}"
 
 def test_reward_bounds(env):
     """Test that rewards are within expected bounds."""

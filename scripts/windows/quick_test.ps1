@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
 
-# Quick RL Training Test
-# Runs a fast training session to verify the RL system is working
-# Duration: ~1-2 minutes
+# Quick Test Script for Windows
+# Runs a quick subset of tests to verify the system is working
+# Duration: ~30-60 seconds
 
-Write-Host "Starting Quick RL Training Test..." -ForegroundColor Green
-Write-Host "Duration: ~1-2 minutes" -ForegroundColor Yellow
+Write-Host "Starting Quick Test..." -ForegroundColor Green
+Write-Host "Duration: ~30-60 seconds" -ForegroundColor Yellow
 Write-Host ""
 
 # Activate virtual environment
@@ -16,12 +16,12 @@ if (Test-Path "venv\Scripts\Activate.ps1") {
     exit 1
 }
 
-# Run quick training
-python src/core/train_agent.py `
-    --total_timesteps 10000 `
-    --eval_freq 2000 `
-    --n_eval_episodes 20 `
-    --verbose 0
+# Set PYTHONPATH
+$env:PYTHONPATH = "src;$env:PYTHONPATH"
+
+# Run quick subset of tests (same as Mac/Linux)
+Write-Host "Running quick test suite..." -ForegroundColor Cyan
+python -m pytest tests/unit/core tests/functional/game_flow -v --maxfail=5 --disable-warnings
 
 Write-Host ""
 Write-Host "Quick test completed!" -ForegroundColor Green 
