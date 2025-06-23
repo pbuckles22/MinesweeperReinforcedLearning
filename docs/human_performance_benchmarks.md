@@ -1,7 +1,14 @@
 # Human Minesweeper Performance Benchmarks
 
 ## Overview
-This document establishes human performance benchmarks for Minesweeper to guide our dual curriculum system development. Our goal is to achieve human-level win rates across all difficulty levels.
+This document establishes human performance benchmarks for Minesweeper to guide our dual curriculum system development. **Our ultimate goal is to develop an AI system that learns and performs better than human benchmarks across all difficulty levels.**
+
+## Research Objective
+The dual curriculum system aims to:
+1. **Match human performance** as intermediate milestones
+2. **Surpass human benchmarks** as the ultimate goal
+3. **Demonstrate superhuman capabilities** in Minesweeper gameplay
+4. **Validate advanced RL techniques** for complex decision-making tasks
 
 ## Human Performance Data
 
@@ -165,17 +172,24 @@ Based on competitive Minesweeper data and expert player statistics:
 
 ## Success Metrics
 
-### Primary Goals
+### Primary Goals (Milestones)
 - **Stage 1**: >80% win rate (human expert level)
 - **Stage 3**: >60% win rate (human expert level)
 - **Stage 5**: >40% win rate (human expert level)
 - **Stage 7**: >20% win rate (human expert level)
+
+### Ultimate Goals (Superhuman Performance)
+- **Stage 1**: >95% win rate (surpass human expert)
+- **Stage 3**: >80% win rate (surpass human expert)
+- **Stage 5**: >60% win rate (surpass human expert)
+- **Stage 7**: >40% win rate (surpass human expert)
 
 ### Secondary Goals
 - **Consistency**: <5% variance between training and evaluation
 - **Learning Speed**: Achieve targets within reasonable time
 - **Generalization**: Performance across different board configurations
 - **Robustness**: Consistent performance under various conditions
+- **Superhuman Capabilities**: Demonstrate abilities beyond human limitations
 
 ## Timeline
 

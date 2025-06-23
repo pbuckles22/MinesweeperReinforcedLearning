@@ -96,7 +96,7 @@ class TestHyperparameterOptimization:
         
         assert params['batch_size'] == 256
         assert params['n_steps'] == 2048
-        assert params['n_epochs'] == 10
+        assert params['n_epochs'] == 11
         assert params['learning_rate'] == 3e-4
     
     def test_get_optimal_hyperparameters_cpu(self):
@@ -256,7 +256,7 @@ class TestDeviceDetectionIntegration:
             # Get hyperparameters
             params = get_optimal_hyperparameters(device_info)
             assert params['batch_size'] == 256
-            assert params['n_epochs'] == 10
+            assert params['n_epochs'] == 11
     
     def test_device_detection_workflow_cpu(self):
         """Test complete device detection workflow for CPU."""

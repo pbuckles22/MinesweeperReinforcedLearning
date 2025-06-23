@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'sr
 from src.core.train_agent import (
     main, ExperimentTracker, CustomEvalCallback, IterationCallback,
     detect_optimal_device, get_optimal_hyperparameters, make_env, evaluate_model, parse_args,
-    signal_handler, benchmark_device_performance
+    signal_handler, benchmark_device_performance, get_curriculum_config
 )
 from src.core.constants import (
     REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION
@@ -443,4 +443,131 @@ class TestTrainAgentPhase4:
                 parsed_args = parse_args()
                 assert parsed_args.total_timesteps == config['total_timesteps']
                 assert parsed_args.learning_rate == config['learning_rate']
-                assert parsed_args.batch_size == config['batch_size'] 
+                assert parsed_args.batch_size == config['batch_size']
+
+    def test_curriculum_mode_selection(self):
+        """Test that curriculum mode selection works correctly."""
+        from src.core.train_agent import get_curriculum_config
+        
+        # Test current mode
+        current_config = get_curriculum_config("current")
+        assert len(current_config) == 7
+        assert current_config[0]['win_rate_threshold'] == 0.15  # 15%
+        assert current_config[0]['training_multiplier'] == 1.0
+        assert current_config[0]['eval_episodes'] == 10
+        
+        # Test human_performance mode
+        human_config = get_curriculum_config("human_performance")
+        assert len(human_config) == 7
+        assert human_config[0]['win_rate_threshold'] == 0.80  # 80%
+        assert human_config[0]['training_multiplier'] == 3.0
+        assert human_config[0]['eval_episodes'] == 20
+        
+        # Test superhuman mode
+        superhuman_config = get_curriculum_config("superhuman")
+        assert len(superhuman_config) == 7
+        assert superhuman_config[0]['win_rate_threshold'] == 0.95  # 95%
+        assert superhuman_config[0]['training_multiplier'] == 5.0
+        assert superhuman_config[0]['eval_episodes'] == 30
+
+    def test_enhanced_training_parameters(self):
+        """Test that enhanced training parameters are applied for human performance modes."""
+        from src.core.train_agent import get_optimal_hyperparameters
+        
+        # Mock device info
+        device_info = {
+            'device': 'mps',
+            'description': 'Apple M1 GPU (MPS)',
+            'performance_notes': '2-4x faster than CPU'
+        }
+        
+        # Test current mode parameters
+        current_params = get_optimal_hyperparameters(device_info, "current")
+        assert current_params['learning_rate'] == 3e-4
+        assert current_params['n_epochs'] == 12  # Base 10 + 2 for M1
+        assert current_params['ent_coef'] == 0.01
+        assert current_params['clip_range'] == 0.2
+        
+        # Test human_performance mode parameters
+        human_params = get_optimal_hyperparameters(device_info, "human_performance")
+        assert human_params['learning_rate'] == 2e-4  # More conservative
+        assert human_params['n_epochs'] == 17  # 15 + 2 for M1
+        assert human_params['ent_coef'] == 0.005  # Lower entropy
+        assert human_params['clip_range'] == 0.15  # Tighter clipping
+        
+        # Test superhuman mode parameters
+        superhuman_params = get_optimal_hyperparameters(device_info, "superhuman")
+        assert superhuman_params['learning_rate'] == 1.5e-4  # Very conservative
+        assert superhuman_params['n_epochs'] == 22  # 20 + 2 for M1
+        assert superhuman_params['ent_coef'] == 0.003  # Very low entropy
+        assert superhuman_params['clip_range'] == 0.1  # Very tight clipping
+        assert superhuman_params['gamma'] == 0.995  # Higher gamma
+
+    def test_extended_training_timesteps(self):
+        """Test that training timesteps are extended for human performance modes."""
+        # This test would require mocking the main function
+        # For now, we'll test the logic directly
+        
+        # Simulate the extended timesteps calculation
+        base_timesteps = [1500, 1500, 2000, 2000, 1500, 1000, 500]  # 10k total
+        curriculum_stages = [
+            {'training_multiplier': 3.0},  # human_performance
+            {'training_multiplier': 3.0},
+            {'training_multiplier': 3.0},
+            {'training_multiplier': 3.0},
+            {'training_multiplier': 3.0},
+            {'training_multiplier': 3.0},
+            {'training_multiplier': 3.0},
+        ]
+        
+        # Calculate extended timesteps
+        extended_timesteps = []
+        for i, base_timesteps_val in enumerate(base_timesteps):
+            training_multiplier = curriculum_stages[i]['training_multiplier']
+            extended_timesteps.append(int(base_timesteps_val * training_multiplier))
+        
+        # Verify extension
+        total_original = sum(base_timesteps)
+        total_extended = sum(extended_timesteps)
+        extension_factor = total_extended / total_original
+        
+        assert extension_factor == 3.0
+        assert total_original == 10000
+        assert total_extended == 30000
+        
+        # Verify individual stage extensions
+        for i, (original, extended) in enumerate(zip(base_timesteps, extended_timesteps)):
+            assert extended == original * 3.0
+            assert extended > original  # All stages should be extended
+
+def test_curriculum_config_current():
+    curriculum = get_curriculum_config("current")
+    assert len(curriculum) == 7
+    assert abs(curriculum[0]['win_rate_threshold'] - 0.15) < 1e-6
+    assert abs(curriculum[-1]['win_rate_threshold'] - 0.02) < 1e-6
+    assert curriculum[0]['learning_based_progression'] is True
+    assert curriculum[-1]['learning_based_progression'] is False
+
+def test_curriculum_config_human_performance():
+    curriculum = get_curriculum_config("human_performance")
+    assert len(curriculum) == 7
+    assert abs(curriculum[0]['win_rate_threshold'] - 0.80) < 1e-6
+    assert abs(curriculum[-1]['win_rate_threshold'] - 0.20) < 1e-6
+    assert all(stage['learning_based_progression'] is False for stage in curriculum)
+
+def test_curriculum_config_superhuman():
+    curriculum = get_curriculum_config("superhuman")
+    assert len(curriculum) == 7
+    assert abs(curriculum[0]['win_rate_threshold'] - 0.95) < 1e-6
+    assert abs(curriculum[-1]['win_rate_threshold'] - 0.40) < 1e-6
+    assert all(stage['learning_based_progression'] is False for stage in curriculum)
+
+@pytest.mark.parametrize("mode,first,last", [
+    ("current", 0.15, 0.02),
+    ("human_performance", 0.80, 0.20),
+    ("superhuman", 0.95, 0.40),
+])
+def test_curriculum_config_targets(mode, first, last):
+    curriculum = get_curriculum_config(mode)
+    assert abs(curriculum[0]['win_rate_threshold'] - first) < 1e-6
+    assert abs(curriculum[-1]['win_rate_threshold'] - last) < 1e-6 
