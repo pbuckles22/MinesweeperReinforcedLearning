@@ -941,9 +941,271 @@ def parse_args():
     parser.add_argument('--_init_setup_model', type=bool, default=True, help='Whether to build the model or not')
     parser.add_argument('--strict_progression', action="store_true", help="Enable strict win rate progression")
     parser.add_argument('--timestamped_stats', action="store_true", help="Enable timestamped stats file")
+    parser.add_argument('--curriculum_mode', type=str, default="human_performance", 
+                      choices=["current", "human_performance", "superhuman"],
+                      help="Curriculum mode: current (15%%/12%%/10%%), human_performance (80%%/70%%/60%%), or superhuman (95%%/80%%/60%%)")
     
     # Advanced PPO options
     return parser.parse_args()
+
+def get_curriculum_config(mode="human_performance"):
+    """
+    Get curriculum configuration based on the specified mode.
+    
+    Args:
+        mode: Curriculum mode - "current", "human_performance", or "superhuman"
+    
+    Returns:
+        List of curriculum stage configurations
+    """
+    if mode == "current":
+        # Original curriculum with lower targets and learning-based progression
+        return [
+            {
+                'name': 'Beginner',
+                'size': 4,
+                'mines': 2,
+                'win_rate_threshold': 0.15,  # 15% - Original target
+                'min_wins_required': 1,
+                'learning_based_progression': True,  # Allow learning-based progression
+                'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification',
+                'training_multiplier': 1.0,  # Standard training
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Intermediate',
+                'size': 6,
+                'mines': 4,
+                'win_rate_threshold': 0.12,  # 12% - Original target
+                'min_wins_required': 1,
+                'learning_based_progression': True,
+                'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Easy',
+                'size': 9,
+                'mines': 10,
+                'win_rate_threshold': 0.10,  # 10% - Original target
+                'min_wins_required': 2,
+                'learning_based_progression': True,
+                'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Normal',
+                'size': 16,
+                'mines': 40,
+                'win_rate_threshold': 0.08,  # 8% - Original target
+                'min_wins_required': 3,
+                'learning_based_progression': False,  # Require actual wins
+                'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Hard',
+                'size': 16,
+                'mines': 99,
+                'win_rate_threshold': 0.05,  # 5% - Original target
+                'min_wins_required': 3,
+                'learning_based_progression': False,
+                'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Expert',
+                'size': 18,
+                'mines': 115,
+                'win_rate_threshold': 0.03,  # 3% - Original target
+                'min_wins_required': 2,
+                'learning_based_progression': False,
+                'description': '18x24 board with 115 mines - Expert level, handling high mine density',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            },
+            {
+                'name': 'Chaotic',
+                'size': 20,
+                'mines': 130,
+                'win_rate_threshold': 0.02,  # 2% - Original target
+                'min_wins_required': 1,
+                'learning_based_progression': False,
+                'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity',
+                'training_multiplier': 1.0,
+                'eval_episodes': 10
+            }
+        ]
+    
+    elif mode == "human_performance":
+        # Human performance targets with extended training
+        return [
+            {
+                'name': 'Beginner',
+                'size': 4,
+                'mines': 2,
+                'win_rate_threshold': 0.80,  # 80% - Human expert level
+                'min_wins_required': 8,  # 8 out of 10 games
+                'learning_based_progression': False,  # Require actual wins
+                'description': '4x4 board with 2 mines - Achieve human expert level (80%)',
+                'training_multiplier': 3.0,  # 3x extended training
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Intermediate',
+                'size': 6,
+                'mines': 4,
+                'win_rate_threshold': 0.70,  # 70% - Human expert level
+                'min_wins_required': 7,  # 7 out of 10 games
+                'learning_based_progression': False,
+                'description': '6x6 board with 4 mines - Achieve human expert level (70%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Easy',
+                'size': 9,
+                'mines': 10,
+                'win_rate_threshold': 0.60,  # 60% - Human expert level
+                'min_wins_required': 6,  # 6 out of 10 games
+                'learning_based_progression': False,
+                'description': '9x9 board with 10 mines - Achieve human expert level (60%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Normal',
+                'size': 16,
+                'mines': 40,
+                'win_rate_threshold': 0.50,  # 50% - Human expert level
+                'min_wins_required': 5,  # 5 out of 10 games
+                'learning_based_progression': False,
+                'description': '16x16 board with 40 mines - Achieve human expert level (50%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Hard',
+                'size': 16,
+                'mines': 99,
+                'win_rate_threshold': 0.40,  # 40% - Human expert level
+                'min_wins_required': 4,  # 4 out of 10 games
+                'learning_based_progression': False,
+                'description': '16x30 board with 99 mines - Achieve human expert level (40%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Expert',
+                'size': 18,
+                'mines': 115,
+                'win_rate_threshold': 0.30,  # 30% - Human expert level
+                'min_wins_required': 3,  # 3 out of 10 games
+                'learning_based_progression': False,
+                'description': '18x24 board with 115 mines - Achieve human expert level (30%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            },
+            {
+                'name': 'Chaotic',
+                'size': 20,
+                'mines': 130,
+                'win_rate_threshold': 0.20,  # 20% - Human expert level
+                'min_wins_required': 2,  # 2 out of 10 games
+                'learning_based_progression': False,
+                'description': '20x35 board with 130 mines - Achieve human expert level (20%)',
+                'training_multiplier': 3.0,
+                'eval_episodes': 20
+            }
+        ]
+    
+    elif mode == "superhuman":
+        # Superhuman targets - surpass human benchmarks
+        return [
+            {
+                'name': 'Beginner',
+                'size': 4,
+                'mines': 2,
+                'win_rate_threshold': 0.95,  # 95% - Surpass human expert
+                'min_wins_required': 9,  # 9 out of 10 games
+                'learning_based_progression': False,
+                'description': '4x4 board with 2 mines - Surpass human expert level (95%)',
+                'training_multiplier': 5.0,  # 5x extended training
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Intermediate',
+                'size': 6,
+                'mines': 4,
+                'win_rate_threshold': 0.85,  # 85% - Surpass human expert
+                'min_wins_required': 8,  # 8 out of 10 games
+                'learning_based_progression': False,
+                'description': '6x6 board with 4 mines - Surpass human expert level (85%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Easy',
+                'size': 9,
+                'mines': 10,
+                'win_rate_threshold': 0.80,  # 80% - Surpass human expert
+                'min_wins_required': 8,  # 8 out of 10 games
+                'learning_based_progression': False,
+                'description': '9x9 board with 10 mines - Surpass human expert level (80%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Normal',
+                'size': 16,
+                'mines': 40,
+                'win_rate_threshold': 0.70,  # 70% - Surpass human expert
+                'min_wins_required': 7,  # 7 out of 10 games
+                'learning_based_progression': False,
+                'description': '16x16 board with 40 mines - Surpass human expert level (70%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Hard',
+                'size': 16,
+                'mines': 99,
+                'win_rate_threshold': 0.60,  # 60% - Surpass human expert
+                'min_wins_required': 6,  # 6 out of 10 games
+                'learning_based_progression': False,
+                'description': '16x30 board with 99 mines - Surpass human expert level (60%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Expert',
+                'size': 18,
+                'mines': 115,
+                'win_rate_threshold': 0.50,  # 50% - Surpass human expert
+                'min_wins_required': 5,  # 5 out of 10 games
+                'learning_based_progression': False,
+                'description': '18x24 board with 115 mines - Surpass human expert level (50%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            },
+            {
+                'name': 'Chaotic',
+                'size': 20,
+                'mines': 130,
+                'win_rate_threshold': 0.40,  # 40% - Surpass human expert
+                'min_wins_required': 4,  # 4 out of 10 games
+                'learning_based_progression': False,
+                'description': '20x35 board with 130 mines - Surpass human expert level (40%)',
+                'training_multiplier': 5.0,
+                'eval_episodes': 30
+            }
+        ]
+    
+    else:
+        raise ValueError(f"Unknown curriculum mode: {mode}")
 
 def main():
     global training_model, training_env, eval_env, shutdown_requested
@@ -1046,146 +1308,15 @@ def main():
         
         # Define curriculum stages with human performance targets
         # ENHANCED CURRICULUM - Human Performance Focus
-        curriculum_stages = [
-            {
-                'name': 'Beginner',
-                'size': 4,
-                'mines': 2,
-                'win_rate_threshold': 0.80,  # 80% - Human expert level
-                'min_wins_required': 8,  # 8 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '4x4 board with 2 mines - Achieve human expert level (80%)',
-                'training_multiplier': 3.0,  # 3x extended training
-                'eval_episodes': 20  # More evaluation episodes
-            },
-            {
-                'name': 'Intermediate',
-                'size': 6,
-                'mines': 4,
-                'win_rate_threshold': 0.70,  # 70% - Human expert level
-                'min_wins_required': 7,  # 7 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '6x6 board with 4 mines - Achieve human expert level (70%)',
-                'training_multiplier': 3.0,  # 3x extended training
-                'eval_episodes': 20
-            },
-            {
-                'name': 'Easy',
-                'size': 9,
-                'mines': 10,
-                'win_rate_threshold': 0.60,  # 60% - Human expert level
-                'min_wins_required': 6,  # 6 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '9x9 board with 10 mines - Achieve human expert level (60%)',
-                'training_multiplier': 3.0,  # 3x extended training
-                'eval_episodes': 20
-            },
-            {
-                'name': 'Normal',
-                'size': 16,
-                'mines': 40,
-                'win_rate_threshold': 0.50,  # 50% - Human expert level
-                'min_wins_required': 5,  # 5 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '16x16 board with 40 mines - Achieve human expert level (50%)',
-                'training_multiplier': 4.0,  # 4x extended training
-                'eval_episodes': 25
-            },
-            {
-                'name': 'Hard',
-                'size': 30,
-                'mines': 99,
-                'win_rate_threshold': 0.40,  # 40% - Human expert level
-                'min_wins_required': 4,  # 4 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '16x30 board with 99 mines - Achieve human expert level (40%)',
-                'training_multiplier': 4.0,  # 4x extended training
-                'eval_episodes': 25
-            },
-            {
-                'name': 'Expert',
-                'size': 24,
-                'mines': 115,
-                'win_rate_threshold': 0.30,  # 30% - Human expert level
-                'min_wins_required': 3,  # 3 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '18x24 board with 115 mines - Achieve human expert level (30%)',
-                'training_multiplier': 5.0,  # 5x extended training
-                'eval_episodes': 30
-            },
-            {
-                'name': 'Chaotic',
-                'size': 35,
-                'mines': 130,
-                'win_rate_threshold': 0.20,  # 20% - Human expert level
-                'min_wins_required': 2,  # 2 out of 10 games
-                'learning_based_progression': False,  # Require actual wins
-                'description': '20x35 board with 130 mines - Achieve human expert level (20%)',
-                'training_multiplier': 5.0,  # 5x extended training
-                'eval_episodes': 30
-            }
-        ]
+        curriculum_stages = get_curriculum_config(args.curriculum_mode)
         
-        # BACKUP: Original curriculum stages (preserved for reference)
-        original_curriculum_stages = [
-            {
-                'name': 'Beginner',
-                'size': 4,
-                'mines': 2,
-                'win_rate_threshold': 0.15,  # 15% - Realistic for 4x4 with 2 mines
-                'description': '4x4 board with 2 mines - Learning basic movement and safe cell identification'
-            },
-            {
-                'name': 'Intermediate',
-                'size': 6,
-                'mines': 4,
-                'win_rate_threshold': 0.12,  # 12% - Slightly harder but achievable
-                'description': '6x6 board with 4 mines - Developing pattern recognition and basic strategy'
-            },
-            {
-                'name': 'Easy',
-                'size': 9,
-                'mines': 10,
-                'win_rate_threshold': 0.10,  # 10% - Standard easy difficulty
-                'description': '9x9 board with 10 mines - Standard easy difficulty, mastering basic gameplay'
-            },
-            {
-                'name': 'Normal',
-                'size': 16,
-                'mines': 40,
-                'win_rate_threshold': 0.08,  # 8% - Standard normal difficulty
-                'description': '16x16 board with 40 mines - Standard normal difficulty, developing advanced strategies'
-            },
-            {
-                'name': 'Hard',
-                'size': 30,
-                'mines': 99,
-                'win_rate_threshold': 0.05,  # 5% - Standard hard difficulty
-                'description': '16x30 board with 99 mines - Standard hard difficulty, mastering complex patterns'
-            },
-            {
-                'name': 'Expert',
-                'size': 24,
-                'mines': 115,
-                'win_rate_threshold': 0.03,  # 3% - Expert level
-                'description': '18x24 board with 115 mines - Expert level, handling high mine density'
-            },
-            {
-                'name': 'Chaotic',
-                'size': 35,
-                'mines': 130,
-                'win_rate_threshold': 0.02,  # 2% - Ultimate challenge
-                'description': '20x35 board with 130 mines - Ultimate challenge, maximum complexity'
-            }
-        ]
-        
-        # Use enhanced curriculum by default, but allow fallback to original
-        if args.strict_progression:
-            # Use original curriculum for strict progression
-            curriculum_stages = original_curriculum_stages
-            print("📚 Using original curriculum (strict progression mode)")
-        else:
-            print("📚 Using enhanced curriculum (human performance targets)")
+        # Log curriculum configuration
+        print(f"\n📚 Curriculum Mode: {args.curriculum_mode.upper()}")
+        print(f"   Stages: {len(curriculum_stages)}")
+        print(f"   First Stage Target: {curriculum_stages[0]['win_rate_threshold']*100:.0f}%")
+        print(f"   Last Stage Target: {curriculum_stages[-1]['win_rate_threshold']*100:.0f}%")
+        print(f"   Training Multiplier: {curriculum_stages[0]['training_multiplier']}x")
+        print(f"   Evaluation Episodes: {curriculum_stages[0]['eval_episodes']}")
         
         # Define stage timesteps based on curriculum
         stage_timesteps = [
