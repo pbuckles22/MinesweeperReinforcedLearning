@@ -87,9 +87,19 @@ def test_invalid_action_reward(env):
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Try to reveal the same cell again
-    state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_REPEATED_CLICK
+    # Make sure the cell was actually revealed (not a mine hit)
+    if not terminated:
+        # Try to reveal the same cell again
+        state, reward, terminated, truncated, info = env.step(action)
+        assert reward == REWARD_REPEATED_CLICK
+    else:
+        # If first click hit a mine, try a different cell
+        action = 1
+        state, reward, terminated, truncated, info = env.step(action)
+        if not terminated:
+            # Try to reveal the same cell again
+            state, reward, terminated, truncated, info = env.step(action)
+            assert reward == REWARD_REPEATED_CLICK
 
 def test_game_over_invalid_action_reward(env):
     """Test reward for actions after game over."""

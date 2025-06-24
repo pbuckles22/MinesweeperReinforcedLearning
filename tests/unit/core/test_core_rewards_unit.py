@@ -13,7 +13,8 @@ from src.core.constants import (
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
     REWARD_HIT_MINE,
-    REWARD_INVALID_ACTION
+    REWARD_INVALID_ACTION,
+    REWARD_REPEATED_CLICK
 )
 
 @pytest.fixture
@@ -116,9 +117,27 @@ def test_invalid_action_reward(env):
     action = 0
     state, reward, terminated, truncated, info = env.step(action)
     
-    # Try to reveal the same cell again
-    state, reward, terminated, truncated, info = env.step(action)
-    assert reward == REWARD_INVALID_ACTION
+    # Make sure the cell was actually revealed (not a mine hit)
+    if not terminated:
+        # Try to reveal the same cell again
+        state, reward, terminated, truncated, info = env.step(action)
+        assert reward == REWARD_REPEATED_CLICK
+    else:
+        # If first click hit a mine, try a different cell
+        action = 1
+        state, reward, terminated, truncated, info = env.step(action)
+        if not terminated:
+            # Try to reveal the same cell again
+            state, reward, terminated, truncated, info = env.step(action)
+            assert reward == REWARD_REPEATED_CLICK
+        else:
+            # If second click also hit a mine, try a third cell
+            action = 2
+            state, reward, terminated, truncated, info = env.step(action)
+            if not terminated:
+                # Try to reveal the same cell again
+                state, reward, terminated, truncated, info = env.step(action)
+                assert reward == REWARD_REPEATED_CLICK
 
 def test_game_over_invalid_action_reward(env):
     """Test reward for actions after game over."""

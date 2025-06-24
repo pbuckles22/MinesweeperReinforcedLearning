@@ -22,6 +22,7 @@ from src.core.constants import (
     REWARD_INVALID_ACTION,
     REWARD_FIRST_CASCADE_SAFE,
     REWARD_FIRST_CASCADE_HIT_MINE,
+    REWARD_REPEATED_CLICK,
 )
 
 class TestComprehensiveRL:
@@ -210,8 +211,8 @@ class TestComprehensiveRL:
             assert new_state.shape == (4, 6, 6), "State shape should remain consistent"
             assert rl_env.observation_space.contains(new_state), "State should be within bounds"
             
-            # Verify state changed (unless invalid action)
-            if reward != REWARD_INVALID_ACTION:
+            # Verify state changed (unless invalid action or repeated click)
+            if reward not in [REWARD_INVALID_ACTION, REWARD_REPEATED_CLICK]:
                 assert not np.array_equal(new_state, previous_state), "State should change after valid action"
             
             # Verify revealed cells are properly updated
@@ -363,8 +364,8 @@ class TestComprehensiveRL:
             state, reward, terminated, truncated, info = rl_env.step(action)
             
             # Subsequent moves should have appropriate rewards (could still be pre-cascade if no cascade occurred)
-            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
-            assert reward in valid_rewards, "Reward should be valid for RL agent"
+            valid_rewards = [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_REPEATED_CLICK]
+            assert reward in valid_rewards, f"Reward should be valid for RL agent, got {reward}"
 
     def test_agent_info_consistency(self, rl_env):
         """Test that info dictionary is consistent and contains expected keys."""

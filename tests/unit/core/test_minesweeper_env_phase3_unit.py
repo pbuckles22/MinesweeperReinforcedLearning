@@ -277,7 +277,8 @@ class TestMinesweeperEnvPhase3AdvancedStateUpdates:
         env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=3)
         env.reset()
         
-        # Manually set up a complex scenario
+        # Manually set up a complex scenario - ensure mines are in specific locations
+        env.mines.fill(False)  # Clear all mines first
         env.mines[0, 0] = True
         env.mines[0, 1] = True
         env.mines[1, 0] = True
@@ -285,9 +286,12 @@ class TestMinesweeperEnvPhase3AdvancedStateUpdates:
         # Update adjacent counts
         env._update_adjacent_counts()
         
-        # Reveal some cells to create complex state
-        env.revealed[2, 2] = True
-        env.revealed[3, 3] = True
+        # Reveal some cells that are guaranteed to be safe (not mines)
+        # Choose cells that are not mines and not adjacent to the mine locations
+        safe_cells = [(2, 2), (3, 3)]  # These should be safe based on our mine placement
+        for row, col in safe_cells:
+            if not env.mines[row, col]:  # Double-check they're not mines
+                env.revealed[row, col] = True
         
         # Update enhanced state
         env._update_enhanced_state()
@@ -295,17 +299,22 @@ class TestMinesweeperEnvPhase3AdvancedStateUpdates:
         # Verify state channels are properly updated
         assert env.state.shape == (4, 4, 4)
         
-        # Channel 0: Game state
-        assert env.state[0, 2, 2] >= 0  # Revealed cell should have number
-        assert env.state[0, 3, 3] >= 0  # Revealed cell should have number
+        # Channel 0: Game state - check revealed cells show numbers (not mine hits)
+        for row, col in safe_cells:
+            if env.revealed[row, col]:
+                assert env.state[0, row, col] >= 0, f"Revealed cell at ({row},{col}) should have number, got {env.state[0, row, col]}"
+        
         assert env.state[0, 0, 0] == -1  # Unrevealed cell
         
         # Channel 1: Safety hints
-        assert env.state[1, 2, 2] == -1  # Revealed cells don't need safety hints
+        for row, col in safe_cells:
+            if env.revealed[row, col]:
+                assert env.state[1, row, col] == -1  # Revealed cells don't need safety hints
         assert env.state[1, 0, 0] >= 0  # Unrevealed cells should have safety hints
         
         # Channel 2: Revealed cell count
-        assert env.state[2, 0, 0] == 2  # Should show 2 revealed cells
+        revealed_count = np.sum(env.revealed)
+        assert env.state[2, 0, 0] == revealed_count  # Should show correct revealed count
         
         # Channel 3: Game progress indicators
         # May or may not have safe bet indicators depending on the scenario

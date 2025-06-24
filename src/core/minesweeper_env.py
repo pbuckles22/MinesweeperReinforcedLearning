@@ -61,6 +61,9 @@ class MinesweeperEnv(gym.Env):
         """
         super().__init__()
         
+        # Initialize random number generator
+        self.np_random = np.random.default_rng()
+        
         # Validate parameters
         if isinstance(max_board_size, int):
             if max_board_size <= 0:
@@ -235,7 +238,7 @@ class MinesweeperEnv(gym.Env):
         
         # Ensure deterministic numpy RNG if seed is provided
         if seed is not None:
-            np.random.seed(seed)
+            self.np_random = np.random.default_rng(seed)
         
         # Initialize or update action space based on current board size
         self.action_space = spaces.Discrete(self.current_board_width * self.current_board_height)
@@ -307,7 +310,20 @@ class MinesweeperEnv(gym.Env):
             "won": False
         }
         
+        # Return (obs, info) for gymnasium + SB3 2.x compatibility
         return self.state, self.info
+
+    def seed(self, seed=None):
+        """Set the random seed for reproducible environments.
+        
+        Args:
+            seed: Random seed to use
+            
+        Returns:
+            List containing the seed
+        """
+        self.np_random = np.random.default_rng(seed)
+        return [seed]
 
     def _place_mines(self):
         """Place mines on the board."""
@@ -332,8 +348,8 @@ class MinesweeperEnv(gym.Env):
                         continue
                 valid_positions.append((y, x))
 
-        # Shuffle valid positions
-        np.random.shuffle(valid_positions)
+        # Shuffle valid positions using the environment's random number generator
+        self.np_random.shuffle(valid_positions)
 
         # Place mines
         mines_placed = 0
@@ -532,28 +548,34 @@ class MinesweeperEnv(gym.Env):
 
     @property
     def action_masks(self):
-        """Return a boolean mask indicating which actions are valid, including smart masking for obviously bad moves."""
-        # If game is over, all actions are invalid
+        """Get action masks for the current state.
+        
+        Returns:
+            numpy.ndarray: Boolean mask where True indicates valid actions
+        """
+        mask = np.ones(self.action_space.n, dtype=bool)
+        
+        # If game is over, mask all actions
         if self.terminated or self.truncated:
-            return np.zeros(self.action_space.n, dtype=bool)
+            mask.fill(False)
+            return mask
         
-        masks = np.ones(self.action_space.n, dtype=bool)
+        # Mask out already revealed cells
+        for row in range(self.current_board_height):
+            for col in range(self.current_board_width):
+                if self.revealed[row, col]:
+                    action_idx = row * self.current_board_width + col
+                    mask[action_idx] = False
         
-        for i in range(self.current_board_height):
-            for j in range(self.current_board_width):
-                # Reveal action
-                reveal_idx = i * self.current_board_width + j
-                
-                # Basic masking: can't reveal already revealed cells
-                if self.revealed[i, j]:
-                    masks[reveal_idx] = False
-                    continue
-                
-                # Smart masking: prefer cells that are guaranteed to be safe
-                # (This is optional - we could prioritize safe cells but still allow others)
-                # For now, we'll just avoid guaranteed mines
-                
-        return masks
+        return mask
+
+    def get_action_mask(self):
+        """Get action mask for the current state.
+        
+        Returns:
+            numpy.ndarray: Boolean mask where True indicates valid actions
+        """
+        return self.action_masks
     
     def render(self):
         """Render the environment."""

@@ -12,7 +12,8 @@ from src.core.constants import (
     REWARD_FIRST_CASCADE_SAFE, REWARD_FIRST_CASCADE_HIT_MINE,
     REWARD_SAFE_REVEAL,
     REWARD_WIN,
-    REWARD_HIT_MINE
+    REWARD_HIT_MINE,
+    UNKNOWN_SAFETY
 )
 
 @pytest.fixture
@@ -169,4 +170,4 @@ def test_safety_hints_channel(env):
     
     new_safety_hints = state[1]
     # Revealed cell should show UNKNOWN_SAFETY (-1) in safety hints
-    assert new_safety_hints[0, 0] == -1  # UNKNOWN_SAFETY for revealed cells 
+    assert new_safety_hints[0, 0] == UNKNOWN_SAFETY  # UNKNOWN_SAFETY for revealed cells 

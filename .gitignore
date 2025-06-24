@@ -133,3 +133,15 @@ scripts/test_epsilon_greedy.py
 conservative_training_logs/
 training_logs/
 *.log
+
+# Experiment results and logs
+experiments/modular_results_*.json
+experiments/simple_results_*.json
+logs/coverage_results_summary.json
+logs/cross_platform_test_report.json
+logs/benchmark_results/
+logs/minimal_training_logs/
+logs/progressive_logs/
+logs/simple_logs/
+logs/conservative_training_logs/
+logs/training_logs/

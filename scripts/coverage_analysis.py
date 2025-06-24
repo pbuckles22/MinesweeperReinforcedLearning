@@ -272,8 +272,11 @@ def main():
         results = run_chunked_coverage_analysis()
         
         # Save results summary
-        with open("coverage_results_summary.json", "w") as f:
-            json.dump(results, f, indent=2)
+        summary = {name: result for name, result in results.items() if result["success"]}
+        summary_path = Path("logs/coverage_results_summary.json")
+        with open(summary_path, "w") as f:
+            json.dump(summary, f, indent=2)
+        print(f"Coverage summary saved to {summary_path}")
         
         print("\n" + "="*60)
         print("COVERAGE ANALYSIS SUMMARY")
@@ -291,7 +294,7 @@ def main():
             for chunk in failed_chunks:
                 print(f"   - {chunk}: {results[chunk]['error']}")
         
-        print(f"\nResults saved to: coverage_results_summary.json")
+        print(f"\nResults saved to: {summary_path}")
         print(f"HTML reports in: htmlcov/")
         
     elif args.test_path and args.source_path:

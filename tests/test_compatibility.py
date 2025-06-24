@@ -67,9 +67,12 @@ def test_compatibility():
         obs, reward, done, info = wrapped_result
         print(f"   Wrapped obs: {type(obs)}, reward: {reward}, done: {done}")
         
-        # Test 7: Test with vectorized environment
+        # Test 7: Test with vectorized environment (direct, no wrapper needed)
         print("\n🔍 Test 7: Test with vectorized environment...")
-        vec_env = make_vec_env_sb3_compatible(MinesweeperEnv, n_envs=1, max_board_size=(4, 4), max_mines=2)
+        def make_env():
+            return MinesweeperEnv(max_board_size=(4, 4), max_mines=2)
+        
+        vec_env = DummyVecEnv([make_env])
         print(f"   VecEnv created: {type(vec_env)}")
         
         # Test 8: Test VecEnv reset

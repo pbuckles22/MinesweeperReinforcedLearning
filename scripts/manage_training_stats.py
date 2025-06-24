@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.core.train_agent import TrainingStatsManager
 
@@ -21,8 +21,8 @@ def main():
                        help='Directory for training stats history (default: training_stats/history)')
     parser.add_argument('--max-age-days', type=int, default=14,
                        help='Maximum age of files to keep in days (default: 14)')
-    parser.add_argument('--max-files', type=int, default=10,
-                       help='Minimum number of files to keep (default: 10)')
+    parser.add_argument('--max-files', type=int, default=None,
+                       help='Maximum number of files to keep (default: None - no limit)')
     parser.add_argument('--action', choices=['summary', 'cleanup', 'list', 'move-existing'],
                        default='summary', help='Action to perform (default: summary)')
     parser.add_argument('--count', type=int, default=5,
@@ -51,7 +51,8 @@ def main():
         print(f"📁 History Directory: {summary['history_dir']}")
         print(f"📈 Total Files: {summary['total_files']}")
         print(f"⚙️  Max Age: {args.max_age_days} days")
-        print(f"📋 Min Files: {args.max_files}")
+        print(f"📋 Max Files: {args.max_files if args.max_files else 'No limit'}")
+        print(f"🧹 Cleanup includes: training stats, experiment results, and log directories")
         
         if summary['recent_files']:
             print(f"\n📋 Recent Files (last {len(summary['recent_files'])}):")
@@ -64,7 +65,10 @@ def main():
     
     elif args.action == 'cleanup':
         # Perform cleanup
-        print("🧹 Cleaning up old training stats files...")
+        print("🧹 Cleaning up old files...")
+        print("   • Training stats files")
+        print("   • Experiment result files (modular_results_*.json, simple_results_*.json)")
+        print("   • Log directories (benchmark_results, logs/, etc.)")
         stats_manager.cleanup_old_files()
         print("✅ Cleanup completed!")
         

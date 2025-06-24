@@ -15,7 +15,7 @@ matplotlib>=3.10.0
 torch
 
 # Stable-Baselines3 with extra dependencies
-stable-baselines3>=2.0.0
+stable-baselines3[extra]>=2.0.0
 
 # MLflow for experiment tracking and monitoring
 mlflow
@@ -41,4 +41,7 @@ setproctitle>=1.3.0
 # - Windows/Linux: CUDA support available if NVIDIA GPU is present
 # - All platforms: CPU fallback available
 # - Note: TensorBoard removed in favor of MLflow for experiment tracking
-# - Windows: pywin32 will be installed automatically if needed 
+# - Windows: pywin32 will be installed automatically if needed
+
+# Added tensorboard
+tensorboard 

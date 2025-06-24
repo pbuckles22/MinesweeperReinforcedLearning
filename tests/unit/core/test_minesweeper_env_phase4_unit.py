@@ -14,7 +14,7 @@ import pygame
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.constants import (
     REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION,
-    CELL_UNREVEALED, CELL_MINE_HIT
+    CELL_UNREVEALED, CELL_MINE_HIT, REWARD_REPEATED_CLICK
 )
 
 
@@ -505,7 +505,7 @@ class TestMinesweeperEnvPhase4:
             state, reward, terminated, truncated, info = env.step(action)
             
             # Verify reward is valid
-            assert reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION]
+            assert reward in [REWARD_SAFE_REVEAL, REWARD_HIT_MINE, REWARD_WIN, REWARD_INVALID_ACTION, REWARD_REPEATED_CLICK]
             
             step_count += 1
             if terminated:
