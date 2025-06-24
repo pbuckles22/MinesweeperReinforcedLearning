@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Function to check if a command exists
 command_exists() {
@@ -18,59 +19,48 @@ if (( $(echo "$python_version < 3.8" | bc -l) )); then
     exit 1
 fi
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "Creating virtual environment..."
-    python -m venv venv
+# Remove old venv if exists
+if [ -d "venv" ]; then
+  echo "Removing old venv..."
+  rm -rf venv
 fi
 
-# Fix permissions for virtual environment executables
-echo "Fixing virtual environment permissions..."
-chmod +x venv/bin/activate venv/bin/activate.csh venv/bin/activate.fish 2>/dev/null || true
-chmod +x venv/bin/python* 2>/dev/null || true
-chmod +x venv/bin/pip* 2>/dev/null || true
-chmod +x venv/bin/* 2>/dev/null || true
-echo "✅ Virtual environment permissions fixed!"
-
-# Activate virtual environment
-echo "Activating virtual environment..."
+# Create new venv
+python3 -m venv venv
 source venv/bin/activate
-echo "✅ Virtual environment activated! (You should see (venv) in your prompt)"
 
-# Verify we're using the right Python
-echo "🔍 Verifying virtual environment..."
-VENV_PYTHON=$(which python)
-echo "   Using Python: $VENV_PYTHON"
-if [[ "$VENV_PYTHON" == *"venv/bin/python"* ]]; then
-    echo "   ✅ Correct virtual environment Python detected"
-else
-    echo "   ❌ Warning: Not using virtual environment Python"
-    echo "   Expected: */venv/bin/python"
-    echo "   Found: $VENV_PYTHON"
-fi
-
-# Upgrade pip to latest version
-echo "Upgrading pip to latest version..."
-python -m pip install --upgrade pip
+# Upgrade pip
+pip install --upgrade pip
 
 # Install requirements
-echo "Installing requirements..."
 pip install -r requirements.txt
 
-# Add src directory to Python path
-export PYTHONPATH="src:$PYTHONPATH"
+# Check gymnasium version
+GYMNASIUM_VERSION=$(python -c 'import gymnasium; print(gymnasium.__version__)')
+echo "Installed gymnasium version: $GYMNASIUM_VERSION"
 
-# Permanently set PYTHONPATH in the virtual environment activation script
-activate_script="venv/bin/activate"
-if [ -f "$activate_script" ]; then
-    # Check if PYTHONPATH is already set in the activation script
-    if ! grep -q 'export PYTHONPATH="src:$PYTHONPATH"' "$activate_script"; then
-        echo "Setting PYTHONPATH in virtual environment activation script..."
-        echo "" >> "$activate_script"
-        echo "# Set project PYTHONPATH" >> "$activate_script"
-        echo 'export PYTHONPATH="src:$PYTHONPATH"' >> "$activate_script"
-    fi
-fi
+# Check torch and stable-baselines3
+python -c 'import torch; import stable_baselines3; print("Torch and SB3 installed successfully.")'
+
+# Add src directory to Python path
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/src"
+
+echo "✅ Environment setup complete. Activate with: source venv/bin/activate"
+
+# Run a quick test to verify everything works
+echo "🧪 Running quick test..."
+python -c "
+import gymnasium as gym
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
+import torch
+
+print('✅ All imports successful!')
+print(f'PyTorch version: {torch.__version__}')
+print(f'Device available: {torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")}')
+"
+
+echo "🎉 Setup complete! You can now run training scripts."
 
 # Create logs directory
 mkdir -p logs

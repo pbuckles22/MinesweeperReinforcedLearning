@@ -4,21 +4,21 @@
 # For a complete list of all dependencies with exact versions, see requirements_full.txt
 # 
 # Core dependencies
-gymnasium>=1.1.1
-numpy>=2.3.0
-pygame>=2.6.1
+gymnasium>=0.28.0
+numpy
+pygame
 matplotlib>=3.10.0
 
 # PyTorch - Platform specific installation
 # For Windows/Linux: pip install torch>=2.0.0
 # For M1 MacBook: pip install torch>=2.0.0 (with MPS support)
-torch>=2.7.0
+torch
 
 # Stable-Baselines3 with extra dependencies
-stable-baselines3[extra]>=2.6.0
+stable-baselines3>=2.0.0
 
 # MLflow for experiment tracking and monitoring
-mlflow>=3.1.0
+mlflow
 
 # Protobuf (updated to latest version to fix deprecation warnings)
 protobuf>=6.31.1
