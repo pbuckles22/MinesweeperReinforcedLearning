@@ -117,3 +117,19 @@ coverage_results_summary.json
 training_stats/
 
 .coverage*
+
+# Temporary debugging and test files (not needed once compatibility is resolved)
+quick_diagnostic.py
+test_eval_debug.py
+test_evaluation_debug_comprehensive.py
+test_evaluation_vs_training_debug.py
+test_seeding_fix.py
+test_win_condition_debug.py
+test_4x4_2mines_difficulty.py
+test_multi_board_training.py
+scripts/test_epsilon_greedy.py
+
+# Training logs and outputs
+conservative_training_logs/
+training_logs/
+*.log
