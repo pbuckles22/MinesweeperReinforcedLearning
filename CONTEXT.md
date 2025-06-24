@@ -86,6 +86,8 @@ python -m pytest tests/ -v
 - ✅ **Project structure cleaned and organized**
 - ✅ **Automatic cleanup with 14-day retention**
 - ✅ **Modular training achieves 21% win rate**
+- ✅ Variable mine and mixed mine curriculum scripts implemented and tested
+- ✅ Catastrophic forgetting identified and mitigated
 
 ## 🎯 **Critical Learning Insights**
 - **Game Logic is Perfect**: Environment randomization and win conditions work correctly
@@ -245,6 +247,15 @@ The modular approach solved the complexity problem:
 - **After**: 300 lines, 21%+ win rates, simple and flexible
 
 This demonstrates the power of **simplicity over complexity** in reinforcement learning! 🚀
+
+### **Curriculum Learning Approaches**
+- **Variable Mine Training**: Trains the agent on a range of mine counts (e.g., 1-5) to encourage generalization and prevent overfitting to a single configuration.
+- **Mixed Mine Training with Experience Replay**: Trains on multiple mine counts simultaneously and leverages experience replay to prevent catastrophic forgetting, ensuring the agent retains skills across all difficulties.
+- **Catastrophic Forgetting Mitigation**: Identified and addressed the issue where agents forget easier tasks when exposed to harder ones by using mixed training and replay.
+
+### **Experience Replay**
+- **Catastrophic Forgetting**: Training only on the hardest scenario can cause the agent to lose performance on easier ones. Mixed training and experience replay are effective solutions.
+- **Experience Replay**: Incorporating replay buffers or mixed environments helps maintain performance across all curriculum stages.
 
 ---
 

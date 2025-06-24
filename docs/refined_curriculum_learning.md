@@ -160,3 +160,23 @@ python scripts/curriculum_training_refined.py
 3. **Advanced Metrics**: Add efficiency and strategy analysis
 4. **Hyperparameter Tuning**: Optimize parameters for each stage
 5. **Ensemble Methods**: Combine multiple models for better performance 
+
+### Comparison with Variable Mine and Mixed Mine Approaches
+
+**Variable Mine Training:**
+- Trains on a range of mine counts in sequence (e.g., 1-5 mines)
+- Improves generalization but can suffer from catastrophic forgetting when the agent is exposed to much harder scenarios
+
+**Mixed Mine Training with Experience Replay:**
+- Trains on multiple mine counts simultaneously in a mixed environment
+- Uses experience replay (or mixed sampling) to ensure the agent retains skills across all difficulties
+- Effectively mitigates catastrophic forgetting, maintaining high performance on easier tasks while learning harder ones
+
+**Key Insights:**
+- Catastrophic forgetting is a major challenge in curriculum learning for RL
+- Mixed training and experience replay are effective solutions
+- The project now includes scripts for both variable mine and mixed mine curriculum, enabling robust comparison and further research
+
+**Recent Results:**
+- Variable mine training improved transfer but regressed on easier tasks at higher difficulty
+- Mixed mine training maintained performance across all mine counts, showing better generalization and stability 

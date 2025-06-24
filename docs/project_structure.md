@@ -66,6 +66,8 @@ scripts/
 ├── manage_training_stats.py    # Cleanup and stats management
 ├── coverage_analysis.py        # Test coverage analysis
 ├── automated_testing_workflow.py # Automated testing
+├── variable_mine_training.py         # Curriculum training on a range of mine counts
+├── mixed_mine_training.py            # Mixed mine count training with experience replay
 └── [other utility scripts]     # Various utility scripts
 ```
 
@@ -77,6 +79,8 @@ experiments/
 ├── modular_results_*.json      # Modular training results
 ├── simple_results_*.json       # Simple training results
 ├── metrics.json                # Experiment metrics
+├── variable_mine_training_results_*.json   # Results from variable mine curriculum
+├── mixed_mine_training_results_*.json      # Results from mixed mine curriculum
 └── metrics_backup.json         # Backup metrics
 ```
 
@@ -149,6 +153,7 @@ The `.gitignore` file is configured to ignore:
 4. **Automatic Cleanup**: Built-in cleanup prevents accumulation of old files
 5. **Platform Support**: Platform-specific scripts are clearly organized
 6. **Test Organization**: Comprehensive test suite with clear categories
+7. **Curriculum Flexibility**: Multiple curriculum scripts allow for rapid experimentation and comparison of learning strategies.
 
 ## 📝 Usage Examples
 

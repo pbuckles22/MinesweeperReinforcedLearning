@@ -35,3 +35,11 @@
 - ✅ Signal handling and interrupt management
 
 **Status**: ✅ **Phase 2 completed successfully - ready for Phase 3**
+
+### 🎯 **New Curriculum Scripts**
+- **Variable Mine Training Scripts**: Added variable mine and mixed mine training scripts
+- **Catastrophic Forgetting**: Identified and addressed with mixed training and experience replay
+
+### 🎯 **Advanced Features**
+4. **Compare RL Algorithms**: Explore Q-learning and other algorithms for further improvement
+5. **Automated Curriculum Adaptation**: Dynamic adjustment of difficulty based on agent performance
