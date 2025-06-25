@@ -29,8 +29,32 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - `src/core/minesweeper_env.py` - Main environment (simplified reward logic)
 - `src/core/train_agent.py` - Training script with curriculum learning
 - `src/core/constants.py` - Reward constants
-- `tests/` - 516 comprehensive tests
+- `tests/` - 739 comprehensive tests (unit: 537, integration: 78, functional: 112, scripts: 12)
 - `scripts/mac/` - Mac-specific training scripts
+
+## Current Test Status (Latest Session)
+- **Total Tests**: 739 tests in the suite
+- **Unit Tests**: 537 passed (100%)
+- **Integration Tests**: 78 passed (100%)
+- **Functional Tests**: 112 passed (100%)
+- **Script Tests**: 12 passed (100%)
+- **E2E Tests**: 0 tests (empty directory)
+- **Root Level Tests**: 3 failing due to missing wrapper classes (ActionMaskingWrapper, MultiBoardTrainingWrapper)
+
+## Recent Test Completion Success
+- **DQN Agent Test**: Successfully completed with 46% win rate and 65% evaluation win rate
+- **Training Pipeline**: All core functionality working correctly
+- **Environment**: 4-channel state representation working properly
+- **Reward System**: Immediate rewards functioning as expected
+- **Device Detection**: CPU/GPU/MPS detection working correctly
+
+## Missing Components (Root Level Test Failures)
+- **ActionMaskingWrapper**: Referenced in root level tests but not implemented in train_agent.py
+- **MultiBoardTrainingWrapper**: Referenced in root level tests but not implemented in train_agent.py
+- **Root Level Tests**: 3 test files failing due to missing imports:
+  - `tests/test_4x4_2mines_difficulty.py`
+  - `tests/test_evaluation_vs_training_debug.py`
+  - `tests/test_multi_board_training.py`
 
 ## When Helping
 - Use immediate rewards for all actions (no first-move special cases)
@@ -39,4 +63,14 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - Run tests to verify changes work correctly
 - Recommend M1 Mac for intensive training
 - Focus on learning improvements, not game logic bugs
-- Ensure cross-platform compatibility when modifying tests or scripts 
+- Ensure cross-platform compatibility when modifying tests or scripts
+- Note that root level tests need wrapper classes implemented or removed
+- Core functionality (unit, integration, functional, scripts) is fully working
+- DQN agent is functional and ready for training
+
+## Next Priorities
+1. **Fix Root Level Tests**: Either implement missing wrapper classes or remove obsolete tests
+2. **DQN Training**: Extend DQN agent training with curriculum learning
+3. **Visualization**: Add real-time agent visualization tools
+4. **Performance Optimization**: Optimize training for longer runs
+5. **Documentation**: Update documentation with latest test results and DQN functionality 
