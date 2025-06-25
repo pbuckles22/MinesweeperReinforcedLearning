@@ -10,7 +10,7 @@ import sys
 import pygame
 import warnings
 from typing import Tuple, Dict, Optional, List, Set
-from src.core.constants import (
+from .constants import (
     CELL_UNREVEALED,
     CELL_MINE,
     CELL_MINE_HIT,
