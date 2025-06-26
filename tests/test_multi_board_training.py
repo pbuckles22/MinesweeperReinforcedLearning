@@ -13,17 +13,28 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from src.core.minesweeper_env import MinesweeperEnv
 from src.core.train_agent import make_env, ActionMaskingWrapper, MultiBoardTrainingWrapper
 
+def get_base_env(env):
+    # Unwrap through .env attributes
+    while hasattr(env, 'env'):
+        env = env.env
+    # If it's a DummyVecEnv, get the first env
+    if hasattr(env, 'envs'):
+        env = env.envs[0]
+    # Unwrap through Monitor wrapper if present
+    while hasattr(env, 'env'):
+        env = env.env
+    return env
+
 def test_multi_board_training():
     """Test that multi-board training generates different board layouts."""
     print("🔍 Testing Multi-Board Training")
     print("=" * 50)
     
     # Create base environment
-    base_env = DummyVecEnv([make_env(max_board_size=(4, 4), max_mines=1)])
-    
-    # Apply wrappers
-    env = ActionMaskingWrapper(base_env)
-    env = MultiBoardTrainingWrapper(env, board_variations=5)
+    base_env = make_env(max_board_size=(4, 4), max_mines=1)()
+    base_env = ActionMaskingWrapper(base_env)
+    base_env = MultiBoardTrainingWrapper(base_env, board_variations=5)
+    env = DummyVecEnv([lambda: base_env])
     
     print(f"✅ Created multi-board training environment")
     print(f"   Board variations: 5")
@@ -36,13 +47,8 @@ def test_multi_board_training():
     
     for i in range(5):
         obs = env.reset()
-        board_info = env.get_board_variation_info()
-        
-        # Get the mine positions from the underlying environment
-        # Navigate through wrappers to get the base environment
-        base_env_instance = env.venv.envs[0]
-        if hasattr(base_env_instance, 'env'):
-            base_env_instance = base_env_instance.env
+        board_info = env.envs[0].get_board_variation_info()
+        base_env_instance = get_base_env(env)
         mine_positions = np.where(base_env_instance.mines)
         
         print(f"  Variation {i+1}:")
@@ -102,15 +108,12 @@ def test_multi_board_training():
     print("\n🔍 Testing Evaluation on Fixed Board:")
     
     # Create evaluation environment with fixed seed
-    eval_env = DummyVecEnv([make_env(max_board_size=(4, 4), max_mines=1)])
-    eval_env = ActionMaskingWrapper(eval_env)
+    eval_base_env = make_env(max_board_size=(4, 4), max_mines=1)()
+    eval_base_env = ActionMaskingWrapper(eval_base_env)
+    eval_env = DummyVecEnv([lambda: eval_base_env])
     
     # Set fixed seed for evaluation
-    for env_instance in eval_env.envs:
-        if hasattr(env_instance, 'env'):
-            env_instance.env.seed(42)
-        else:
-            env_instance.seed(42)
+    eval_base_env.reset(seed=42)
     
     obs = eval_env.reset()
     print(f"✅ Created evaluation environment with fixed seed")
@@ -127,7 +130,7 @@ def test_multi_board_training():
         
         while not done and steps < 20:
             action, _ = model.predict(obs, deterministic=True)
-            step_result = eval_env.step(action)
+            step_result = eval_env.step([action])  # Pass as list for DummyVecEnv
             
             if len(step_result) == 5:
                 obs, reward, terminated, truncated, info = step_result

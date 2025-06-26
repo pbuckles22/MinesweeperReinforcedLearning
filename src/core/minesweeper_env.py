@@ -35,7 +35,8 @@ class MinesweeperEnv(gym.Env):
                  mine_spacing=1, initial_board_size=4, initial_mines=2,
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
                  safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN,
-                 first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE):
+                 first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE,
+                 learnable_only=True, max_learnable_attempts=1000):
         """Initialize the Minesweeper environment.
         
         Args:
@@ -55,6 +56,8 @@ class MinesweeperEnv(gym.Env):
             win_reward: Reward for winning
             first_cascade_safe_reward: Reward for first cascade safe
             first_cascade_hit_mine_reward: Reward for first cascade hit mine
+            learnable_only: Only generate board configurations that require 2+ moves
+            max_learnable_attempts: Maximum attempts to find learnable configuration
         """
         super().__init__()
         
@@ -126,6 +129,10 @@ class MinesweeperEnv(gym.Env):
         self.first_cascade_safe_reward = first_cascade_safe_reward
         self.first_cascade_hit_mine_reward = first_cascade_hit_mine_reward
         self.reward_invalid_action = invalid_action_penalty
+        
+        # Learnable configuration parameters
+        self.learnable_only = learnable_only
+        self.max_learnable_attempts = max_learnable_attempts
         
         # Game state
         self.board = None
@@ -306,7 +313,29 @@ class MinesweeperEnv(gym.Env):
         return self.state, self.info
 
     def _place_mines(self):
-        """Place mines on the board."""
+        """Place mines on the board, ensuring learnable configuration if requested."""
+        if self.learnable_only:
+            self._place_mines_learnable()
+        else:
+            self._place_mines_random()
+    
+    def _place_mines_learnable(self):
+        """Place mines ensuring configuration requires 2+ moves."""
+        for attempt in range(self.max_learnable_attempts):
+            # Generate random mine positions
+            mine_positions = self._generate_random_mine_positions()
+            
+            # Check if configuration is learnable
+            if self._is_learnable_configuration(mine_positions):
+                self._place_mines_at_positions(mine_positions)
+                return
+        
+        # Fallback to random if no learnable config found
+        warnings.warn(f"Could not find learnable configuration after {self.max_learnable_attempts} attempts, using random placement")
+        self._place_mines_random()
+    
+    def _place_mines_random(self):
+        """Place mines randomly (original implementation)."""
         # Create list of valid positions
         valid_positions = []
         for y in range(self.current_board_height):
@@ -347,6 +376,125 @@ class MinesweeperEnv(gym.Env):
 
         # Update adjacent counts
         self._update_adjacent_counts()
+    
+    def _generate_random_mine_positions(self):
+        """Generate random mine positions respecting spacing constraints."""
+        # Create list of valid positions
+        valid_positions = []
+        for y in range(self.current_board_height):
+            for x in range(self.current_board_width):
+                # Skip positions that would violate mine spacing
+                if self.mine_spacing > 0:
+                    valid = True
+                    for dy in range(-self.mine_spacing, self.mine_spacing + 1):
+                        for dx in range(-self.mine_spacing, self.mine_spacing + 1):
+                            ny, nx = y + dy, x + dx
+                            if (0 <= ny < self.current_board_height and 
+                                0 <= nx < self.current_board_width and 
+                                self.mines[ny, nx]):
+                                valid = False
+                                break
+                        if not valid:
+                            break
+                    if not valid:
+                        continue
+                valid_positions.append((y, x))
+
+        # Shuffle and select positions
+        np.random.shuffle(valid_positions)
+        return valid_positions[:self.current_mines]
+    
+    def _place_mines_at_positions(self, mine_positions):
+        """Place mines at specific positions."""
+        # Clear existing mines
+        self.mines.fill(False)
+        
+        # Place mines at specified positions
+        for y, x in mine_positions:
+            self.mines[y, x] = True
+        
+        # Update adjacent counts
+        self._update_adjacent_counts()
+    
+    def _is_learnable_configuration(self, mine_positions):
+        """Check if mine placement creates a learnable scenario (requires 2+ moves)."""
+        if len(mine_positions) == 1:
+            return self._is_single_mine_learnable(mine_positions[0])
+        else:
+            return self._is_multi_mine_learnable(mine_positions)
+    
+    def _is_single_mine_learnable(self, mine_pos):
+        """Check if single mine placement requires 2+ moves using cascade simulation."""
+        # Create a temporary board with the mine at the specified position
+        temp_board = np.zeros((self.current_board_height, self.current_board_width), dtype=int)
+        row, col = mine_pos
+        temp_board[row, col] = 9  # Place mine
+        
+        # Fill in adjacent counts
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                nr, nc = row + dr, col + dc
+                if (0 <= nr < self.current_board_height and 
+                    0 <= nc < self.current_board_width and 
+                    (nr, nc) != mine_pos):
+                    temp_board[nr, nc] += 1
+        
+        # Simulate cascade from a non-mine cell
+        revealed_cells = self._simulate_cascade(temp_board, mine_pos)
+        total_cells = self.current_board_height * self.current_board_width
+        
+        # If cascade reveals (total_cells - 1) cells, it's a 1-move win (not learnable)
+        # Otherwise, it requires strategic play (learnable)
+        return revealed_cells < (total_cells - 1)
+    
+    def _simulate_cascade(self, board, mine_pos):
+        """Simulate a cascade from a non-mine cell and return number of revealed cells."""
+        h, w = board.shape
+        max_revealed = 0
+        
+        # Try cascading from every non-mine cell and find the maximum
+        for start_r in range(h):
+            for start_c in range(w):
+                if (start_r, start_c) == mine_pos:
+                    continue
+                
+                # Simulate cascade from this start position
+                revealed = np.zeros_like(board, dtype=bool)
+                queue = [(start_r, start_c)]
+                
+                while queue:
+                    r, c = queue.pop(0)
+                    if revealed[r, c]:
+                        continue
+                    
+                    revealed[r, c] = True
+                    
+                    # If this cell has no adjacent mines (value 0), cascade to neighbors
+                    if board[r, c] == 0:
+                        for dr in [-1, 0, 1]:
+                            for dc in [-1, 0, 1]:
+                                if dr == 0 and dc == 0:
+                                    continue
+                                nr, nc = r + dr, c + dc
+                                if (0 <= nr < h and 
+                                    0 <= nc < w and 
+                                    not revealed[nr, nc] and 
+                                    (nr, nc) != mine_pos):
+                                    queue.append((nr, nc))
+                
+                # Update maximum revealed
+                revealed_count = revealed.sum()
+                if revealed_count > max_revealed:
+                    max_revealed = revealed_count
+        
+        return max_revealed
+    
+    def _is_multi_mine_learnable(self, mine_positions):
+        """Check if multi-mine placement requires 2+ moves."""
+        # For multi-mine games, we need more complex logic
+        # For now, assume all multi-mine configurations are learnable
+        # This can be enhanced later with more sophisticated analysis
+        return True
 
     def _update_adjacent_counts(self):
         """Update the board with the count of adjacent mines for each cell."""
@@ -772,6 +920,38 @@ class MinesweeperEnv(gym.Env):
             'repeated_actions': list(self.repeated_actions),
             'revealed_cell_click_count': self.revealed_cell_click_count,
             'invalid_action_count': self.invalid_action_count
+        }
+    
+    def get_board_statistics(self):
+        """Get statistics about the current board configuration.
+        
+        Returns:
+            dict: Dictionary containing board configuration statistics
+        """
+        # Get current mine positions
+        mine_positions = []
+        for i in range(self.current_board_height):
+            for j in range(self.current_board_width):
+                if self.mines[i, j]:
+                    mine_positions.append((i, j))
+        
+        # Check if current configuration is learnable
+        is_learnable = self._is_learnable_configuration(mine_positions)
+        
+        # Calculate board metrics
+        total_cells = self.current_board_height * self.current_board_width
+        mine_density = self.current_mines / total_cells
+        
+        return {
+            'board_size': (self.current_board_height, self.current_board_width),
+            'mines_placed': self.current_mines,
+            'mine_positions': mine_positions,
+            'learnable_configuration': is_learnable,
+            'learnable_only_mode': self.learnable_only,
+            'total_cells': total_cells,
+            'mine_density': mine_density,
+            'safe_cells': total_cells - self.current_mines,
+            'safe_cell_ratio': (total_cells - self.current_mines) / total_cells
         }
     
     def _record_game_moves(self):

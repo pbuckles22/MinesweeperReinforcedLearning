@@ -19,9 +19,10 @@ def test_4x4_2mines_difficulty():
     print("=" * 50)
     
     # Create environment
-    env = DummyVecEnv([make_env(max_board_size=(4, 4), max_mines=2)])
-    env = ActionMaskingWrapper(env)
-    env = MultiBoardTrainingWrapper(env, board_variations=10)
+    base_env = make_env(max_board_size=(4, 4), max_mines=2)()
+    base_env = ActionMaskingWrapper(base_env)
+    base_env = MultiBoardTrainingWrapper(base_env, board_variations=10)
+    env = DummyVecEnv([lambda: base_env])
     
     print("✅ Created 4x4 with 2 mines environment")
     print("   Board size: 4x4")
@@ -41,7 +42,7 @@ def test_4x4_2mines_difficulty():
         while not done and steps < 20:
             # Random action
             action = env.action_space.sample()
-            step_result = env.step([action])
+            step_result = env.step([action])  # Pass as list for DummyVecEnv
             
             if len(step_result) == 5:
                 obs, reward, terminated, truncated, info = step_result
@@ -97,7 +98,7 @@ def test_4x4_2mines_difficulty():
         
         while not done and steps < 20:
             action, _ = model.predict(obs, deterministic=True)
-            step_result = env.step(action)
+            step_result = env.step([action])  # Pass as list for DummyVecEnv
             
             if len(step_result) == 5:
                 obs, reward, terminated, truncated, info = step_result
@@ -139,8 +140,9 @@ def test_4x4_2mines_difficulty():
     print(f"\n🎲 Testing Different Board Configurations:")
     
     for mines in [1, 2, 3]:
-        test_env = DummyVecEnv([make_env(max_board_size=(4, 4), max_mines=mines)])
-        test_env = ActionMaskingWrapper(test_env)
+        base_test_env = make_env(max_board_size=(4, 4), max_mines=mines)()
+        base_test_env = ActionMaskingWrapper(base_test_env)
+        test_env = DummyVecEnv([lambda: base_test_env])
         
         wins = 0
         episodes = 20
@@ -152,7 +154,7 @@ def test_4x4_2mines_difficulty():
             
             while not done and steps < 20:
                 action, _ = model.predict(obs, deterministic=True)
-                step_result = test_env.step(action)
+                step_result = test_env.step([action])
                 
                 if len(step_result) == 5:
                     obs, reward, terminated, truncated, info = step_result

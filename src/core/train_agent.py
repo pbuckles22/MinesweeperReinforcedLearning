@@ -43,12 +43,213 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 import tempfile
 import shutil
+import gymnasium as gym
 
 # Global variables for graceful shutdown
 training_model = None
 training_env = None
 eval_env = None
 shutdown_requested = False
+
+class ActionMaskingWrapper(gym.Wrapper):
+    """Wrapper for action masking - placeholder implementation."""
+    
+    def __init__(self, env):
+        # Handle both gymnasium.Env and DummyVecEnv
+        if hasattr(env, 'envs'):  # DummyVecEnv
+            self.env = env
+            self.is_vectorized = True
+            self._action_space = env.action_space
+            self._observation_space = env.observation_space
+            self._metadata = getattr(env, 'metadata', {})
+            self._reward_range = getattr(env, 'reward_range', None)
+            self._spec = getattr(env, 'spec', None)
+            self._render_mode = getattr(env, 'render_mode', None)
+        else:
+            super().__init__(env)
+            self.is_vectorized = False
+    
+    @property
+    def action_space(self):
+        return self._action_space if self.is_vectorized else self.env.action_space
+    @property
+    def observation_space(self):
+        return self._observation_space if self.is_vectorized else self.env.observation_space
+    @property
+    def metadata(self):
+        return self._metadata if self.is_vectorized else self.env.metadata
+    @property
+    def reward_range(self):
+        return self._reward_range if self.is_vectorized else self.env.reward_range
+    @property
+    def spec(self):
+        return self._spec if self.is_vectorized else self.env.spec
+    @property
+    def render_mode(self):
+        return self._render_mode if self.is_vectorized else getattr(self.env, 'render_mode', None)
+    @property
+    def unwrapped(self):
+        return self.env.unwrapped
+    def __getattr__(self, name):
+        # Forward any missing attributes to the underlying env
+        return getattr(self.env, name)
+    def step(self, action):
+        result = self.env.step(action)
+        # Gymnasium expects (obs, reward, terminated, truncated, info)
+        if isinstance(result, tuple):
+            if len(result) == 5:
+                obs, reward, terminated, truncated, info = result
+            elif len(result) == 4:
+                obs, reward, terminated, info = result
+                truncated = False
+            else:
+                # Fallback: wrap as vectorized
+                obs, reward, terminated, truncated, info = result, 0.0, False, False, {}
+        else:
+            obs, reward, terminated, truncated, info = result, 0.0, False, False, {}
+        if self.is_vectorized:
+            # Wrap as 1-element lists/arrays
+            import numpy as np
+            obs = np.expand_dims(obs, 0) if not isinstance(obs, (list, tuple, np.ndarray)) or (isinstance(obs, np.ndarray) and obs.ndim == 2) else obs
+            reward = np.array([reward])
+            terminated = np.array([terminated])
+            truncated = np.array([truncated])
+            info = [info]
+        return obs, reward, terminated, truncated, info
+    def reset(self, **kwargs):
+        if self.is_vectorized:
+            if 'seed' in kwargs:
+                seed = kwargs.pop('seed')
+                for env_instance in self.env.envs:
+                    if hasattr(env_instance, 'reset'):
+                        env_instance.reset(seed=seed)
+            result = self.env.reset(**kwargs)
+        else:
+            result = self.env.reset(**kwargs)
+        # Ensure (obs, info) tuple
+        if isinstance(result, tuple) and len(result) == 2:
+            return result
+        else:
+            return result, {}
+
+class MultiBoardTrainingWrapper(gym.Wrapper):
+    """Wrapper for multi-board training - placeholder implementation."""
+    def __init__(self, env, board_variations=10):
+        if hasattr(env, 'envs'):
+            self.env = env
+            self.is_vectorized = True
+            self._action_space = env.action_space
+            self._observation_space = env.observation_space
+            self._metadata = getattr(env, 'metadata', {})
+            self._reward_range = getattr(env, 'reward_range', None)
+            self._spec = getattr(env, 'spec', None)
+            self._render_mode = getattr(env, 'render_mode', None)
+        else:
+            super().__init__(env)
+            self.is_vectorized = False
+        self.board_variations = board_variations
+        self.current_variation = 0
+        self.variation_seed = 42
+    
+    def reset(self, **kwargs):
+        if self.is_vectorized:
+            if 'seed' in kwargs:
+                seed = kwargs.pop('seed')
+                for env_instance in self.env.envs:
+                    if hasattr(env_instance, 'reset'):
+                        env_instance.reset(seed=seed)
+            result = self.env.reset(**kwargs)
+        else:
+            result = self.env.reset(**kwargs)
+        # Ensure (obs, info) tuple
+        if isinstance(result, tuple) and len(result) == 2:
+            return result
+        else:
+            return result, {}
+    
+    def step(self, action):
+        result = self.env.step(action)
+        if isinstance(result, tuple):
+            if len(result) == 5:
+                obs, reward, terminated, truncated, info = result
+            elif len(result) == 4:
+                obs, reward, terminated, info = result
+                truncated = False
+            else:
+                obs, reward, terminated, truncated, info = result, 0.0, False, False, {}
+        else:
+            obs, reward, terminated, truncated, info = result, 0.0, False, False, {}
+        if self.is_vectorized:
+            import numpy as np
+            obs = np.expand_dims(obs, 0) if not isinstance(obs, (list, tuple, np.ndarray)) or (isinstance(obs, np.ndarray) and obs.ndim == 2) else obs
+            reward = np.array([reward])
+            terminated = np.array([terminated])
+            truncated = np.array([truncated])
+            info = [info]
+        return obs, reward, terminated, truncated, info
+    
+    def get_board_variation_info(self):
+        """Get information about the current board variation."""
+        self.current_variation = (self.current_variation + 1) % self.board_variations
+        self.variation_seed = 42 + self.current_variation
+        return {
+            'variation_seed': self.variation_seed,
+            'current_variation': self.current_variation,
+            'total_variations': self.board_variations
+        }
+    
+    @property
+    def action_space(self):
+        if self.is_vectorized:
+            return self._action_space
+        else:
+            return self.env.action_space
+    
+    @property
+    def observation_space(self):
+        if self.is_vectorized:
+            return self._observation_space
+        else:
+            return self.env.observation_space
+    
+    @property
+    def metadata(self):
+        if self.is_vectorized:
+            return self._metadata
+        else:
+            return self.env.metadata
+    
+    @property
+    def reward_range(self):
+        if self.is_vectorized:
+            return self._reward_range
+        else:
+            return self.env.reward_range
+    
+    @property
+    def spec(self):
+        if self.is_vectorized:
+            return self._spec
+        else:
+            return self.env.spec
+    
+    @property
+    def render_mode(self):
+        if self.is_vectorized:
+            return self._render_mode
+        else:
+            return self.env.render_mode
+    
+    @property
+    def unwrapped(self):
+        if self.is_vectorized:
+            return self.env.unwrapped
+        else:
+            return self.env.unwrapped
+    
+    def __getattr__(self, name):
+        """Forward any other attributes to the underlying environment."""
+        return getattr(self.env, name)
 
 class TrainingStatsManager:
     """Manages training stats history with automatic cleanup and organization."""
@@ -885,7 +1086,9 @@ def make_env(max_board_size, max_mines):
             invalid_action_penalty=REWARD_INVALID_ACTION,
             mine_penalty=REWARD_HIT_MINE,
             safe_reveal_base=REWARD_SAFE_REVEAL,
-            win_reward=REWARD_WIN
+            win_reward=REWARD_WIN,
+            learnable_only=True,  # Only generate learnable board configurations
+            max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
         )
         # Configure Monitor to track the 'won' field from environment info
         env = Monitor(env, info_keywords=("won",))
