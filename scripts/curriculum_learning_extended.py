@@ -44,13 +44,14 @@ class CurriculumLearningManager:
         action_size = board_size[0] * board_size[1]
         
         # Stage-specific hyperparameters (adjusted for more realistic targets)
-        if board_size[0] * board_size[1] <= 16:  # 4x4
-            learning_rate = 0.0001
-            epsilon_decay = 0.9995
-            epsilon_min = 0.05
-            batch_size = 32
-            target_update_freq = 1000
-            episodes = 2000  # Increased training
+        if board_size[0] * board_size[1] <= 16:  # 4x4 - Use PROVEN 90% configuration
+            learning_rate = 0.0001          # PROVEN: Conservative learning rate
+            epsilon_decay = 0.9995          # PROVEN: Very slow exploration decay
+            epsilon_min = 0.05              # PROVEN: Higher minimum exploration
+            batch_size = 32                 # PROVEN: Smaller batches
+            target_update_freq = 1000       # PROVEN: More frequent updates
+            episodes = 1000                 # PROVEN: Back to proven amount
+            replay_buffer_size = 100000     # PROVEN: Smaller buffer
         elif board_size[0] * board_size[1] <= 25:  # 5x5
             learning_rate = 0.00005
             epsilon_decay = 0.9997
@@ -58,6 +59,7 @@ class CurriculumLearningManager:
             batch_size = 64
             target_update_freq = 1500
             episodes = 3000  # Increased training
+            replay_buffer_size = 200000
         elif board_size[0] * board_size[1] <= 36:  # 6x6
             learning_rate = 0.00003
             epsilon_decay = 0.9998
@@ -65,6 +67,7 @@ class CurriculumLearningManager:
             batch_size = 128
             target_update_freq = 2000
             episodes = 4000  # Increased training
+            replay_buffer_size = 200000
         else:  # 8x8
             learning_rate = 0.00002
             epsilon_decay = 0.9999
@@ -72,6 +75,7 @@ class CurriculumLearningManager:
             batch_size = 256
             target_update_freq = 3000
             episodes = 6000  # Increased training
+            replay_buffer_size = 200000
         
         agent = EnhancedDQNAgent(
             board_size=board_size,
@@ -81,7 +85,7 @@ class CurriculumLearningManager:
             epsilon=0.3 if previous_agent is not None else 1.0,  # Lower initial epsilon for transfer
             epsilon_decay=epsilon_decay,
             epsilon_min=epsilon_min,
-            replay_buffer_size=200000,
+            replay_buffer_size=replay_buffer_size,
             batch_size=batch_size,
             target_update_freq=target_update_freq,
             device='cpu',
@@ -335,6 +339,7 @@ class CurriculumLearningManager:
         print("   Progressive learning from 4x4 to 8x8 boards")
         print("   Extended training times with transfer learning")
         print("   Target: Improve performance on larger boards")
+        print("   Stage 1: Uses PROVEN 90% configuration for 4x4")
         print("=" * 65)
         
         # Start MLflow run
@@ -347,10 +352,10 @@ class CurriculumLearningManager:
         try:
             # Curriculum stages with more realistic targets
             curriculum_stages = [
-                ("Stage 1", (4, 4), 1, 2000, 0.70),   # 4x4, 1 mine, 2000 episodes, 70% target (was 95%)
-                ("Stage 2", (5, 5), 2, 3000, 0.50),   # 5x5, 2 mines, 3000 episodes, 50% target (was 70%)
-                ("Stage 3", (6, 6), 3, 4000, 0.35),   # 6x6, 3 mines, 4000 episodes, 35% target (was 50%)
-                ("Stage 4", (8, 8), 5, 6000, 0.20),   # 8x8, 5 mines, 6000 episodes, 20% target (was 30%)
+                ("Stage 1", (4, 4), 1, 1000, 0.90),   # 4x4, 1 mine, 1000 episodes, 90% target (PROVEN configuration)
+                ("Stage 2", (5, 5), 2, 3000, 0.50),   # 5x5, 2 mines, 3000 episodes, 50% target
+                ("Stage 3", (6, 6), 3, 4000, 0.35),   # 6x6, 3 mines, 4000 episodes, 35% target
+                ("Stage 4", (8, 8), 5, 6000, 0.20),   # 8x8, 5 mines, 6000 episodes, 20% target
             ]
             
             # Log curriculum parameters to MLflow
