@@ -1,0 +1,158 @@
+{
+  "training_win_rate": 0.593,
+  "eval_win_rate": 0.708,
+  "eval_std": 0.061013659672786935,
+  "training_time": 92.30562090873718,
+  "all_results": [
+    {
+      "win_rate": 0.8,
+      "mean_reward": 419.1,
+      "mean_length": 2.54
+    },
+    {
+      "win_rate": 0.7,
+      "mean_reward": 362.9,
+      "mean_length": 2.26
+    },
+    {
+      "win_rate": 0.68,
+      "mean_reward": 348.0,
+      "mean_length": 1.96
+    },
+    {
+      "win_rate": 0.66,
+      "mean_reward": 345.4,
+      "mean_length": 2.48
+    },
+    {
+      "win_rate": 0.66,
+      "mean_reward": 343.3,
+      "mean_length": 2.34
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 399.5,
+      "mean_length": 2.62
+    },
+    {
+      "win_rate": 0.74,
+      "mean_reward": 393.3,
+      "mean_length": 2.9
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 397.1,
+      "mean_length": 2.46
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 396.2,
+      "mean_length": 2.4
+    },
+    {
+      "win_rate": 0.7,
+      "mean_reward": 365.6,
+      "mean_length": 2.44
+    },
+    {
+      "win_rate": 0.64,
+      "mean_reward": 335.6,
+      "mean_length": 2.52
+    },
+    {
+      "win_rate": 0.7,
+      "mean_reward": 365.3,
+      "mean_length": 2.42
+    },
+    {
+      "win_rate": 0.68,
+      "mean_reward": 357.9,
+      "mean_length": 2.62
+    },
+    {
+      "win_rate": 0.68,
+      "mean_reward": 360.0,
+      "mean_length": 2.76
+    },
+    {
+      "win_rate": 0.64,
+      "mean_reward": 335.9,
+      "mean_length": 2.54
+    },
+    {
+      "win_rate": 0.7,
+      "mean_reward": 361.4,
+      "mean_length": 2.16
+    },
+    {
+      "win_rate": 0.6,
+      "mean_reward": 311.2,
+      "mean_length": 2.28
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 398.6,
+      "mean_length": 2.56
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 394.4,
+      "mean_length": 2.28
+    },
+    {
+      "win_rate": 0.7,
+      "mean_reward": 361.7,
+      "mean_length": 2.18
+    },
+    {
+      "win_rate": 0.78,
+      "mean_reward": 402.7,
+      "mean_length": 2.14
+    },
+    {
+      "win_rate": 0.76,
+      "mean_reward": 397.7,
+      "mean_length": 2.5
+    },
+    {
+      "win_rate": 0.82,
+      "mean_reward": 431.6,
+      "mean_length": 2.68
+    },
+    {
+      "win_rate": 0.78,
+      "mean_reward": 408.7,
+      "mean_length": 2.54
+    },
+    {
+      "win_rate": 0.64,
+      "mean_reward": 336.8,
+      "mean_length": 2.6
+    },
+    {
+      "win_rate": 0.68,
+      "mean_reward": 355.2,
+      "mean_length": 2.44
+    },
+    {
+      "win_rate": 0.8,
+      "mean_reward": 416.4,
+      "mean_length": 2.36
+    },
+    {
+      "win_rate": 0.58,
+      "mean_reward": 301.1,
+      "mean_length": 2.3
+    },
+    {
+      "win_rate": 0.66,
+      "mean_reward": 341.8,
+      "mean_length": 2.24
+    },
+    {
+      "win_rate": 0.66,
+      "mean_reward": 348.4,
+      "mean_length": 2.68
+    }
+  ]
+}

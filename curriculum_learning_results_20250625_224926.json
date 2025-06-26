@@ -1,0 +1,141 @@
+{
+  "total_time": 1993.30712890625,
+  "curriculum_results": [
+    {
+      "stage_num": 1,
+      "stage_name": "Stage 1: 4x4 Board",
+      "board_size": [
+        4,
+        4
+      ],
+      "mines": 1,
+      "episodes": 2000,
+      "target_win_rate": 0.7,
+      "training_stats": {
+        "win_rate": 0.606,
+        "mean_loss": 36.38617108823931,
+        "final_epsilon": 0.3677874521460121,
+        "replay_buffer_size": 4888
+      },
+      "eval_stats": {
+        "win_rate": 0.5986666666666668,
+        "win_rate_std": 0.06108645967442831,
+        "win_rate_range": [
+          0.46,
+          0.68
+        ],
+        "mean_reward": 315.28666666666663,
+        "mean_reward_std": 30.797572775932995,
+        "mean_length": 2.598666666666667,
+        "mean_length_std": 0.25102102612242577
+      },
+      "training_time": 188.24791812896729,
+      "transfer_success": false,
+      "achieved_win_rate": 0.5986666666666668,
+      "status": "\u2705 CLOSE",
+      "agent_filename": "curriculum_stage_1_20250625_221924.pth"
+    },
+    {
+      "stage_num": 2,
+      "stage_name": "Stage 2: 5x5 Board",
+      "board_size": [
+        5,
+        5
+      ],
+      "mines": 2,
+      "episodes": 2000,
+      "target_win_rate": 0.5,
+      "training_stats": {
+        "win_rate": 0.844,
+        "mean_loss": 29.928355253627494,
+        "final_epsilon": 0.10821408796484357,
+        "replay_buffer_size": 6283
+      },
+      "eval_stats": {
+        "win_rate": 0.15933333333333338,
+        "win_rate_std": 0.04242116871982142,
+        "win_rate_range": [
+          0.06,
+          0.26
+        ],
+        "mean_reward": 95.98333333333333,
+        "mean_reward_std": 21.68215984526347,
+        "mean_length": 3.208666666666667,
+        "mean_length_std": 0.20692564418704182
+      },
+      "training_time": 276.40519404411316,
+      "transfer_success": true,
+      "achieved_win_rate": 0.15933333333333338,
+      "status": "\u274c NEEDS WORK",
+      "agent_filename": "curriculum_stage_2_20250625_222405.pth"
+    },
+    {
+      "stage_num": 3,
+      "stage_name": "Stage 3: 6x6 Board",
+      "board_size": [
+        6,
+        6
+      ],
+      "mines": 3,
+      "episodes": 2500,
+      "target_win_rate": 0.3,
+      "training_stats": {
+        "win_rate": 0.778,
+        "mean_loss": 19.672912377938236,
+        "final_epsilon": 0.04999038634581687,
+        "replay_buffer_size": 8777
+      },
+      "eval_stats": {
+        "win_rate": 0.07133333333333335,
+        "win_rate_std": 0.036030850978324425,
+        "win_rate_range": [
+          0.0,
+          0.14
+        ],
+        "mean_reward": 53.66333333333333,
+        "mean_reward_std": 19.706369246740735,
+        "mean_length": 3.4380000000000006,
+        "mean_length_std": 0.2573376510864018
+      },
+      "training_time": 411.79368591308594,
+      "transfer_success": true,
+      "achieved_win_rate": 0.07133333333333335,
+      "status": "\u274c NEEDS WORK",
+      "agent_filename": "curriculum_stage_3_20250625_223103.pth"
+    },
+    {
+      "stage_num": 4,
+      "stage_name": "Stage 4: 8x8 Board",
+      "board_size": [
+        8,
+        8
+      ],
+      "mines": 6,
+      "episodes": 3000,
+      "target_win_rate": 0.15,
+      "training_stats": {
+        "win_rate": 0.6563333333333333,
+        "mean_loss": 11.448359401554454,
+        "final_epsilon": 0.05,
+        "replay_buffer_size": 12438
+      },
+      "eval_stats": {
+        "win_rate": 0.008666666666666666,
+        "win_rate_std": 0.014313940369055924,
+        "win_rate_range": [
+          0.0,
+          0.06
+        ],
+        "mean_reward": 34.516666666666666,
+        "mean_reward_std": 9.047212584854826,
+        "mean_length": 4.334,
+        "mean_length_std": 0.4281168064909389
+      },
+      "training_time": 1091.6770370006561,
+      "transfer_success": true,
+      "achieved_win_rate": 0.008666666666666666,
+      "status": "\u274c NEEDS WORK",
+      "agent_filename": "curriculum_stage_4_20250625_224926.pth"
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "timestamp": "20250625_210021",
+  "config": {
+    "approach": "Curriculum Learning with Extended Training",
+    "strategy": "Progressive board sizes with transfer learning",
+    "target": "Improve performance on larger boards through curriculum"
+  },
+  "curriculum_stages": [
+    {
+      "stage_name": "Stage 1",
+      "board_size": [
+        4,
+        4
+      ],
+      "mines": 1,
+      "target_episodes": 1500,
+      "target_win_rate": 0.95,
+      "training_results": {
+        "win_rate": 0.5626666666666666,
+        "final_epsilon": 0.4722779627867691,
+        "episodes": 1500,
+        "training_time": 144.91534805297852,
+        "episodes_per_second": 10.350870492003555
+      },
+      "evaluation_results": {
+        "board_size": [
+          4,
+          4
+        ],
+        "mines": 1,
+        "mean_win_rate": 0.30720000000000003,
+        "std_win_rate": 0.07794972738887546,
+        "mean_reward": 160.516,
+        "std_reward": 38.53376368848493,
+        "mean_length": 2.3848,
+        "std_length": 0.19009723827557307,
+        "min_win_rate": 0.18,
+        "max_win_rate": 0.44,
+        "all_runs": [
+          {
+            "win_rate": 0.38,
+            "mean_reward": 195.6,
+            "mean_length": 2.2
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 137.1,
+            "mean_length": 2.46
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 158.5,
+            "mean_length": 2.5
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 138.6,
+            "mean_length": 2.56
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 176.0,
+            "mean_length": 2.28
+          },
+          {
+            "win_rate": 0.44,
+            "mean_reward": 226.5,
+            "mean_length": 2.18
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 159.4,
+            "mean_length": 2.56
+          },
+          {
+            "win_rate": 0.22,
+            "mean_reward": 119.3,
+            "mean_length": 2.66
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 96.7,
+            "mean_length": 2.54
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 176.9,
+            "mean_length": 2.34
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 155.2,
+            "mean_length": 2.28
+          },
+          {
+            "win_rate": 0.2,
+            "mean_reward": 104.1,
+            "mean_length": 2.34
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 176.6,
+            "mean_length": 2.32
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 173.6,
+            "mean_length": 2.12
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 159.1,
+            "mean_length": 2.54
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 174.8,
+            "mean_length": 2.2
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 176.9,
+            "mean_length": 2.34
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 96.7,
+            "mean_length": 2.54
+          },
+          {
+            "win_rate": 0.44,
+            "mean_reward": 231.0,
+            "mean_length": 2.48
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 99.7,
+            "mean_length": 2.74
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 174.5,
+            "mean_length": 2.18
+          },
+          {
+            "win_rate": 0.4,
+            "mean_reward": 204.2,
+            "mean_length": 2.08
+          },
+          {
+            "win_rate": 0.24,
+            "mean_reward": 130.3,
+            "mean_length": 2.7
+          },
+          {
+            "win_rate": 0.44,
+            "mean_reward": 225.0,
+            "mean_length": 2.08
+          },
+          {
+            "win_rate": 0.28,
+            "mean_reward": 146.6,
+            "mean_length": 2.4
+          }
+        ]
+      },
+      "performance": {
+        "final_win_rate": 0.30720000000000003,
+        "target_achieved": false,
+        "stage_time": 144.91534805297852
+      }
+    }
+  ],
+  "summary": {
+    "total_stages_completed": 1,
+    "stages_achieved_target": 0,
+    "stages_close_to_target": 0,
+    "total_curriculum_time": 148.01592898368835,
+    "average_win_rate": 0.30720000000000003
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "timestamp": "20250625_212357",
+  "total_configs": 3,
+  "total_episodes": 3000,
+  "total_training_time": 385.8204879760742,
+  "final_win_rate": 0.9159999999999998,
+  "config_results": [
+    {
+      "config_name": "Conservative Learning",
+      "config": {
+        "learning_rate": 0.0001,
+        "discount_factor": 0.99,
+        "epsilon": 1.0,
+        "epsilon_decay": 0.9995,
+        "epsilon_min": 0.05,
+        "replay_buffer_size": 100000,
+        "batch_size": 32,
+        "target_update_freq": 1000,
+        "use_double_dqn": true,
+        "use_dueling": true,
+        "use_prioritized_replay": true
+      },
+      "training_stats": {
+        "win_rate": 0.583,
+        "mean_loss": 58.51301634090333,
+        "final_epsilon": 0.606454822840097,
+        "replay_buffer_size": 2293
+      },
+      "eval_stats": {
+        "win_rate": 0.69,
+        "mean_reward": 360.025,
+        "mean_length": 2.415,
+        "wins": 138,
+        "total_episodes": 200
+      },
+      "training_time": 87.7989559173584,
+      "final_win_rate": 0.583,
+      "eval_win_rate": 0.69
+    },
+    {
+      "config_name": "Aggressive Learning",
+      "config": {
+        "learning_rate": 0.001,
+        "discount_factor": 0.99,
+        "epsilon": 1.0,
+        "epsilon_decay": 0.998,
+        "epsilon_min": 0.1,
+        "replay_buffer_size": 50000,
+        "batch_size": 64,
+        "target_update_freq": 500,
+        "use_double_dqn": true,
+        "use_dueling": false,
+        "use_prioritized_replay": false
+      },
+      "training_stats": {
+        "win_rate": 0.564,
+        "mean_loss": 68.28172208875672,
+        "final_epsilon": 0.13506452244668335,
+        "replay_buffer_size": 2403
+      },
+      "eval_stats": {
+        "win_rate": 0.575,
+        "mean_reward": 300.075,
+        "mean_length": 2.405,
+        "wins": 115,
+        "total_episodes": 200
+      },
+      "training_time": 140.50127720832825,
+      "final_win_rate": 0.564,
+      "eval_win_rate": 0.575
+    },
+    {
+      "config_name": "Balanced Learning",
+      "config": {
+        "learning_rate": 0.0003,
+        "discount_factor": 0.99,
+        "epsilon": 1.0,
+        "epsilon_decay": 0.999,
+        "epsilon_min": 0.02,
+        "replay_buffer_size": 200000,
+        "batch_size": 64,
+        "target_update_freq": 2000,
+        "use_double_dqn": true,
+        "use_dueling": true,
+        "use_prioritized_replay": true
+      },
+      "training_stats": {
+        "win_rate": 0.645,
+        "mean_loss": 63.373414828605256,
+        "final_epsilon": 0.3676954247709635,
+        "replay_buffer_size": 2391
+      },
+      "eval_stats": {
+        "win_rate": 0.925,
+        "mean_reward": 483.35,
+        "mean_length": 2.49,
+        "wins": 185,
+        "total_episodes": 200
+      },
+      "training_time": 157.52025485038757,
+      "final_win_rate": 0.645,
+      "eval_win_rate": 0.925
+    }
+  ],
+  "final_evaluation": {
+    "mean_win_rate": 0.9159999999999998,
+    "std_win_rate": 0.04270831300812524,
+    "mean_reward": 478.11999999999995,
+    "std_reward": 22.644681494779302,
+    "mean_length": 2.453333333333333,
+    "std_length": 0.23570226039551584,
+    "min_win_rate": 0.82,
+    "max_win_rate": 0.98,
+    "all_runs": [
+      {
+        "win_rate": 0.88,
+        "mean_reward": 460.7,
+        "mean_length": 2.54,
+        "wins": 44,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.96,
+        "mean_reward": 499.9,
+        "mean_length": 2.38,
+        "wins": 48,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.9,
+        "mean_reward": 467.5,
+        "mean_length": 2.3,
+        "wins": 45,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.9,
+        "mean_reward": 469.9,
+        "mean_length": 2.46,
+        "wins": 45,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.98,
+        "mean_reward": 508.5,
+        "mean_length": 2.26,
+        "wins": 49,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.88,
+        "mean_reward": 464.0,
+        "mean_length": 2.76,
+        "wins": 44,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.94,
+        "mean_reward": 491.3,
+        "mean_length": 2.5,
+        "wins": 47,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.86,
+        "mean_reward": 449.1,
+        "mean_length": 2.46,
+        "wins": 43,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.94,
+        "mean_reward": 486.5,
+        "mean_length": 2.18,
+        "wins": 47,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.92,
+        "mean_reward": 481.2,
+        "mean_length": 2.52,
+        "wins": 46,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.96,
+        "mean_reward": 508.3,
+        "mean_length": 2.94,
+        "wins": 48,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.94,
+        "mean_reward": 483.8,
+        "mean_length": 2.0,
+        "wins": 47,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.96,
+        "mean_reward": 503.8,
+        "mean_length": 2.64,
+        "wins": 48,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.82,
+        "mean_reward": 424.4,
+        "mean_length": 2.2,
+        "wins": 41,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.9,
+        "mean_reward": 472.9,
+        "mean_length": 2.66,
+        "wins": 45,
+        "total_episodes": 50
+      }
+    ]
+  }
+}

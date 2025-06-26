@@ -1,0 +1,123 @@
+{
+  "timestamp": "20250625_182533",
+  "config": {
+    "episodes": 1500,
+    "eval_freq": 100,
+    "target": "95%+ win rate"
+  },
+  "training_results": {
+    "win_rate": 0.5426666666666666,
+    "mean_loss": 31.98734284477731,
+    "final_epsilon": 0.4722779627867691,
+    "episodes": 1500,
+    "training_time": 294.86987590789795,
+    "episodes_per_second": 5.086989626802441,
+    "win_rates": [
+      0.77,
+      0.74,
+      0.8,
+      0.86,
+      0.75,
+      0.72,
+      0.71,
+      0.71,
+      0.74,
+      0.79,
+      0.73,
+      0.73,
+      0.77,
+      0.62,
+      0.71
+    ]
+  },
+  "evaluation_results": {
+    "mean_win_rate": 0.296,
+    "std_win_rate": 0.05896891836665595,
+    "mean_reward": 157.80000000000004,
+    "std_reward": 30.175641390587433,
+    "mean_length": 2.592,
+    "std_length": 0.2141401410291868,
+    "min_win_rate": 0.22,
+    "max_win_rate": 0.44,
+    "all_runs": [
+      {
+        "win_rate": 0.26,
+        "mean_reward": 134.4,
+        "mean_length": 2.28
+      },
+      {
+        "win_rate": 0.26,
+        "mean_reward": 141.6,
+        "mean_length": 2.76
+      },
+      {
+        "win_rate": 0.44,
+        "mean_reward": 232.5,
+        "mean_length": 2.58
+      },
+      {
+        "win_rate": 0.22,
+        "mean_reward": 114.5,
+        "mean_length": 2.34
+      },
+      {
+        "win_rate": 0.32,
+        "mean_reward": 167.7,
+        "mean_length": 2.42
+      },
+      {
+        "win_rate": 0.32,
+        "mean_reward": 170.4,
+        "mean_length": 2.6
+      },
+      {
+        "win_rate": 0.26,
+        "mean_reward": 142.5,
+        "mean_length": 2.82
+      },
+      {
+        "win_rate": 0.26,
+        "mean_reward": 142.8,
+        "mean_length": 2.84
+      },
+      {
+        "win_rate": 0.24,
+        "mean_reward": 126.4,
+        "mean_length": 2.44
+      },
+      {
+        "win_rate": 0.36,
+        "mean_reward": 187.9,
+        "mean_length": 2.38
+      },
+      {
+        "win_rate": 0.3,
+        "mean_reward": 157.9,
+        "mean_length": 2.46
+      },
+      {
+        "win_rate": 0.24,
+        "mean_reward": 133.3,
+        "mean_length": 2.9
+      },
+      {
+        "win_rate": 0.32,
+        "mean_reward": 174.9,
+        "mean_length": 2.9
+      },
+      {
+        "win_rate": 0.38,
+        "mean_reward": 198.3,
+        "mean_length": 2.38
+      },
+      {
+        "win_rate": 0.26,
+        "mean_reward": 141.9,
+        "mean_length": 2.78
+      }
+    ]
+  },
+  "performance": {
+    "final_win_rate": 0.296,
+    "training_speed": 5.086989626802441,
+    "target_achieved": 

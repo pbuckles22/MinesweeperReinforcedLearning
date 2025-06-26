@@ -2,13 +2,9 @@
 """
 Enhanced Deep Q-Network (DQN) Agent for Minesweeper
 
-Implements advanced DQN techniques:
-- Double DQN (reduces overestimation bias)
-- Prioritized Experience Replay (focuses on important experiences)
-- Dueling DQN (separates value and advantage streams)
-- Enhanced exploration strategies
-
-Based on successful conv128x4_dense512x2 architecture with optimizations.
+Implements DQN with transfer learning capabilities between different board sizes.
+Uses a flexible architecture that can adapt to different input/output dimensions.
+Includes proven advanced features: Double DQN, Dueling DQN, Prioritized Replay.
 """
 
 import numpy as np
@@ -40,6 +36,7 @@ class DuelingDQNNetwork(nn.Module):
         self.action_size = action_size
         
         # Convolutional layers (4 layers of 128 filters each)
+        # These remain the same regardless of board size
         self.conv1 = nn.Conv2d(4, 128, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
@@ -59,8 +56,8 @@ class DuelingDQNNetwork(nn.Module):
         self.advantage_stream = nn.Linear(512, 256)
         self.advantage_head = nn.Linear(256, action_size)
         
-        # Dropout for regularization
-        self.dropout = nn.Dropout(0.2)
+        # Dropout for regularization (increased to 0.4)
+        self.dropout = nn.Dropout(0.4)
         
     def forward(self, x):
         # Ensure input is the right shape: (batch_size, channels, height, width)
@@ -94,6 +91,25 @@ class DuelingDQNNetwork(nn.Module):
         q_values = value + (advantage - advantage.mean(dim=1, keepdim=True))
         
         return q_values
+    
+    def get_architecture_info(self) -> Dict[str, Any]:
+        """Get information about the network architecture."""
+        conv_output_size = 128 * self.board_height * self.board_width
+        return {
+            'board_size': (self.board_height, self.board_width),
+            'action_size': self.action_size,
+            'conv_output_size': conv_output_size,
+            'fc1_input_size': conv_output_size,
+            'fc1_output_size': 512,
+            'fc2_input_size': 512,
+            'fc2_output_size': 512,
+            'value_stream_input_size': 512,
+            'value_stream_output_size': 256,
+            'value_head_output_size': 1,
+            'advantage_stream_input_size': 512,
+            'advantage_stream_output_size': 256,
+            'advantage_head_output_size': self.action_size
+        }
 
 
 class PrioritizedExperienceReplayBuffer:
@@ -153,13 +169,13 @@ class PrioritizedExperienceReplayBuffer:
 
 
 class EnhancedDQNAgent:
-    """Enhanced Deep Q-Network agent with advanced techniques."""
+    """Enhanced Deep Q-Network agent with transfer learning capabilities."""
     
     def __init__(self, board_size: Tuple[int, int], action_size: int,
-                 learning_rate: float = 0.0003, discount_factor: float = 0.99,
-                 epsilon: float = 1.0, epsilon_decay: float = 0.995,
-                 epsilon_min: float = 0.01, replay_buffer_size: int = 100000,
-                 batch_size: int = 64, target_update_freq: int = 1000,
+                 learning_rate: float = 0.0001, discount_factor: float = 0.99,
+                 epsilon: float = 1.0, epsilon_decay: float = 0.9995,
+                 epsilon_min: float = 0.05, replay_buffer_size: int = 100000,
+                 batch_size: int = 32, target_update_freq: int = 1000,
                  device: str = 'auto', use_double_dqn: bool = True,
                  use_dueling: bool = True, use_prioritized_replay: bool = True):
         
@@ -178,6 +194,7 @@ class EnhancedDQNAgent:
         
         # Device setup
         if device == 'auto':
+            # Default to CPU for better performance on Mac (MPS can be slower for small networks)
             self.device = torch.device('cpu')
         else:
             self.device = torch.device(device)
@@ -199,7 +216,7 @@ class EnhancedDQNAgent:
         self.target_network.load_state_dict(self.q_network.state_dict())
         
         # Optimizer
-        self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(self.q_network.parameters(), lr=learning_rate, weight_decay=1e-4)
         
         # Experience replay buffer
         if use_prioritized_replay:
@@ -222,10 +239,13 @@ class EnhancedDQNAgent:
         # Target network update counter
         self.target_update_counter = 0
         
-        print(f"Enhanced DQN Agent initialized:")
+        print("Enhanced DQN Agent initialized:")
+        print(f"   Board size: {board_size}")
+        print(f"   Action size: {action_size}")
         print(f"   Double DQN: {use_double_dqn}")
         print(f"   Dueling DQN: {use_dueling}")
         print(f"   Prioritized Replay: {use_prioritized_replay}")
+        print(f"   Architecture: {self.q_network.get_architecture_info()}")
     
     def _preprocess_state(self, state: np.ndarray) -> torch.Tensor:
         """Preprocess state for neural network input."""
@@ -399,21 +419,103 @@ class EnhancedDQNAgent:
             'target_update_counter': self.target_update_counter,
             'use_double_dqn': self.use_double_dqn,
             'use_dueling': self.use_dueling,
-            'use_prioritized_replay': self.use_prioritized_replay
+            'use_prioritized_replay': self.use_prioritized_replay,
+            'architecture_info': self.q_network.get_architecture_info()
         }
         
         torch.save(model_data, filepath)
+        print(f"💾 Model saved to {filepath}")
     
-    def load_model(self, filepath: str):
-        """Load model and training stats."""
-        model_data = torch.load(filepath, map_location=self.device)
-        
-        self.q_network.load_state_dict(model_data['q_network_state_dict'])
-        self.target_network.load_state_dict(model_data['target_network_state_dict'])
-        self.optimizer.load_state_dict(model_data['optimizer_state_dict'])
-        self.training_stats = model_data['training_stats']
-        self.epsilon = model_data['epsilon']
-        self.target_update_counter = model_data['target_update_counter']
+    def load_model(self, filepath: str) -> bool:
+        """Load model and training stats with transfer learning support."""
+        try:
+            model_data = torch.load(filepath, map_location=self.device)
+            
+            # Check if architecture is compatible
+            saved_architecture = model_data.get('architecture_info', {})
+            current_architecture = self.q_network.get_architecture_info()
+            
+            print(f"🔍 Transfer Analysis:")
+            print(f"   Saved: {saved_architecture.get('board_size', 'Unknown')} → {saved_architecture.get('action_size', 'Unknown')} actions")
+            print(f"   Current: {current_architecture['board_size']} → {current_architecture['action_size']} actions")
+            
+            # Check if we can transfer
+            if (saved_architecture.get('board_size') == current_architecture['board_size'] and
+                saved_architecture.get('action_size') == current_architecture['action_size']):
+                # Direct transfer - same architecture
+                print("   ✅ Direct transfer possible")
+                self.q_network.load_state_dict(model_data['q_network_state_dict'])
+                self.target_network.load_state_dict(model_data['target_network_state_dict'])
+                self.optimizer.load_state_dict(model_data['optimizer_state_dict'])
+                self.training_stats = model_data['training_stats']
+                self.epsilon = model_data['epsilon']
+                self.target_update_counter = model_data['target_update_counter']
+                return True
+            else:
+                # Partial transfer - different board size
+                print("   🔄 Partial transfer (different board size)")
+                return self._transfer_partial_weights(model_data)
+                
+        except Exception as e:
+            print(f"   ❌ Transfer failed: {e}")
+            return False
+    
+    def _transfer_partial_weights(self, model_data: Dict) -> bool:
+        """Transfer weights that can be shared between different board sizes."""
+        try:
+            saved_state_dict = model_data['q_network_state_dict']
+            current_state_dict = self.q_network.state_dict()
+            
+            transferred_layers = 0
+            total_layers = len(current_state_dict)
+            
+            for name, param in current_state_dict.items():
+                if name in saved_state_dict:
+                    saved_param = saved_state_dict[name]
+                    
+                    # Check if shapes are compatible
+                    if param.shape == saved_param.shape:
+                        # Direct copy
+                        param.data.copy_(saved_param.data)
+                        transferred_layers += 1
+                        print(f"      ✅ {name}: {param.shape}")
+                    else:
+                        # Handle different sizes
+                        if 'conv' in name:
+                            # Convolutional layers can be transferred directly
+                            param.data.copy_(saved_param.data)
+                            transferred_layers += 1
+                            print(f"      ✅ {name}: {saved_param.shape} → {param.shape}")
+                        elif 'fc2' in name:
+                            # Middle dense layer can be transferred
+                            param.data.copy_(saved_param.data)
+                            transferred_layers += 1
+                            print(f"      ✅ {name}: {saved_param.shape} → {param.shape}")
+                        elif 'value_stream' in name or 'advantage_stream' in name:
+                            # Dueling stream layers can be transferred
+                            param.data.copy_(saved_param.data)
+                            transferred_layers += 1
+                            print(f"      ✅ {name}: {saved_param.shape} → {param.shape}")
+                        else:
+                            # Input/output layers need special handling
+                            print(f"      ⚠️  {name}: {saved_param.shape} → {param.shape} (skipped)")
+            
+            # Update target network
+            self.target_network.load_state_dict(self.q_network.state_dict())
+            
+            # Load training stats but reset episode count
+            self.training_stats = model_data['training_stats'].copy()
+            self.training_stats['episodes'] = 0  # Reset episode count for new stage
+            
+            # Load epsilon but allow for some exploration
+            self.epsilon = max(self.epsilon_min, model_data['epsilon'] * 0.8)
+            
+            print(f"   📊 Transfer Summary: {transferred_layers}/{total_layers} layers transferred")
+            return transferred_layers > 0
+            
+        except Exception as e:
+            print(f"   ❌ Partial transfer failed: {e}")
+            return False
     
     def get_stats(self) -> Dict[str, Any]:
         """Get current training statistics."""
@@ -430,7 +532,8 @@ class EnhancedDQNAgent:
             'device': str(self.device),
             'use_double_dqn': self.use_double_dqn,
             'use_dueling': self.use_dueling,
-            'use_prioritized_replay': self.use_prioritized_replay
+            'use_prioritized_replay': self.use_prioritized_replay,
+            'architecture': self.q_network.get_architecture_info()
         }
 
 
@@ -530,6 +633,7 @@ def train_enhanced_dqn_agent(env, agent: EnhancedDQNAgent, episodes: int, mine_c
 
 def evaluate_enhanced_dqn_agent(agent: EnhancedDQNAgent, env, n_episodes: int = 100) -> Dict[str, Any]:
     """Evaluate enhanced DQN agent."""
+    
     print(f"🔍 Evaluating Enhanced DQN agent on {n_episodes} episodes...")
     
     wins = 0
@@ -583,4 +687,32 @@ def evaluate_enhanced_dqn_agent(agent: EnhancedDQNAgent, env, n_episodes: int = 
         'mean_length': mean_length,
         'wins': wins,
         'total_episodes': n_episodes
-    } 
+    }
+
+
+if __name__ == "__main__":
+    # Example usage
+    from core.minesweeper_env import MinesweeperEnv
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    
+    # Create environment
+    board_size = (4, 4)
+    max_mines = 2
+    
+    env = DummyVecEnv([lambda: MinesweeperEnv(initial_board_size=board_size, max_mines=max_mines)])
+    
+    # Create enhanced DQN agent
+    agent = EnhancedDQNAgent(
+        board_size=board_size,
+        action_size=board_size[0] * board_size[1],
+        learning_rate=0.0001,
+        epsilon=1.0,
+        epsilon_decay=0.9995,
+        epsilon_min=0.05,
+        use_double_dqn=True,
+        use_dueling=True,
+        use_prioritized_replay=True
+    )
+    
+    # Train agent
+    stats = train_enhanced_dqn_agent(env, agent, episodes=1000, mine_count=max_mines) 

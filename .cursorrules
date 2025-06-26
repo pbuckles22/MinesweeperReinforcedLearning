@@ -1,7 +1,7 @@
 # Minesweeper RL Project Rules
 
 ## Project Context
-This is a Reinforcement Learning environment for Minesweeper using Stable Baselines3 (PPO) with curriculum learning and MLflow tracking.
+This is a Reinforcement Learning environment for Minesweeper using Stable Baselines3 (PPO) and Deep Q-Network (DQN) with curriculum learning and MLflow tracking.
 
 ## Key Design Decisions
 - **Immediate Rewards**: Every safe reveal gets +15, every mine hit gets -20, wins get +500 (simplified from confusing first-move logic)
@@ -24,10 +24,12 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - **Curriculum Learning**: Realistic win rate thresholds (15%, 12%, 10%, 8%, 5%, 3%, 2%) enable progression
 - **Training Complexity**: Even simple 4x4 boards are challenging for RL agents
 - **Performance**: Use M1 Mac for longer training runs (GPU acceleration)
+- **DQN Transfer Issues**: Model transfer between different board sizes needs attention (size mismatch errors)
 
 ## Important Files
 - `src/core/minesweeper_env.py` - Main environment (simplified reward logic)
 - `src/core/train_agent.py` - Training script with curriculum learning
+- `src/core/dqn_agent.py` - DQN agent implementation
 - `src/core/constants.py` - Reward constants
 - `tests/` - 739 comprehensive tests (unit: 537, integration: 78, functional: 112, scripts: 12)
 - `scripts/mac/` - Mac-specific training scripts
@@ -41,12 +43,19 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - **E2E Tests**: 0 tests (empty directory)
 - **Root Level Tests**: 3 failing due to missing wrapper classes (ActionMaskingWrapper, MultiBoardTrainingWrapper)
 
-## Recent Test Completion Success
-- **DQN Agent Test**: Successfully completed with 46% win rate and 65% evaluation win rate
+## Recent DQN Training Success
+- **DQN Agent**: Successfully implemented with Double DQN, Dueling DQN, and Prioritized Replay
+- **Stage 2 Performance**: 24.3% training win rate, 16.6% evaluation win rate
 - **Training Pipeline**: All core functionality working correctly
 - **Environment**: 4-channel state representation working properly
 - **Reward System**: Immediate rewards functioning as expected
 - **Device Detection**: CPU/GPU/MPS detection working correctly
+
+## Current DQN Issues
+- **Transfer Problem**: Model transfer between board sizes fails due to size mismatches
+- **Error**: `size mismatch for fc1.weight: copying a param with shape torch.Size([512, 3200]) from checkpoint, the shape in current model is torch.Size([512, 4608])`
+- **Affected**: Stage 3 progression (4x4 → 6x6 board)
+- **Solution Needed**: Dynamic model architecture or proper transfer learning
 
 ## Missing Components (Root Level Test Failures)
 - **ActionMaskingWrapper**: Referenced in root level tests but not implemented in train_agent.py
@@ -66,11 +75,13 @@ This is a Reinforcement Learning environment for Minesweeper using Stable Baseli
 - Ensure cross-platform compatibility when modifying tests or scripts
 - Note that root level tests need wrapper classes implemented or removed
 - Core functionality (unit, integration, functional, scripts) is fully working
-- DQN agent is functional and ready for training
+- DQN agent is functional but has transfer issues between board sizes
+- Priority: Fix DQN transfer issues before continuing curriculum training
 
 ## Next Priorities
-1. **Fix Root Level Tests**: Either implement missing wrapper classes or remove obsolete tests
-2. **DQN Training**: Extend DQN agent training with curriculum learning
-3. **Visualization**: Add real-time agent visualization tools
-4. **Performance Optimization**: Optimize training for longer runs
-5. **Documentation**: Update documentation with latest test results and DQN functionality 
+1. **Fix DQN Transfer Issues**: Resolve model loading errors between different board sizes
+2. **Extend DQN Training**: Continue curriculum learning with proper model transfer
+3. **Fix Root Level Tests**: Either implement missing wrapper classes or remove obsolete tests
+4. **Visualization**: Add real-time agent visualization tools
+5. **Performance Optimization**: Optimize training for longer runs
+6. **Documentation**: Update documentation with latest DQN results and transfer fixes 

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20250625_181819",
+  "config": {
+    "episodes": 1500,
+    "eval_freq": 100,
+    "target": "95%+ win rate"
+  },
+  "training_results": {
+    "win_rate": 0.59,
+    "mean_loss": 38.713854300406815,
+    "final_epsilon": 0.4722779627867691,
+    "episodes": 1500,
+    "training_time": 303.0792760848999,
+    "episodes_per_second": 4.949200154417069,
+    "agent": 

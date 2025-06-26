@@ -1,0 +1,100 @@
+{
+  "timestamp": "20250625_171804",
+  "total_stages": 3,
+  "stages_completed": 3,
+  "targets_achieved": 2,
+  "total_episodes": 225,
+  "total_training_time": 19.79285717010498,
+  "stage_results": [
+    {
+      "stage": {
+        "name": "Stage 1: 2x2 Board",
+        "board_size": [
+          2,
+          2
+        ],
+        "mine_count": 1,
+        "episodes": 50,
+        "target_win_rate": 0.7,
+        "description": "Simplest possible board for basic pattern learning"
+      },
+      "training_stats": {
+        "win_rate": 0.3,
+        "mean_loss": 69.61206584865764,
+        "final_epsilon": 0.778312557068642,
+        "replay_buffer_size": 122
+      },
+      "eval_stats": {
+        "win_rate": 0.26666666666666666,
+        "mean_reward": 139.16666666666666,
+        "mean_length": 2.3666666666666667,
+        "wins": 8,
+        "total_episodes": 30
+      },
+      "training_time": 2.8008713722229004,
+      "target_achieved": false,
+      "final_epsilon": 0.778312557068642,
+      "replay_buffer_size": 122
+    },
+    {
+      "stage": {
+        "name": "Stage 2: 3x3 Board",
+        "board_size": [
+          3,
+          3
+        ],
+        "mine_count": 1,
+        "episodes": 75,
+        "target_win_rate": 0.6,
+        "description": "Medium complexity for spatial reasoning"
+      },
+      "training_stats": {
+        "win_rate": 0.7333333333333333,
+        "mean_loss": 101.09635131724559,
+        "final_epsilon": 0.34332154659360004,
+        "replay_buffer_size": 200
+      },
+      "eval_stats": {
+        "win_rate": 0.8666666666666667,
+        "mean_reward": 461.6666666666667,
+        "mean_length": 3.066666666666667,
+        "wins": 26,
+        "total_episodes": 30
+      },
+      "training_time": 7.051376819610596,
+      "target_achieved": true,
+      "final_epsilon": 0.34332154659360004,
+      "replay_buffer_size": 200
+    },
+    {
+      "stage": {
+        "name": "Stage 3: 4x4 Board",
+        "board_size": [
+          4,
+          4
+        ],
+        "mine_count": 1,
+        "episodes": 100,
+        "target_win_rate": 0.5,
+        "description": "Full complexity for advanced strategies"
+      },
+      "training_stats": {
+        "win_rate": 0.65,
+        "mean_loss": 94.90672996520996,
+        "final_epsilon": 0.3028852182453639,
+        "replay_buffer_size": 238
+      },
+      "eval_stats": {
+        "win_rate": 0.9333333333333333,
+        "mean_reward": 486.8333333333333,
+        "mean_length": 2.433333333333333,
+        "wins": 28,
+        "total_episodes": 30
+      },
+      "training_time": 9.940608978271484,
+      "target_achieved": true,
+      "final_epsilon": 0.3028852182453639,
+      "replay_buffer_size": 238
+    }
+  ]
+}

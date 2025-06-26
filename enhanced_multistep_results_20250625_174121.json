@@ -1,0 +1,219 @@
+{
+  "timestamp": "20250625_174121",
+  "total_stages": 3,
+  "stages_completed": 3,
+  "targets_achieved": 0,
+  "total_episodes": 1800,
+  "total_training_time": 217.5864839553833,
+  "final_win_rate": 0.434,
+  "stage_results": [
+    {
+      "stage": {
+        "name": "Stage 1: 2x2 Board (Foundation)",
+        "board_size": [
+          2,
+          2
+        ],
+        "mine_count": 1,
+        "episodes": 300,
+        "target_win_rate": 0.85,
+        "config": {
+          "learning_rate": 0.001,
+          "discount_factor": 0.99,
+          "epsilon": 1.0,
+          "epsilon_decay": 0.998,
+          "epsilon_min": 0.1,
+          "replay_buffer_size": 100000,
+          "batch_size": 64,
+          "target_update_freq": 200,
+          "n_steps": 3,
+          "max_n_steps": 5
+        }
+      },
+      "training_stats": {
+        "win_rate": 0.22333333333333333,
+        "mean_loss": 12.941650163431401,
+        "final_epsilon": 0.5484820084336942,
+        "replay_buffer_size": 300,
+        "avg_n_step_return": 112.59478666666668
+      },
+      "eval_stats": {
+        "win_rate": 0.26,
+        "mean_reward": 132.75,
+        "mean_length": 2.17,
+        "wins": 26,
+        "total_episodes": 100
+      },
+      "training_time": 30.486012935638428,
+      "target_achieved": false,
+      "final_epsilon": 0.5484820084336942,
+      "replay_buffer_size": 300
+    },
+    {
+      "stage": {
+        "name": "Stage 2: 3x3 Board (Intermediate)",
+        "board_size": [
+          3,
+          3
+        ],
+        "mine_count": 1,
+        "episodes": 600,
+        "target_win_rate": 0.75,
+        "config": {
+          "learning_rate": 0.0005,
+          "discount_factor": 0.99,
+          "epsilon": 0.8,
+          "epsilon_decay": 0.999,
+          "epsilon_min": 0.05,
+          "replay_buffer_size": 200000,
+          "batch_size": 64,
+          "target_update_freq": 500,
+          "n_steps": 5,
+          "max_n_steps": 7
+        }
+      },
+      "training_stats": {
+        "win_rate": 0.5183333333333333,
+        "mean_loss": 25.680637110318386,
+        "final_epsilon": 0.4389175259883982,
+        "replay_buffer_size": 696,
+        "avg_n_step_return": 235.681556970546
+      },
+      "eval_stats": {
+        "win_rate": 0.53,
+        "mean_reward": 277.5,
+        "mean_length": 2.46,
+        "wins": 53,
+        "total_episodes": 100
+      },
+      "training_time": 79.69129276275635,
+      "target_achieved": false,
+      "final_epsilon": 0.4389175259883982,
+      "replay_buffer_size": 696
+    },
+    {
+      "stage": {
+        "name": "Stage 3: 4x4 Board (Advanced)",
+        "board_size": [
+          4,
+          4
+        ],
+        "mine_count": 1,
+        "episodes": 900,
+        "target_win_rate": 0.85,
+        "config": {
+          "learning_rate": 0.0002,
+          "discount_factor": 0.99,
+          "epsilon": 0.6,
+          "epsilon_decay": 0.9995,
+          "epsilon_min": 0.02,
+          "replay_buffer_size": 300000,
+          "batch_size": 64,
+          "target_update_freq": 1000,
+          "n_steps": 5,
+          "max_n_steps": 7
+        }
+      },
+      "training_stats": {
+        "win_rate": 0.5255555555555556,
+        "mean_loss": 30.975274640536867,
+        "final_epsilon": 0.3825338391433517,
+        "replay_buffer_size": 922,
+        "avg_n_step_return": 263.4728182050976
+      },
+      "eval_stats": {
+        "win_rate": 0.5,
+        "mean_reward": 258.75,
+        "mean_length": 2.25,
+        "wins": 50,
+        "total_episodes": 100
+      },
+      "training_time": 107.40917825698853,
+      "target_achieved": false,
+      "final_epsilon": 0.3825338391433517,
+      "replay_buffer_size": 922
+    }
+  ],
+  "final_evaluation": {
+    "mean_win_rate": 0.434,
+    "std_win_rate": 0.04651881339845203,
+    "mean_reward": 226.50000000000006,
+    "std_reward": 23.55915957754011,
+    "mean_length": 2.3880000000000003,
+    "std_length": 0.124,
+    "min_win_rate": 0.36,
+    "max_win_rate": 0.52,
+    "all_runs": [
+      {
+        "win_rate": 0.52,
+        "mean_reward": 270.5,
+        "mean_length": 2.34,
+        "wins": 26,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.42,
+        "mean_reward": 220.6,
+        "mean_length": 2.48,
+        "wins": 21,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.4,
+        "mean_reward": 208.4,
+        "mean_length": 2.36,
+        "wins": 20,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.4,
+        "mean_reward": 211.1,
+        "mean_length": 2.54,
+        "wins": 20,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.46,
+        "mean_reward": 239.6,
+        "mean_length": 2.36,
+        "wins": 23,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.36,
+        "mean_reward": 187.9,
+        "mean_length": 2.38,
+        "wins": 18,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.42,
+        "mean_reward": 221.2,
+        "mean_length": 2.52,
+        "wins": 21,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.48,
+        "mean_reward": 251.5,
+        "mean_length": 2.46,
+        "wins": 24,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.4,
+        "mean_reward": 208.4,
+        "mean_length": 2.36,
+        "wins": 20,
+        "total_episodes": 50
+      },
+      {
+        "win_rate": 0.48,
+        "mean_reward": 245.8,
+        "mean_length": 2.08,
+        "wins": 24,
+        "total_episodes": 50
+      }
+    ]
+  }
+}

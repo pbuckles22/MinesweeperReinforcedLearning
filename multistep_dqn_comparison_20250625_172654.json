@@ -1,0 +1,43 @@
+{
+  "timestamp": "20250625_172654",
+  "enhanced_dqn": {
+    "training_stats": {
+      "win_rate": 0.62,
+      "mean_loss": 104.42940503556207,
+      "final_epsilon": 0.6057704364907278,
+      "replay_buffer_size": 214
+    },
+    "eval_stats": {
+      "win_rate": 0.92,
+      "mean_reward": 478.8,
+      "mean_length": 2.36,
+      "wins": 46,
+      "total_episodes": 50
+    },
+    "training_time": 8.546105861663818
+  },
+  "multistep_dqn": {
+    "training_stats": {
+      "win_rate": 0.56,
+      "mean_loss": 122.62388186588466,
+      "final_epsilon": 0.6057704364907278,
+      "replay_buffer_size": 120,
+      "avg_n_step_return": 206.0865875
+    },
+    "eval_stats": {
+      "win_rate": 0.46,
+      "mean_reward": 236.9,
+      "mean_length": 2.18,
+      "wins": 23,
+      "total_episodes": 50
+    },
+    "training_time": 6.018044948577881,
+    "n_steps": 3,
+    "max_n_steps": 5,
+    "avg_n_step_return": 206.0865875
+  },
+  "improvements": {
+    "win_rate_improvement_pct": -50.0,
+    "reward_improvement_pct": -50.522138680033414
+  }
+}

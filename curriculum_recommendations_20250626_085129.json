@@ -1,0 +1,95 @@
+{
+  "curriculum_stages": [
+    {
+      "name": "Stage 1: 4x4 Board Mastery",
+      "board_size": [
+        4,
+        4
+      ],
+      "mines": 1,
+      "min_episodes": 3000,
+      "max_episodes": 15000,
+      "target_win_rate": 0.85,
+      "eval_freq": 500,
+      "eval_episodes": 50,
+      "eval_runs": 5,
+      "early_stop_consecutive": 2,
+      "description": "Mastery training on small board"
+    },
+    {
+      "name": "Stage 2: 5x5 Board Foundation",
+      "board_size": [
+        5,
+        5
+      ],
+      "mines": 2,
+      "min_episodes": 5000,
+      "max_episodes": 20000,
+      "target_win_rate": 0.55,
+      "eval_freq": 500,
+      "eval_episodes": 50,
+      "eval_runs": 5,
+      "early_stop_consecutive": 2,
+      "description": "Transfer learning to medium board"
+    },
+    {
+      "name": "Stage 3: 6x6 Board Challenge",
+      "board_size": [
+        6,
+        6
+      ],
+      "mines": 3,
+      "min_episodes": 8000,
+      "max_episodes": 25000,
+      "target_win_rate": 0.35,
+      "eval_freq": 500,
+      "eval_episodes": 50,
+      "eval_runs": 5,
+      "early_stop_consecutive": 2,
+      "description": "Advanced training on larger board"
+    },
+    {
+      "name": "Stage 4: 7x7 Board Intermediate",
+      "board_size": [
+        7,
+        7
+      ],
+      "mines": 5,
+      "min_episodes": 10000,
+      "max_episodes": 30000,
+      "target_win_rate": 0.2,
+      "eval_freq": 500,
+      "eval_episodes": 50,
+      "eval_runs": 5,
+      "early_stop_consecutive": 2,
+      "description": "Intermediate challenge"
+    },
+    {
+      "name": "Stage 5: 8x8 Board Ultimate",
+      "board_size": [
+        8,
+        8
+      ],
+      "mines": 6,
+      "min_episodes": 12000,
+      "max_episodes": 35000,
+      "target_win_rate": 0.08,
+      "eval_freq": 500,
+      "eval_episodes": 50,
+      "eval_runs": 5,
+      "early_stop_consecutive": 2,
+      "description": "Ultimate challenge on large board"
+    }
+  ],
+  "agent_config": {
+    "learning_rate": 0.0001,
+    "epsilon_decay": 0.9995,
+    "epsilon_min": 0.1,
+    "replay_buffer_size": 100000,
+    "batch_size": 32,
+    "target_update_freq": 1000,
+    "use_double_dqn": true,
+    "use_dueling": true,
+    "use_prioritized_replay": true
+  }
+}
