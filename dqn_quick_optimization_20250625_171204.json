@@ -1,0 +1,191 @@
+[
+  {
+    "config": {
+      "name": "Very_Low_LR",
+      "learning_rate": 0.0003,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.42,
+    "eval_win_rate": 0.9,
+    "mean_reward": 470.5,
+    "mean_length": 2.5,
+    "win_rate_stability": 0.48000000000000004,
+    "efficiency": 0.36,
+    "training_time": 1.8464252948760986,
+    "final_epsilon": 0.778312557068642
+  },
+  {
+    "config": {
+      "name": "Baseline",
+      "learning_rate": 0.001,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.58,
+    "eval_win_rate": 0.75,
+    "mean_reward": 388.75,
+    "mean_length": 2.25,
+    "win_rate_stability": 0.17000000000000004,
+    "efficiency": 0.3333333333333333,
+    "training_time": 2.7815370559692383,
+    "final_epsilon": 0.778312557068642
+  },
+  {
+    "config": {
+      "name": "Small_Batch",
+      "learning_rate": 0.001,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 32,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.58,
+    "eval_win_rate": 0.75,
+    "mean_reward": 387.25,
+    "mean_length": 2.15,
+    "win_rate_stability": 0.17000000000000004,
+    "efficiency": 0.3488372093023256,
+    "training_time": 3.0101778507232666,
+    "final_epsilon": 0.778312557068642
+  },
+  {
+    "config": {
+      "name": "Slow_Epsilon",
+      "learning_rate": 0.001,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.999,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.52,
+    "eval_win_rate": 0.75,
+    "mean_reward": 406.75,
+    "mean_length": 3.45,
+    "win_rate_stability": 0.22999999999999998,
+    "efficiency": 0.21739130434782608,
+    "training_time": 2.6473281383514404,
+    "final_epsilon": 0.9512056281970315
+  },
+  {
+    "config": {
+      "name": "Very_Slow_Epsilon",
+      "learning_rate": 0.001,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.9995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.56,
+    "eval_win_rate": 0.75,
+    "mean_reward": 391.75,
+    "mean_length": 2.45,
+    "win_rate_stability": 0.18999999999999995,
+    "efficiency": 0.3061224489795918,
+    "training_time": 2.4005730152130127,
+    "final_epsilon": 0.9753038143277888
+  },
+  {
+    "config": {
+      "name": "Lower_LR",
+      "learning_rate": 0.0005,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 1000
+    },
+    "training_win_rate": 0.6,
+    "eval_win_rate": 0.7,
+    "mean_reward": 360.5,
+    "mean_length": 2.1,
+    "win_rate_stability": 0.09999999999999998,
+    "efficiency": 0.3333333333333333,
+    "training_time": 2.42750883102417,
+    "final_epsilon": 0.778312557068642
+  },
+  {
+    "config": {
+      "name": "Best_Guess",
+      "learning_rate": 0.0005,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.999,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 32,
+      "target_update_freq": 2000
+    },
+    "training_win_rate": 0.48,
+    "eval_win_rate": 0.7,
+    "mean_reward": 365.75,
+    "mean_length": 2.45,
+    "win_rate_stability": 0.21999999999999997,
+    "efficiency": 0.2857142857142857,
+    "training_time": 2.730962038040161,
+    "final_epsilon": 0.9512056281970315
+  },
+  {
+    "config": {
+      "name": "Conservative",
+      "learning_rate": 0.0003,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.9995,
+      "epsilon_min": 0.05,
+      "replay_buffer_size": 200000,
+      "batch_size": 16,
+      "target_update_freq": 5000
+    },
+    "training_win_rate": 0.62,
+    "eval_win_rate": 0.65,
+    "mean_reward": 337.5,
+    "mean_length": 2.3,
+    "win_rate_stability": 0.030000000000000027,
+    "efficiency": 0.28260869565217395,
+    "training_time": 2.1405680179595947,
+    "final_epsilon": 0.9753038143277888
+  },
+  {
+    "config": {
+      "name": "Slow_Target",
+      "learning_rate": 0.001,
+      "discount_factor": 0.99,
+      "epsilon": 1.0,
+      "epsilon_decay": 0.995,
+      "epsilon_min": 0.01,
+      "replay_buffer_size": 100000,
+      "batch_size": 64,
+      "target_update_freq": 2000
+    },
+    "training_win_rate": 0.56,
+    "eval_win_rate": 0.5,
+    "mean_reward": 269.25,
+    "mean_length": 2.95,
+    "win_rate_stability": 0.06000000000000005,
+    "efficiency": 0.1694915254237288,
+    "training_time": 2.6719682216644287,
+    "final_epsilon": 0.778312557068642
+  }
+]
