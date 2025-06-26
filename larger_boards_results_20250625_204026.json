@@ -1,0 +1,457 @@
+{
+  "timestamp": "20250625_204026",
+  "config": {
+    "base_configuration": "Winning 95% Conservative Learning",
+    "adaptation_strategy": "Adapted hyperparameters for larger boards",
+    "target": "Test scalability of winning configuration"
+  },
+  "board_results": [
+    {
+      "board_size": [
+        5,
+        5
+      ],
+      "mines": 2,
+      "training_results": {
+        "board_size": [
+          5,
+          5
+        ],
+        "mines": 2,
+        "win_rate": 0.257,
+        "final_epsilon": 0.7407848779433163,
+        "episodes": 1000,
+        "training_time": 199.43722891807556,
+        "episodes_per_second": 5.014108977671255,
+        "training_stats": {
+          "win_rate": 0.257,
+          "mean_loss": 51.5568432287793,
+          "final_epsilon": 0.7407848779433163,
+          "replay_buffer_size": 3125
+        }
+      },
+      "evaluation_results": {
+        "board_size": [
+          5,
+          5
+        ],
+        "mines": 2,
+        "mean_win_rate": 0.319,
+        "std_win_rate": 0.07758221445666526,
+        "mean_reward": 181.565,
+        "std_reward": 40.127163804585045,
+        "mean_length": 3.3790000000000004,
+        "std_length": 0.282239260203112,
+        "min_win_rate": 0.18,
+        "max_win_rate": 0.48,
+        "all_runs": [
+          {
+            "win_rate": 0.2,
+            "mean_reward": 119.4,
+            "mean_length": 3.36
+          },
+          {
+            "win_rate": 0.48,
+            "mean_reward": 256.9,
+            "mean_length": 2.82
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 198.2,
+            "mean_length": 3.76
+          },
+          {
+            "win_rate": 0.28,
+            "mean_reward": 167.9,
+            "mean_length": 3.82
+          },
+          {
+            "win_rate": 0.38,
+            "mean_reward": 214.8,
+            "mean_length": 3.48
+          },
+          {
+            "win_rate": 0.32,
+            "mean_reward": 177.9,
+            "mean_length": 3.1
+          },
+          {
+            "win_rate": 0.38,
+            "mean_reward": 219.6,
+            "mean_length": 3.8
+          },
+          {
+            "win_rate": 0.38,
+            "mean_reward": 209.1,
+            "mean_length": 3.1
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 103.6,
+            "mean_length": 3.0
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 195.5,
+            "mean_length": 3.58
+          },
+          {
+            "win_rate": 0.32,
+            "mean_reward": 179.7,
+            "mean_length": 3.22
+          },
+          {
+            "win_rate": 0.22,
+            "mean_reward": 128.9,
+            "mean_length": 3.3
+          },
+          {
+            "win_rate": 0.28,
+            "mean_reward": 161.9,
+            "mean_length": 3.42
+          },
+          {
+            "win_rate": 0.38,
+            "mean_reward": 219.3,
+            "mean_length": 3.78
+          },
+          {
+            "win_rate": 0.2,
+            "mean_reward": 119.4,
+            "mean_length": 3.36
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 153.9,
+            "mean_length": 3.58
+          },
+          {
+            "win_rate": 0.34,
+            "mean_reward": 191.9,
+            "mean_length": 3.34
+          },
+          {
+            "win_rate": 0.42,
+            "mean_reward": 227.8,
+            "mean_length": 2.96
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 171.7,
+            "mean_length": 3.38
+          },
+          {
+            "win_rate": 0.38,
+            "mean_reward": 213.9,
+            "mean_length": 3.42
+          }
+        ]
+      },
+      "performance": {
+        "final_win_rate": 0.319,
+        "training_speed": 5.014108977671255,
+        "target_achieved": false
+      }
+    },
+    {
+      "board_size": [
+        6,
+        6
+      ],
+      "mines": 3,
+      "training_results": {
+        "board_size": [
+          6,
+          6
+        ],
+        "mines": 3,
+        "win_rate": 0.103,
+        "final_epsilon": 0.818714376443117,
+        "episodes": 1000,
+        "training_time": 382.12091398239136,
+        "episodes_per_second": 2.6169727000236405,
+        "training_stats": {
+          "win_rate": 0.103,
+          "mean_loss": 26.862126074722596,
+          "final_epsilon": 0.818714376443117,
+          "replay_buffer_size": 3531
+        }
+      },
+      "evaluation_results": {
+        "board_size": [
+          6,
+          6
+        ],
+        "mines": 3,
+        "mean_win_rate": 0.19200000000000003,
+        "std_win_rate": 0.05810335618533579,
+        "mean_reward": 125.02000000000001,
+        "std_reward": 32.03252409661156,
+        "mean_length": 4.012,
+        "std_length": 0.36874923728734676,
+        "min_win_rate": 0.1,
+        "max_win_rate": 0.3,
+        "all_runs": [
+          {
+            "win_rate": 0.2,
+            "mean_reward": 122.1,
+            "mean_length": 3.54
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 121.9,
+            "mean_length": 4.22
+          },
+          {
+            "win_rate": 0.14,
+            "mean_reward": 103.2,
+            "mean_length": 4.36
+          },
+          {
+            "win_rate": 0.12,
+            "mean_reward": 93.4,
+            "mean_length": 4.4
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 169.8,
+            "mean_length": 4.64
+          },
+          {
+            "win_rate": 0.16,
+            "mean_reward": 102.8,
+            "mean_length": 3.64
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 179.5,
+            "mean_length": 3.9
+          },
+          {
+            "win_rate": 0.14,
+            "mean_reward": 85.8,
+            "mean_length": 3.2
+          },
+          {
+            "win_rate": 0.24,
+            "mean_reward": 150.1,
+            "mean_length": 4.02
+          },
+          {
+            "win_rate": 0.14,
+            "mean_reward": 98.7,
+            "mean_length": 4.06
+          },
+          {
+            "win_rate": 0.1,
+            "mean_reward": 77.0,
+            "mean_length": 4.0
+          },
+          {
+            "win_rate": 0.14,
+            "mean_reward": 93.6,
+            "mean_length": 3.72
+          },
+          {
+            "win_rate": 0.16,
+            "mean_reward": 113.0,
+            "mean_length": 4.32
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 157.8,
+            "mean_length": 3.84
+          },
+          {
+            "win_rate": 0.18,
+            "mean_reward": 109.0,
+            "mean_length": 3.36
+          },
+          {
+            "win_rate": 0.3,
+            "mean_reward": 187.3,
+            "mean_length": 4.42
+          },
+          {
+            "win_rate": 0.26,
+            "mean_reward": 165.6,
+            "mean_length": 4.36
+          },
+          {
+            "win_rate": 0.16,
+            "mean_reward": 107.0,
+            "mean_length": 3.92
+          },
+          {
+            "win_rate": 0.2,
+            "mean_reward": 131.4,
+            "mean_length": 4.16
+          },
+          {
+            "win_rate": 0.2,
+            "mean_reward": 131.4,
+            "mean_length": 4.16
+          }
+        ]
+      },
+      "performance": {
+        "final_win_rate": 0.19200000000000003,
+        "training_speed": 2.6169727000236405,
+        "target_achieved": false
+      }
+    },
+    {
+      "board_size": [
+        8,
+        8
+      ],
+      "mines": 5,
+      "training_results": {
+        "board_size": [
+          8,
+          8
+        ],
+        "mines": 5,
+        "win_rate": 0.021,
+        "final_epsilon": 0.9048328935585562,
+        "episodes": 1000,
+        "training_time": 1205.0816462039948,
+        "episodes_per_second": 0.8298192932819103,
+        "training_stats": {
+          "win_rate": 0.021,
+          "mean_loss": 9.365903618522921,
+          "final_epsilon": 0.9048328935585562,
+          "replay_buffer_size": 3732
+        }
+      },
+      "evaluation_results": {
+        "board_size": [
+          8,
+          8
+        ],
+        "mines": 5,
+        "mean_win_rate": 0.038,
+        "std_win_rate": 0.030919249667480612,
+        "mean_reward": 44.445,
+        "std_reward": 16.709891531664706,
+        "mean_length": 3.979,
+        "std_length": 0.27491635091423716,
+        "min_win_rate": 0.0,
+        "max_win_rate": 0.1,
+        "all_runs": [
+          {
+            "win_rate": 0.02,
+            "mean_reward": 30.9,
+            "mean_length": 3.7
+          },
+          {
+            "win_rate": 0.0,
+            "mean_reward": 19.3,
+            "mean_length": 3.62
+          },
+          {
+            "win_rate": 0.04,
+            "mean_reward": 44.0,
+            "mean_length": 3.88
+          },
+          {
+            "win_rate": 0.04,
+            "mean_reward": 47.9,
+            "mean_length": 4.14
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 48.7,
+            "mean_length": 3.5
+          },
+          {
+            "win_rate": 0.0,
+            "mean_reward": 31.6,
+            "mean_length": 4.44
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 53.5,
+            "mean_length": 3.82
+          },
+          {
+            "win_rate": 0.02,
+            "mean_reward": 38.1,
+            "mean_length": 4.18
+          },
+          {
+            "win_rate": 0.0,
+            "mean_reward": 30.7,
+            "mean_length": 4.38
+          },
+          {
+            "win_rate": 0.0,
+            "mean_reward": 25.0,
+            "mean_length": 4.0
+          },
+          {
+            "win_rate": 0.04,
+            "mean_reward": 43.1,
+            "mean_length": 3.82
+          },
+          {
+            "win_rate": 0.1,
+            "mean_reward": 76.1,
+            "mean_length": 3.94
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 52.3,
+            "mean_length": 3.74
+          },
+          {
+            "win_rate": 0.1,
+            "mean_reward": 80.6,
+            "mean_length": 4.24
+          },
+          {
+            "win_rate": 0.02,
+            "mean_reward": 32.4,
+            "mean_length": 3.8
+          },
+          {
+            "win_rate": 0.02,
+            "mean_reward": 32.1,
+            "mean_length": 3.78
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 57.4,
+            "mean_length": 4.08
+          },
+          {
+            "win_rate": 0.0,
+            "mean_reward": 22.9,
+            "mean_length": 3.86
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 64.6,
+            "mean_length": 4.56
+          },
+          {
+            "win_rate": 0.06,
+            "mean_reward": 57.7,
+            "mean_length": 4.1
+          }
+        ]
+      },
+      "performance": {
+        "final_win_rate": 0.038,
+        "training_speed": 0.8298192932819103,
+        "target_achieved": false
+      }
+    }
+  ],
+  "summary": {
+    "total_boards_tested": 3,
+    "boards_above_80_percent": 0,
+    "boards_above_70_percent": 0,
+    "average_win_rate": 0.18300000000000002
+  }
+}
