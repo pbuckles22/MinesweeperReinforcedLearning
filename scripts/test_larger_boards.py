@@ -214,6 +214,9 @@ def main():
     print("🏆 Testing Winning 95% Configuration on Larger Boards")
     print("=" * 65)
     
+    # Start total timer
+    total_start_time = time.time()
+    
     # Board configurations to test
     board_configs = [
         ((5, 5), 2),   # 5x5 with 2 mines
@@ -224,7 +227,7 @@ def main():
     all_results = []
     
     try:
-        for board_size, mines in board_configs:
+        for i, (board_size, mines) in enumerate(board_configs):
             print(f"\n{'='*20} {board_size[0]}x{board_size[1]} BOARD {'='*20}")
             
             # Train on this board size
@@ -269,6 +272,9 @@ def main():
                 }
             })
         
+        # Calculate total time
+        total_time = time.time() - total_start_time
+        
         # Summary across all board sizes
         print(f"\n{'='*20} SUMMARY ACROSS ALL BOARDS {'='*20}")
         print(f"{'Board':<10} {'Mines':<6} {'Win Rate':<12} {'Speed':<12} {'Status':<15}")
@@ -292,6 +298,8 @@ def main():
                 status = "💥 NEEDS WORK"
             
             print(f"{board_str:<10} {mines:<6} {win_rate:.3f}±{result['evaluation_results']['std_win_rate']:.3f}  {speed:<12.2f} {status:<15}")
+        
+        print(f"\n⏱️  Total Run Time: {total_time:.2f}s ({total_time/60:.1f} minutes)")
         
         # Save comprehensive results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -333,7 +341,8 @@ def main():
                 'total_boards_tested': len(all_results),
                 'boards_above_80_percent': len([r for r in all_results if r['evaluation_results']['mean_win_rate'] >= 0.80]),
                 'boards_above_70_percent': len([r for r in all_results if r['evaluation_results']['mean_win_rate'] >= 0.70]),
-                'average_win_rate': np.mean([r['evaluation_results']['mean_win_rate'] for r in all_results])
+                'average_win_rate': np.mean([r['evaluation_results']['mean_win_rate'] for r in all_results]),
+                'total_run_time': float(total_time)
             }
         }
         
@@ -345,7 +354,9 @@ def main():
         return True
         
     except Exception as e:
+        total_time = time.time() - total_start_time
         print(f"\n❌ Error during larger boards testing: {e}")
+        print(f"   Total time elapsed: {total_time:.2f}s")
         import traceback
         traceback.print_exc()
         return False
