@@ -16,10 +16,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
 
 import numpy as np
-from core.minesweeper_env import MinesweeperEnv
+from src.core.minesweeper_env import MinesweeperEnv
 
 def test_first_move_strategies(board_size, mine_count, num_games=500):
     """Test different first move strategies comprehensively."""

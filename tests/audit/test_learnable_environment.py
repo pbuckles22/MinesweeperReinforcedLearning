@@ -6,13 +6,13 @@ Tests that environment filters instant wins and training discards first-move min
 
 import sys
 import os
-# Add the project root to the path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
 
 import numpy as np
 import time
 from datetime import datetime
-from core.minesweeper_env import MinesweeperEnv
+from src.core.minesweeper_env import MinesweeperEnv
 
 def test_instant_win_filtering():
     """Test that learnable environment filters out instant win boards."""

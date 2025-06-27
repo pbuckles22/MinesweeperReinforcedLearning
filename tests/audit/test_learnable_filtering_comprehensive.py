@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Comprehensive audit of learnable filtering logic over 3000 boards per configuration.
-Checks that no single move can cause an instant win (proper learnable definition).
+Comprehensive audit of learnable environment filtering.
+Tests that learnable environment correctly filters out instant wins and first-move mine hits.
 
 Audits all board sizes from 4×4 to 9×9 with mine counts from 1 to 7.
 Estimated time: 6-9 hours for complete audit.
@@ -10,13 +10,13 @@ import sys
 import os
 import time
 import json
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 
-# Add src to path (from tests/audit/ we need to go up 3 levels)
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
 
-import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
 
 def audit_learnable_filtering(board_size, mine_count, num_boards=3000):
