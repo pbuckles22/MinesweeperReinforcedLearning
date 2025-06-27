@@ -36,7 +36,7 @@ class MinesweeperEnv(gym.Env):
                  invalid_action_penalty=REWARD_INVALID_ACTION, mine_penalty=REWARD_HIT_MINE,
                  safe_reveal_base=REWARD_SAFE_REVEAL, win_reward=REWARD_WIN,
                  first_cascade_safe_reward=REWARD_FIRST_CASCADE_SAFE, first_cascade_hit_mine_reward=REWARD_FIRST_CASCADE_HIT_MINE,
-                 learnable_only=True, max_learnable_attempts=1000):
+                 learnable_only=False, max_learnable_attempts=1000):
         """Initialize the Minesweeper environment.
         
         Args:

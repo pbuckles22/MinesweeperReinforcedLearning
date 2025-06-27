@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Comprehensive DQN Training Test Script
+Comprehensive DQN Training Test Script (Without Learnable Filtering)
 Tests multiple training durations on a single board size and compares results.
 
 This script runs short, medium, and long training sessions to determine optimal training length
-and compare performance to past results.
+and compare performance to past results. This version DISABLES learnable filtering to test
+if that's causing training instability.
 """
 
 import sys
