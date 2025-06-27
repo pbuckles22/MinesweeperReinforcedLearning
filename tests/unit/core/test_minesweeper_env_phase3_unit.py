@@ -277,7 +277,8 @@ class TestMinesweeperEnvPhase3AdvancedStateUpdates:
         env = MinesweeperEnv(initial_board_size=(4, 4), initial_mines=3)
         env.reset()
         
-        # Manually set up a complex scenario
+        # Clear all mines first, then manually set up a complex scenario
+        env.mines.fill(False)
         env.mines[0, 0] = True
         env.mines[0, 1] = True
         env.mines[1, 0] = True

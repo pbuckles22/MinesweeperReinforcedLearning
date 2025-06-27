@@ -6,8 +6,16 @@ from pathlib import Path
 
 @pytest.fixture
 def script_path():
-    """Get the path to the installation script."""
-    return Path("scripts/install_and_run.ps1")
+    """Get the path to the installation script based on platform."""
+    system = platform.system().lower()
+    if system == "windows":
+        return Path("scripts/platform/windows/install_and_run.ps1")
+    elif system == "linux":
+        return Path("scripts/platform/linux/install_and_run.sh")
+    elif system == "darwin":
+        return Path("scripts/platform/mac/install_and_run.sh")
+    else:
+        pytest.skip(f"Unsupported platform: {system}")
 
 def test_script_exists(script_path):
     """Test that the installation script exists."""

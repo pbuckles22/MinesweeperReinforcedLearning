@@ -229,8 +229,14 @@ class TestTrainAgentPhase4:
         assert env is not None
         # Access the underlying environment through the Monitor wrapper
         underlying_env = env.env
-        assert underlying_env.max_board_size == (35, 20)
-        assert underlying_env.max_mines == 130
+        # The environment is wrapped in FirstMoveDiscardWrapper
+        from src.core.train_agent import FirstMoveDiscardWrapper
+        assert isinstance(underlying_env, FirstMoveDiscardWrapper)
+        
+        # Get the actual MinesweeperEnv from the wrapper
+        actual_env = underlying_env.env
+        assert actual_env.max_board_size == (35, 20)
+        assert actual_env.max_mines == 130
 
     def test_make_env_function_edge_cases(self):
         """Test make_env function edge cases."""
@@ -240,8 +246,14 @@ class TestTrainAgentPhase4:
         assert env is not None
         # Access the underlying environment through the Monitor wrapper
         underlying_env = env.env
-        assert underlying_env.max_board_size == (20, 20)
-        assert underlying_env.max_mines == 50
+        # The environment is wrapped in FirstMoveDiscardWrapper
+        from src.core.train_agent import FirstMoveDiscardWrapper
+        assert isinstance(underlying_env, FirstMoveDiscardWrapper)
+        
+        # Get the actual MinesweeperEnv from the wrapper
+        actual_env = underlying_env.env
+        assert actual_env.max_board_size == (20, 20)
+        assert actual_env.max_mines == 50
 
     def test_experiment_tracker_complex_scenarios(self):
         """Test ExperimentTracker complex scenarios."""

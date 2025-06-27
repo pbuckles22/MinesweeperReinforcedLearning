@@ -234,17 +234,21 @@ class TestMakeEnv:
         env = env_fn()
         # The environment is wrapped in Monitor, so check the underlying env
         assert isinstance(env, Monitor)
-        # Check the underlying environment
-        assert isinstance(env.env, MinesweeperEnv)
-        assert env.env.max_board_size_int == 4
-        assert env.env.max_mines == 2
-        assert env.env.early_learning_mode is False
-        assert env.env.early_learning_threshold == 200
-        assert env.env.early_learning_corner_safe is False
-        assert env.env.early_learning_edge_safe is False
-        assert env.env.mine_spacing == 1
-        assert env.env.initial_board_width == 4
-        assert env.env.initial_mines == 2
+        # Check the underlying environment (may be wrapped in FirstMoveDiscardWrapper)
+        underlying_env = env.env
+        # If it's wrapped in FirstMoveDiscardWrapper, get the actual environment
+        if hasattr(underlying_env, 'env'):
+            underlying_env = underlying_env.env
+        assert isinstance(underlying_env, MinesweeperEnv)
+        assert underlying_env.max_board_size_int == 4
+        assert underlying_env.max_mines == 2
+        assert underlying_env.early_learning_mode is False
+        assert underlying_env.early_learning_threshold == 200
+        assert underlying_env.early_learning_corner_safe is False
+        assert underlying_env.early_learning_edge_safe is False
+        assert underlying_env.mine_spacing == 1
+        assert underlying_env.initial_board_width == 4
+        assert underlying_env.initial_mines == 2
 
 
 class TestParseArgs:

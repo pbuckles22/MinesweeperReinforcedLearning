@@ -235,9 +235,16 @@ class TestMakeEnvEdgeCases:
         from stable_baselines3.common.monitor import Monitor
         assert isinstance(env, Monitor)
         
-        # Check underlying environment
+        # Check underlying environment - it's wrapped in FirstMoveDiscardWrapper
         underlying_env = env.env
+        from src.core.train_agent import FirstMoveDiscardWrapper
         from src.core.minesweeper_env import MinesweeperEnv
-        assert isinstance(underlying_env, MinesweeperEnv)
-        assert underlying_env.max_board_size_int == 4
-        assert underlying_env.max_mines == 2
+        
+        # The environment is wrapped in FirstMoveDiscardWrapper
+        assert isinstance(underlying_env, FirstMoveDiscardWrapper)
+        
+        # Get the actual MinesweeperEnv from the wrapper
+        actual_env = underlying_env.env
+        assert isinstance(actual_env, MinesweeperEnv)
+        assert actual_env.max_board_size_int == 4
+        assert actual_env.max_mines == 2

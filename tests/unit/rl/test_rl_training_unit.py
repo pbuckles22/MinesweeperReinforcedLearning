@@ -177,8 +177,11 @@ class TestMakeEnv:
         # Environment is wrapped in Monitor, so check the underlying env
         from stable_baselines3.common.monitor import Monitor
         assert isinstance(env, Monitor)
-        # Get the underlying environment
+        # Get the underlying environment (may be wrapped in FirstMoveDiscardWrapper)
         underlying_env = env.env
+        # If it's wrapped in FirstMoveDiscardWrapper, get the actual environment
+        if hasattr(underlying_env, 'env'):
+            underlying_env = underlying_env.env
         assert isinstance(underlying_env, MinesweeperEnv)
         assert underlying_env.max_board_size_int == 4
         assert underlying_env.max_mines == 2
@@ -197,8 +200,11 @@ class TestMakeEnv:
         # Environment is wrapped in Monitor, so check the underlying env
         from stable_baselines3.common.monitor import Monitor
         assert isinstance(env, Monitor)
-        # Get the underlying environment
+        # Get the underlying environment (may be wrapped in FirstMoveDiscardWrapper)
         underlying_env = env.env
+        # If it's wrapped in FirstMoveDiscardWrapper, get the actual environment
+        if hasattr(underlying_env, 'env'):
+            underlying_env = underlying_env.env
         assert underlying_env.max_board_size_int == 8
         assert underlying_env.max_mines == 10
         assert underlying_env.initial_board_width == 8  # Should match max_board_size

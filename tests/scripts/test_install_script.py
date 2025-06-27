@@ -10,11 +10,11 @@ def script_path():
     system = platform.system().lower()
     
     if system == "windows":
-        return Path("scripts/windows/install_and_run.ps1")
+        return Path("scripts/platform/windows/install_and_run.ps1")
     elif system == "linux":
-        return Path("scripts/linux/install_and_run.sh")
+        return Path("scripts/platform/linux/install_and_run.sh")
     elif system == "darwin":  # macOS
-        return Path("scripts/mac/install_and_run.sh")
+        return Path("scripts/platform/mac/install_and_run.sh")
     else:
         pytest.skip(f"Unsupported platform: {system}")
 

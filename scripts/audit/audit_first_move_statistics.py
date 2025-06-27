@@ -15,12 +15,23 @@ import time
 import json
 from datetime import datetime
 from pathlib import Path
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
 
 import numpy as np
 from src.core.minesweeper_env import MinesweeperEnv
+
+@pytest.fixture
+def board_size():
+    """Fixture for board size."""
+    return (4, 4)
+
+@pytest.fixture
+def mine_count():
+    """Fixture for mine count."""
+    return 2
 
 def test_first_move_strategies(board_size, mine_count, num_games=500):
     """Test different first move strategies comprehensively."""

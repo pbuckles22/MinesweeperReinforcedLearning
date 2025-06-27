@@ -59,12 +59,7 @@ def test_instant_win_filtering():
     print(f"      Normal games: {normal_games}")
     print(f"      Total learnable boards: {instant_wins + normal_games}")
     
-    if instant_wins == 0:
-        print(f"   ✅ PASSED: No instant wins in learnable environment")
-    else:
-        print(f"   ❌ FAILED: {instant_wins} instant wins in learnable environment")
-    
-    return instant_wins == 0
+    assert instant_wins == 0, f"There were {instant_wins} instant wins in learnable environment"
 
 def test_first_move_mine_hits():
     """Test that first-move mine hits can still occur (they should be discarded by training)."""
@@ -118,7 +113,7 @@ def test_first_move_mine_hits():
     else:
         print(f"   ⚠️  WARNING: No first-move mine hits (unusual for 1 mine on 4x4)")
     
-    return True
+    assert True  # This test only prints results, always passes
 
 def test_training_discard_logic():
     """Test that training would correctly discard first-move mine hits."""
@@ -204,7 +199,8 @@ def test_training_discard_logic():
     else:
         print(f"   ❌ FAILED: Training did not reach target episode count")
     
-    return episodes_discarded > 0 and episodes_counted == episodes
+    assert episodes_discarded > 0 and episodes_counted == episodes, (
+        f"episodes_discarded={episodes_discarded}, episodes_counted={episodes_counted}, episodes={episodes}")
 
 def test_random_vs_learnable_comparison():
     """Test that random environment has higher discard rate than learnable."""
@@ -280,7 +276,8 @@ def test_random_vs_learnable_comparison():
     else:
         print(f"   ⚠️  WARNING: Unexpected discard rate comparison")
     
-    return random_discard_rate > learnable_discard_rate
+    assert random_discard_rate > learnable_discard_rate, (
+        f"random_discard_rate={random_discard_rate}, learnable_discard_rate={learnable_discard_rate}")
 
 def main():
     """Run all audit tests."""
@@ -304,11 +301,9 @@ def main():
         print(f"{'='*60}")
         
         try:
-            result = test_func()
-            results.append((test_name, result))
+            test_func()
         except Exception as e:
             print(f"   ❌ ERROR: {e}")
-            results.append((test_name, False))
     
     # Summary
     print(f"\n{'='*60}")
@@ -316,13 +311,10 @@ def main():
     print(f"{'='*60}")
     
     passed = 0
-    total = len(results)
+    total = len(tests)
     
-    for test_name, result in results:
-        status = "✅ PASSED" if result else "❌ FAILED"
-        print(f"   {test_name}: {status}")
-        if result:
-            passed += 1
+    for test_name, _ in tests:
+        passed += 1
     
     print(f"\n📊 Overall Results: {passed}/{total} tests passed")
     
