@@ -1087,12 +1087,12 @@ def make_env(max_board_size, max_mines):
             mine_penalty=REWARD_HIT_MINE,
             safe_reveal_base=REWARD_SAFE_REVEAL,
             win_reward=REWARD_WIN,
-            learnable_only=True,  # Only generate learnable board configurations
+            learnable_only=False,  # DISABLED: Test without learnable filtering
             max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
         )
         
         # Wrap with FirstMoveDiscardWrapper to handle first-move mine hits
-        env = FirstMoveDiscardWrapper(env, learnable_only=True)
+        env = FirstMoveDiscardWrapper(env, learnable_only=False)  # DISABLED: Test without learnable filtering
         
         # Configure Monitor to track the 'won' field from environment info
         env = Monitor(env, info_keywords=("won",))

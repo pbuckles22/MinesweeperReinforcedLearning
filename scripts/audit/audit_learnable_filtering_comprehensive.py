@@ -14,8 +14,9 @@ import numpy as np
 from datetime import datetime
 from pathlib import Path
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
+# Add the project root to the path so we can import src modules
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 from src.core.minesweeper_env import MinesweeperEnv
 
@@ -177,7 +178,7 @@ def main():
         for mine_count in range(1, max_mines + 1):
             configs.append((board_size, mine_count))
     
-    num_boards = 3000
+    num_boards = 3000  # Comprehensive audit: 3000 boards per configuration
     total_configs = len(configs)
     
     print(f"🚀 Comprehensive Learnable Filtering Audit")
@@ -185,7 +186,8 @@ def main():
     print(f"🎯 Board sizes: 4×4 to 9×9")
     print(f"💣 Mine counts: 1 to 7")
     print(f"⏱️  Estimated time: 6-9 hours")
-    print(f"🔍 Failure tracking enabled for pattern analysis")
+    print(f"🔍 Testing EVERY position on EVERY board for instant wins")
+    print(f"🎯 Goal: Verify learnable_only=True eliminates ALL instant wins")
     print("=" * 80)
     
     # Create results directory

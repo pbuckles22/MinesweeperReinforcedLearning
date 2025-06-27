@@ -240,8 +240,15 @@ class DQNAgent:
     
     def store_experience(self, state: np.ndarray, action: int, reward: float,
                         next_state: np.ndarray, done: bool):
-        """Store experience in replay buffer."""
-        experience = Experience(state, action, reward, next_state, done)
+        """Store experience in replay buffer with reward normalization."""
+        # Normalize rewards to prevent Q-value explosion
+        # Scale rewards to [-0.5, 0.5] range for better stability
+        if reward > 0:
+            normalized_reward = min(reward / 200.0, 0.5)  # Cap positive rewards at 0.5
+        else:
+            normalized_reward = max(reward / 200.0, -0.5)  # Cap negative rewards at -0.5
+        
+        experience = Experience(state, action, normalized_reward, next_state, done)
         self.replay_buffer.add(experience)
     
     def train(self) -> Optional[float]:
@@ -281,6 +288,10 @@ class DQNAgent:
         # Backward pass
         self.optimizer.zero_grad()
         loss.backward()
+        
+        # Gradient clipping to prevent explosion
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=0.5)
+        
         self.optimizer.step()
         
         # Update target network

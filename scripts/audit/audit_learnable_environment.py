@@ -6,8 +6,9 @@ Tests that environment filters instant wins and training discards first-move min
 
 import sys
 import os
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
+# Add the project root to the path so we can import src modules
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 import numpy as np
 import time
