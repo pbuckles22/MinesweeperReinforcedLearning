@@ -1090,6 +1090,10 @@ def make_env(max_board_size, max_mines):
             learnable_only=True,  # Only generate learnable board configurations
             max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
         )
+        
+        # Wrap with FirstMoveDiscardWrapper to handle first-move mine hits
+        env = FirstMoveDiscardWrapper(env, learnable_only=True)
+        
         # Configure Monitor to track the 'won' field from environment info
         env = Monitor(env, info_keywords=("won",))
         return env
@@ -1800,6 +1804,74 @@ def evaluate_model(model, env, n_episodes=100, raise_errors=False):
         "length_ci": length_std,
         "n_episodes": n_episodes
     }
+
+class FirstMoveDiscardWrapper(gym.Wrapper):
+    """Wrapper that discards episodes where the first move hits a mine."""
+    
+    def __init__(self, env, learnable_only=False):
+        super().__init__(env)
+        self.learnable_only = learnable_only
+        self.episodes_discarded = 0
+        self.episodes_counted = 0
+        self.first_move_mine_hits = 0
+        self.current_episode_step = 0
+        self.current_episode_discarded = False
+    
+    def reset(self, **kwargs):
+        """Reset the environment and track episode start."""
+        result = self.env.reset(**kwargs)
+        
+        # Reset episode tracking
+        self.current_episode_step = 0
+        self.current_episode_discarded = False
+        
+        return result
+    
+    def step(self, action):
+        """Step the environment and track first-move mine hits."""
+        result = self.env.step(action)
+        
+        # Handle different result formats
+        if len(result) == 5:
+            obs, reward, terminated, truncated, info = result
+        elif len(result) == 4:
+            obs, reward, terminated, truncated = result
+            info = {}
+        else:
+            return result
+        
+        self.current_episode_step += 1
+        
+        # Check for first-move mine hit (step 1, mine hit, learnable environment)
+        if (self.learnable_only and 
+            self.current_episode_step == 1 and 
+            terminated and 
+            reward == -20 and  # Mine hit penalty
+            not self.current_episode_discarded):
+            
+            # Mark this episode as discarded
+            self.current_episode_discarded = True
+            self.episodes_discarded += 1
+            self.first_move_mine_hits += 1
+            
+            # Return a neutral result (no reward, not terminated)
+            # This will cause the episode to continue but not count as a loss
+            return obs, 0.0, False, truncated, info
+        
+        # Normal step processing
+        if not self.current_episode_discarded:
+            self.episodes_counted += 1
+        
+        return result
+    
+    def get_discard_stats(self):
+        """Get statistics about discarded episodes."""
+        return {
+            'episodes_discarded': self.episodes_discarded,
+            'episodes_counted': self.episodes_counted,
+            'first_move_mine_hits': self.first_move_mine_hits,
+            'discard_rate': (self.episodes_discarded / (self.episodes_discarded + self.episodes_counted)) * 100 if (self.episodes_discarded + self.episodes_counted) > 0 else 0
+        }
 
 if __name__ == "__main__":
     main() 

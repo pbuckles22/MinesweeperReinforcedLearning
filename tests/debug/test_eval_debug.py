@@ -11,8 +11,8 @@ import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
-from src.core.minesweeper_env import MinesweeperEnv
-from src.core.train_agent import make_env
+from core.minesweeper_env import MinesweeperEnv
+from core.train_agent import make_env
 
 def test_evaluation_win_detection():
     """Test if evaluation win detection is working correctly."""

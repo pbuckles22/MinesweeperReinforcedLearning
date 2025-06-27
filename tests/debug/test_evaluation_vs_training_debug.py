@@ -10,8 +10,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from src.core.minesweeper_env import MinesweeperEnv
-from src.core.train_agent import make_env, ActionMaskingWrapper, MultiBoardTrainingWrapper
+from core.minesweeper_env import MinesweeperEnv
+from core.train_agent import make_env, ActionMaskingWrapper, MultiBoardTrainingWrapper
 
 def debug_training_vs_evaluation():
     """Debug the exact differences between training and evaluation environments."""

@@ -368,8 +368,12 @@ class ParallelDQNAgent:
         print(f"🚀 Starting parallel training with {self.num_workers} workers")
         
         # Create environments for each worker
-        environments = [MinesweeperEnv(initial_board_size=self.board_size, initial_mines=mine_count) 
-                       for _ in range(self.num_workers)]
+        environments = [MinesweeperEnv(
+            initial_board_size=self.board_size, 
+            initial_mines=mine_count,
+            learnable_only=True,  # Only generate learnable board configurations
+            max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
+        ) for _ in range(self.num_workers)]
         
         # Start worker threads
         self.worker_threads = []

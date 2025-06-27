@@ -14,9 +14,9 @@ import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from src.core.minesweeper_env import MinesweeperEnv
-from src.core.dqn_agent import DQNAgent, train_dqn_agent, evaluate_dqn_agent
-from src.core.dqn_agent_enhanced import EnhancedDQNAgent, train_enhanced_dqn_agent, evaluate_enhanced_dqn_agent
+from core.minesweeper_env import MinesweeperEnv
+from core.dqn_agent import DQNAgent, train_dqn_agent, evaluate_dqn_agent
+from core.dqn_agent_enhanced import EnhancedDQNAgent, train_enhanced_dqn_agent, evaluate_enhanced_dqn_agent
 
 
 def test_baseline_dqn():

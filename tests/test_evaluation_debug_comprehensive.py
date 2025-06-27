@@ -308,7 +308,7 @@ def test_manual_win_reproduction():
 def make_seeded_env(seed=42, **kwargs):
     def _init():
         env = MinesweeperEnv(**kwargs)
-        env.seed(seed)
+        env.reset(seed=seed)
         return env
     return _init
 

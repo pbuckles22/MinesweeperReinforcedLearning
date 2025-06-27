@@ -116,3 +116,16 @@ coverage_results_summary.json
 # Ignore all training stats files and history
 training_stats/
 
+# Timestamped JSON files (training results, analysis outputs, etc.)
+# Pattern: any JSON file ending with timestamp (YYYYMMDD_HHMMSS.json)
+*_????????_??????.json
+
+# Audit results
+audit_results/
+*_audit_*.json
+*_failures_*.json
+*_summary_*.json
+
+# Performance test files
+test_*_performance.py
+

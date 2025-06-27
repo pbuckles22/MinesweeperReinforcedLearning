@@ -699,7 +699,12 @@ if __name__ == "__main__":
     board_size = (4, 4)
     max_mines = 2
     
-    env = DummyVecEnv([lambda: MinesweeperEnv(initial_board_size=board_size, max_mines=max_mines)])
+    env = DummyVecEnv([lambda: MinesweeperEnv(
+        initial_board_size=board_size, 
+        max_mines=max_mines,
+        learnable_only=True,  # Only generate learnable board configurations
+        max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
+    )])
     
     # Create enhanced DQN agent
     agent = EnhancedDQNAgent(

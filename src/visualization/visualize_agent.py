@@ -47,7 +47,9 @@ class MinesweeperVisualizer:
             max_board_size=(board_size, board_size), 
             max_mines=num_mines,
             initial_board_size=(board_size, board_size),
-            initial_mines=num_mines
+            initial_mines=num_mines,
+            learnable_only=True,  # Only generate learnable board configurations
+            max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
         )])
         self.model = PPO("MlpPolicy", self.env, verbose=0)
         

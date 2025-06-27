@@ -155,6 +155,15 @@ class DQNAgent:
     
     def _preprocess_state(self, state: np.ndarray) -> torch.Tensor:
         """Preprocess state for neural network input."""
+        # Handle state that might be a tuple (from env.reset()) or numpy array
+        if isinstance(state, tuple):
+            state = state[0]  # Extract the actual state from (state, info)
+        
+        # Handle vectorized observations from DummyVecEnv
+        if hasattr(state, 'shape') and len(state.shape) > 3:
+            # Vectorized observation: shape is (num_envs, channels, height, width)
+            state = state[0]  # Take first environment's state
+        
         # Ensure state is float32 and in the right range
         if state.dtype != np.float32:
             state = state.astype(np.float32)
@@ -176,6 +185,11 @@ class DQNAgent:
         # Handle state that might be a tuple (from env.reset()) or numpy array
         if isinstance(state, tuple):
             state = state[0]  # Extract the actual state from (state, info)
+        
+        # Handle vectorized observations from DummyVecEnv
+        if hasattr(state, 'shape') and len(state.shape) > 3:
+            # Vectorized observation: shape is (num_envs, channels, height, width)
+            state = state[0]  # Take first environment's state
         
         # Handle state that might have different shapes
         if hasattr(state, 'shape'):
@@ -467,7 +481,7 @@ def evaluate_dqn_agent(agent: DQNAgent, env, n_episodes: int = 100) -> Dict[str,
         'lengths': lengths
     }
     
-    print(f"📊 Evaluation Results:")
+    print(f" Evaluation Results:")
     print(f"   Win Rate: {win_rate:.3f}")
     print(f"   Mean Reward: {mean_reward:.2f}")
     print(f"   Mean Length: {mean_length:.1f} steps")
@@ -484,7 +498,12 @@ if __name__ == "__main__":
     board_size = (4, 4)
     max_mines = 2
     
-    env = DummyVecEnv([lambda: MinesweeperEnv(initial_board_size=board_size, max_mines=max_mines)])
+    env = DummyVecEnv([lambda: MinesweeperEnv(
+        initial_board_size=board_size, 
+        max_mines=max_mines,
+        learnable_only=True,  # Only generate learnable board configurations
+        max_learnable_attempts=1000  # Maximum attempts to find learnable configuration
+    )])
     
     # Create DQN agent
     agent = DQNAgent(

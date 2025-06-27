@@ -299,16 +299,17 @@ class MinesweeperEnv(gym.Env):
         self.revealed_cell_click_count = 0
         self._actions_taken_this_game = set()
         
+        # Initialize info dict
+        self.info = {
+            "won": False,
+            "learnable": False
+        }
+        
         # Place mines immediately (before first move)
         self._place_mines()
         
         # Update enhanced state after mine placement
         self._update_enhanced_state()
-        
-        # Initialize info dict
-        self.info = {
-            "won": False
-        }
         
         return self.state, self.info
 
@@ -320,19 +321,76 @@ class MinesweeperEnv(gym.Env):
             self._place_mines_random()
     
     def _place_mines_learnable(self):
-        """Place mines ensuring configuration requires 2+ moves."""
+        """Place mines ensuring configuration requires 2+ moves and first move is safe."""
         for attempt in range(self.max_learnable_attempts):
             # Generate random mine positions
             mine_positions = self._generate_random_mine_positions()
             
             # Check if configuration is learnable
             if self._is_learnable_configuration(mine_positions):
+                # Place the mines
                 self._place_mines_at_positions(mine_positions)
-                return
+                
+                # Check if first move is safe (no mine adjustment, pure filtering)
+                if self._has_safe_first_move():
+                    # Store learnable status
+                    self.info['learnable'] = True
+                    return
+                else:
+                    # First move is not safe, try again
+                    continue
         
         # Fallback to random if no learnable config found
         warnings.warn(f"Could not find learnable configuration after {self.max_learnable_attempts} attempts, using random placement")
         self._place_mines_random()
+        # Mark as not learnable
+        self.info['learnable'] = False
+    
+    def _has_safe_first_move(self):
+        """Check if there's at least one safe first move (corners or edges)."""
+        # Check corners first (common first moves)
+        corners = [(0, 0), (0, self.current_board_width-1), 
+                  (self.current_board_height-1, 0), (self.current_board_height-1, self.current_board_width-1)]
+        
+        for row, col in corners:
+            if not self.mines[row, col]:
+                return True
+        
+        # Check edges if no safe corners
+        for row in [0, self.current_board_height-1]:
+            for col in range(self.current_board_width):
+                if not self.mines[row, col]:
+                    return True
+        
+        for col in [0, self.current_board_width-1]:
+            for row in range(self.current_board_height):
+                if not self.mines[row, col]:
+                    return True
+        
+        return False
+    
+    def _get_safe_positions(self):
+        """Get positions that would be safe for first moves."""
+        safe_positions = []
+        
+        # Add corners
+        safe_positions.extend([
+            (0, 0), (0, self.current_board_width-1),
+            (self.current_board_height-1, 0), (self.current_board_height-1, self.current_board_width-1)
+        ])
+        
+        # Add edges
+        for row in [0, self.current_board_height-1]:
+            for col in range(self.current_board_width):
+                if (row, col) not in safe_positions:
+                    safe_positions.append((row, col))
+        
+        for col in [0, self.current_board_width-1]:
+            for row in range(self.current_board_height):
+                if (row, col) not in safe_positions:
+                    safe_positions.append((row, col))
+        
+        return safe_positions
     
     def _place_mines_random(self):
         """Place mines randomly (original implementation)."""
@@ -376,6 +434,11 @@ class MinesweeperEnv(gym.Env):
 
         # Update adjacent counts
         self._update_adjacent_counts()
+        
+        # For random placement, check if it's learnable
+        mine_positions = [(y, x) for y in range(self.current_board_height) 
+                         for x in range(self.current_board_width) if self.mines[y, x]]
+        self.info['learnable'] = self._is_learnable_configuration(mine_positions)
     
     def _generate_random_mine_positions(self):
         """Generate random mine positions respecting spacing constraints."""
@@ -489,11 +552,118 @@ class MinesweeperEnv(gym.Env):
         
         return max_revealed
     
+    def _simulate_cascade_multi_mine(self, board, mine_positions):
+        """Simulate a cascade from a non-mine cell for multi-mine boards."""
+        h, w = board.shape
+        max_revealed = 0
+        
+        # Try cascading from every non-mine cell and find the maximum
+        for start_r in range(h):
+            for start_c in range(w):
+                if (start_r, start_c) in mine_positions:
+                    continue
+                
+                # Simulate cascade from this start position
+                revealed = np.zeros_like(board, dtype=bool)
+                queue = [(start_r, start_c)]
+                
+                while queue:
+                    r, c = queue.pop(0)
+                    if revealed[r, c]:
+                        continue
+                    
+                    revealed[r, c] = True
+                    
+                    # If this cell has no adjacent mines (value 0), cascade to neighbors
+                    if board[r, c] == 0:
+                        for dr in [-1, 0, 1]:
+                            for dc in [-1, 0, 1]:
+                                if dr == 0 and dc == 0:
+                                    continue
+                                nr, nc = r + dr, c + dc
+                                if (0 <= nr < h and 
+                                    0 <= nc < w and 
+                                    not revealed[nr, nc] and 
+                                    (nr, nc) not in mine_positions):
+                                    queue.append((nr, nc))
+                
+                # Update maximum revealed
+                revealed_count = revealed.sum()
+                if revealed_count > max_revealed:
+                    max_revealed = revealed_count
+        
+        return max_revealed
+    
     def _is_multi_mine_learnable(self, mine_positions):
         """Check if multi-mine placement requires 2+ moves."""
-        # For multi-mine games, we need more complex logic
-        # For now, assume all multi-mine configurations are learnable
-        # This can be enhanced later with more sophisticated analysis
+        # For multi-mine games, we need to check if any first move can cause an instant win
+        # or if the first move is guaranteed to be safe
+        
+        # First, check if there's a safe first move
+        if not self._has_safe_first_move():
+            return False
+        
+        # Create a temporary board with the mines
+        temp_board = np.zeros((self.current_board_height, self.current_board_width), dtype=int)
+        
+        # Place mines
+        for row, col in mine_positions:
+            temp_board[row, col] = 9
+        
+        # Fill in adjacent counts
+        for row, col in mine_positions:
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    if dr == 0 and dc == 0:
+                        continue
+                    nr, nc = row + dr, col + dc
+                    if (0 <= nr < self.current_board_height and 
+                        0 <= nc < self.current_board_width and 
+                        (nr, nc) not in mine_positions):
+                        temp_board[nr, nc] += 1
+        
+        # Test each non-mine position as a first move for instant wins
+        total_cells = self.current_board_height * self.current_board_width
+        mine_count = len(mine_positions)
+        safe_cells = total_cells - mine_count
+        
+        for start_row in range(self.current_board_height):
+            for start_col in range(self.current_board_width):
+                if (start_row, start_col) in mine_positions:
+                    continue  # Skip mine positions
+                
+                # Simulate clicking this position and any cascading cells
+                revealed = np.zeros_like(temp_board, dtype=bool)
+                queue = [(start_row, start_col)]
+                
+                while queue:
+                    r, c = queue.pop(0)
+                    if revealed[r, c]:
+                        continue
+                    
+                    revealed[r, c] = True
+                    
+                    # If this cell has no adjacent mines (value 0), cascade to neighbors
+                    if temp_board[r, c] == 0:
+                        for dr in [-1, 0, 1]:
+                            for dc in [-1, 0, 1]:
+                                if dr == 0 and dc == 0:
+                                    continue
+                                nr, nc = r + dr, c + dc
+                                if (0 <= nr < self.current_board_height and 
+                                    0 <= nc < self.current_board_width and 
+                                    not revealed[nr, nc] and 
+                                    (nr, nc) not in mine_positions):
+                                    queue.append((nr, nc))
+                
+                # Check if this first move reveals all safe cells (instant win)
+                revealed_count = revealed.sum()
+                
+                # If this first move reveals all safe cells, it's an instant win (not learnable)
+                if revealed_count >= safe_cells:
+                    return False  # This configuration allows instant win
+        
+        # If no instant wins found, the configuration is learnable
         return True
 
     def _update_adjacent_counts(self):

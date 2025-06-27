@@ -9,8 +9,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
 from stable_baselines3.common.vec_env import DummyVecEnv
-from src.core.minesweeper_env import MinesweeperEnv
-from src.core.train_agent import make_env
+from core.minesweeper_env import MinesweeperEnv
+from core.train_agent import make_env
 
 def test_win_condition_logic():
     """Test the win condition logic step by step."""

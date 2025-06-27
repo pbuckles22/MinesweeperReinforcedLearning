@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
-from src.core.minesweeper_env import MinesweeperEnv
+from core.minesweeper_env import MinesweeperEnv
 
 def test_seeding_consistency():
     """Test that seeding produces consistent results."""
@@ -22,12 +22,8 @@ def test_seeding_consistency():
     
     # Set same seed
     seed = 42
-    env1.seed(seed)
-    env2.seed(seed)
-    
-    # Reset both environments
-    obs1, info1 = env1.reset()
-    obs2, info2 = env2.reset()
+    obs1, info1 = env1.reset(seed=seed)
+    obs2, info2 = env2.reset(seed=seed)
     
     print(f"Environment 1 mines: {env1.mines}")
     print(f"Environment 2 mines: {env2.mines}")
@@ -39,11 +35,8 @@ def test_seeding_consistency():
     env3 = MinesweeperEnv(max_board_size=(4, 4), max_mines=1)
     env4 = MinesweeperEnv(max_board_size=(4, 4), max_mines=1)
     
-    env3.seed(42)
-    env4.seed(123)
-    
-    obs3, info3 = env3.reset()
-    obs4, info4 = env4.reset()
+    obs3, info3 = env3.reset(seed=42)
+    obs4, info4 = env4.reset(seed=123)
     
     print(f"Environment 3 mines (seed 42): {env3.mines}")
     print(f"Environment 4 mines (seed 123): {env4.mines}")
